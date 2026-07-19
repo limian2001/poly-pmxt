@@ -1,0 +1,217 @@
+---
+title: Find Similar Events
+description: "Discover cross-venue event clusters and the markets inside each matched event."
+---
+
+Use event clusters when the thing you care about has multiple child
+markets. PMXT groups matched events across venues, then returns the
+markets attached to each event so you can inspect the full cross-venue
+structure in one response.
+
+You can anchor the lookup to an event you already have, or omit the
+anchor fields to browse event clusters across the catalog.
+
+## fetchMatchedEventClusters
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import pmxt
+
+    router = pmxt.Router(pmxt_api_key="pmxt_live_...")
+
+    clusters = router.fetch_matched_event_clusters(
+        slug="2026-nba-champion",
+        relation="identity",
+        min_confidence=0.8,
+        venues=["polymarket", "kalshi"],
+        include_raw_matches=True,
+        limit=5,
+    )
+
+    for cluster in clusters:
+        print(cluster.cluster_id, cluster.confidence, cluster.canonical_title)
+
+        for event in cluster.events:
+            print(f"  {event.source_exchange}: {event.title}")
+            for market in event.markets[:3]:
+                print(f"    - {market.title}")
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    import pmxt from "pmxtjs";
+
+    const router = new pmxt.Router({ pmxtApiKey: "pmxt_live_..." });
+
+    const clusters = await router.fetchMatchedEventClusters({
+      slug: "2026-nba-champion",
+      relation: "identity",
+      minConfidence: 0.8,
+      venues: ["polymarket", "kalshi"],
+      includeRawMatches: true,
+      limit: 5,
+    });
+
+    for (const cluster of clusters) {
+      console.log(cluster.clusterId, cluster.confidence, cluster.canonicalTitle);
+
+      for (const event of cluster.events) {
+        console.log(`  ${event.sourceExchange}: ${event.title}`);
+        for (const market of event.markets.slice(0, 3)) {
+          console.log(`    - ${market.title}`);
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="curl">
+    ```bash
+    curl -G "https://api.pmxt.dev/v0/matched-event-clusters" \
+      -H "Authorization: Bearer pmxt_live_..." \
+      --data-urlencode "slug=2026-nba-champion" \
+      --data-urlencode "relation=identity" \
+      --data-urlencode "minConfidence=0.8" \
+      --data-urlencode "venues=polymarket,kalshi" \
+      --data-urlencode "includeRawMatches=true" \
+      --data-urlencode "limit=5"
+    ```
+  </Tab>
+</Tabs>
+
+### Passing an existing event
+
+If the event came from `fetchEvents`, pass it directly.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    events = router.fetch_events(query="2026 NBA Champion", limit=1)
+    clusters = router.fetch_matched_event_clusters(events[0])
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const events = await router.fetchEvents({
+      query: "2026 NBA Champion",
+      limit: 1,
+    });
+
+    const clusters = await router.fetchMatchedEventClusters(events[0]);
+    ```
+  </Tab>
+</Tabs>
+
+### Browsing clusters
+
+Omit `eventId`, `slug`, and `url` to browse the highest-volume matched
+event clusters.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    clusters = router.fetch_matched_event_clusters(
+        sort="volume",
+        min_venues=2,
+        limit=25,
+    )
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const clusters = await router.fetchMatchedEventClusters({
+      sort: "volume",
+      minVenues: 2,
+      limit: 25,
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Parameters
+
+| Parameter | Type | Default | Notes |
+| --------- | ---- | ------- | ----- |
+| `eventId` | `string` | - | Anchor to a PMXT event ID. |
+| `slug` | `string` | - | Anchor to an event slug. |
+| `url` | `string` | - | Anchor to a venue event URL. |
+| `relation` | `string` | - | Filter to one relation type. |
+| `relations` | `string` or `string[]` | - | Filter to multiple relation types. |
+| `minConfidence` / `min_confidence` | `number` | `0` | Minimum cluster edge confidence, from `0` to `1`. |
+| `venues` | `string` or `string[]` | - | Only include clusters touching these venues. |
+| `excludeVenues` / `exclude_venues` | `string` or `string[]` | - | Exclude clusters touching these venues. |
+| `minVenues` / `min_venues` | `integer` | - | Require at least this many venues in a cluster. |
+| `withOrderbook` / `with_orderbook` | `boolean` | `false` | Require live orderbook coverage on matched edges. |
+| `includeRawMatches` / `include_raw_matches` | `boolean` | `false` | Include pairwise edges used to build the cluster. |
+| `updatedSince` / `updated_since` | `datetime` | - | Only include matches updated after this time. |
+| `sort` | `"volume"` or `"confidence"` | `"volume"` | Cluster sort order. |
+| `limit` | `integer` | `50` | Maximum clusters to return. |
+| `offset` | `integer` | `0` | Pagination offset. |
+| `edgeLimit` / `edge_limit` | `integer` | - | Maximum pairwise edges to scan before clustering. |
+
+### Response shape
+
+```json
+{
+  "clusterId": "ecl_3e7b1534e6235f9e",
+  "canonicalTitle": "2026 NBA Champion",
+  "category": "Sports",
+  "relations": ["identity"],
+  "confidence": 0.97,
+  "volume24h": 1487365.42,
+  "events": [
+    {
+      "id": "poly_event_...",
+      "sourceExchange": "polymarket",
+      "title": "2026 NBA Champion",
+      "markets": [
+        {
+          "marketId": "pm_knicks_...",
+          "title": "2026 NBA Champion - Will the New York Knicks win the 2026 NBA Finals?",
+          "outcomes": [
+            { "outcomeId": "pm_knicks_yes", "label": "Yes", "price": 0.23 },
+            { "outcomeId": "pm_knicks_no", "label": "No", "price": 0.77 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kalshi_event_...",
+      "sourceExchange": "kalshi",
+      "title": "2026 Pro Basketball Finals",
+      "markets": [
+        {
+          "marketId": "kalshi_knicks_...",
+          "title": "Will New York win the 2026 Pro Basketball Finals?",
+          "outcomes": [
+            { "outcomeId": "KXNBA-26-NYK", "label": "Yes", "price": 0.22 },
+            { "outcomeId": "KXNBA-26-NYK-NO", "label": "No", "price": 0.78 }
+          ]
+        }
+      ]
+    }
+  ],
+  "rawMatches": [
+    {
+      "eventAId": "poly_event_...",
+      "eventBId": "kalshi_event_...",
+      "marketAId": "pm_knicks_...",
+      "marketBId": "kalshi_knicks_...",
+      "relation": "identity",
+      "confidence": 0.97
+    }
+  ]
+}
+```
+
+## When To Use Event Clusters
+
+| You have | Use |
+| -------- | --- |
+| A single tradeable question | [Find Similar Markets](/router/matching) |
+| A parent event with many child markets | **Find Similar Events** |
+
+Event clusters are the better default when venues structure the same
+topic differently. For example, one venue may expose a single event with
+many team markets while another exposes each team as its own market
+under a differently named event.

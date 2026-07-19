@@ -1,0 +1,52 @@
+---
+title: "WebSocket Overview"
+description: "Real-time orderbook and trade streaming via WebSocket"
+---
+
+## Connection
+
+Connect to the WebSocket endpoint with your API key:
+
+| Environment | URL |
+|---|---|
+| Local server | `ws://localhost:3847/ws` |
+| Hosted API | `wss://api.pmxt.dev/ws?apiKey=YOUR_KEY` |
+
+All messages are JSON text frames. A single connection supports multiple concurrent subscriptions.
+
+## Protocol
+
+### Subscribe
+
+```json
+{ "id": "req-1", "action": "subscribe", "exchange": "polymarket", "method": "watchOrderBook", "args": ["OUTCOME_ID", 50] }
+```
+
+### Data event
+
+```json
+{
+  "event": "data",
+  "id": "req-1",
+  "method": "watchOrderBook",
+  "symbol": "OUTCOME_ID",
+  "source": "polymarket",
+  "data": {
+    "bids": [{ "price": 0.42, "size": 100 }],
+    "asks": [{ "price": 0.58, "size": 200 }],
+    "timestamp": 1778450010713
+  }
+}
+```
+
+### Unsubscribe
+
+```json
+{ "id": "req-1", "action": "unsubscribe", "exchange": "polymarket", "method": "watchOrderBook", "args": ["OUTCOME_ID"] }
+```
+
+### Error
+
+```json
+{ "event": "error", "id": "req-1", "error": { "message": "..." } }
+```

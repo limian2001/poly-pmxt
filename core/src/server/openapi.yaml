@@ -1,0 +1,5073 @@
+openapi: 3.0.0
+info:
+  title: PMXT Sidecar API
+  description: >-
+    A unified local sidecar API for supported prediction markets. This API acts as a JSON-RPC-style gateway over PMXT
+    exchange implementations, with venue and write support varying by method and capability.
+  version: 0.4.4
+servers:
+  - url: 'http://localhost:3847'
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Server Health Check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Server is consistent and running.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: integer
+                    format: int64
+  '/api/{exchange}/getAuthNonce':
+    post:
+      summary: Get Auth Nonce
+      operationId: getAuthNonce
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: GetAuthNonceRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: string
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Get Auth Nonce response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+      description: Get a cryptographic nonce for Web3 login.
+  '/api/{exchange}/loginWithSignature':
+    post:
+      summary: Login With Signature
+      operationId: loginWithSignature
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: LoginWithSignatureRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items:
+                    oneOf:
+                      - type: string
+                      - type: string
+                      - type: string
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Login With Signature response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+      description: Login with a signed nonce to obtain session credentials.
+  '/api/{exchange}/logout':
+    post:
+      summary: Logout
+      operationId: logout
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: LogoutRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: string
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+      responses:
+        '200':
+          description: Logout response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+      description: Logout and invalidate the current session.
+  '/api/{exchange}/isSessionActive':
+    post:
+      summary: Is Session Active
+      operationId: isSessionActive
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: IsSessionActiveRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: string
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Is Session Active response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: boolean
+      description: Check if a session is active for the given wallet address.
+  '/api/{exchange}/loadMarkets':
+    post:
+      summary: Load Markets
+      operationId: loadMarkets
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: LoadMarketsRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: boolean
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+      responses:
+        '200':
+          description: Load Markets response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        additionalProperties:
+                          $ref: '#/components/schemas/UnifiedMarket'
+      description: >-
+        Load and cache all markets from the exchange into `this.markets` and `this.marketsBySlug`. Subsequent calls
+        return the cached result without hitting the API again. This is the correct way to paginate or iterate over
+        markets without drift. Because `fetchMarkets()` always hits the API, repeated calls with different `offset`
+        values may return inconsistent results if the exchange reorders or adds markets between requests. Use
+        `loadMarkets()` once to get a stable snapshot, then paginate over `Object.values(exchange.markets)` locally.
+  '/api/{exchange}/fetchMarkets':
+    get:
+      summary: Fetch Markets
+      operationId: fetchMarkets
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - metaculus
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - suibets
+              - rain
+              - hunch
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: number
+          description: Pagination offset — number of results to skip
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - volume
+              - liquidity
+              - newest
+          description: Sort order for results
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+              - closed
+              - all
+          description: 'Filter by market status (default: ''active'', ''inactive'' and ''closed'' are interchangeable)'
+        - in: query
+          name: searchIn
+          required: false
+          schema:
+            type: string
+            enum:
+              - title
+              - description
+              - both
+          description: 'Where to search (default: ''title'')'
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: For keyword search
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+          description: For slug/ticker lookup
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: Direct lookup by market ID
+        - in: query
+          name: outcomeId
+          required: false
+          schema:
+            type: string
+          description: Reverse lookup -- find market containing this outcome
+        - in: query
+          name: eventId
+          required: false
+          schema:
+            type: string
+          description: Find markets belonging to an event
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+          description: For pagination (used by Limitless)
+        - in: query
+          name: similarityThreshold
+          required: false
+          schema:
+            type: number
+          description: For semantic search (used by Limitless)
+        - in: query
+          name: sourceExchange
+          required: false
+          schema:
+            type: string
+          description: 'Filter by source venue (e.g. ''polymarket'', ''kalshi'', ''myriad''). `exchange` is an alias.'
+        - in: query
+          name: exchange
+          required: false
+          schema:
+            type: string
+          description: Alias for `sourceExchange`.
+      responses:
+        '200':
+          description: Fetch Markets response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedMarket'
+      description: >-
+        Fetch markets with optional filtering, search, or slug lookup. Always hits the exchange API — results reflect
+        the live state at the time of the call.
+  '/api/{exchange}/fetchMarketsPaginated':
+    get:
+      summary: Fetch Markets Paginated
+      operationId: fetchMarketsPaginated
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: filter
+          required: false
+          schema:
+            $ref: '#/components/schemas/MarketFilterCriteria'
+      responses:
+        '200':
+          description: Fetch Markets Paginated response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PaginatedMarketsResult'
+      description: >-
+        Fetch markets with cursor-based pagination backed by a stable in-memory snapshot. On the first call (or when no
+        cursor is supplied), fetches all markets once and caches them. Subsequent calls with a cursor returned from a
+        previous call slice directly from the cached snapshot — no additional API calls are made. The snapshot is
+        invalidated after `snapshotTTL` ms (configured via `ExchangeOptions` in the constructor). A request using a
+        cursor from an expired snapshot throws `'Cursor has expired'`.
+  '/api/{exchange}/fetchEventsPaginated':
+    get:
+      summary: Fetch Events Paginated
+      operationId: fetchEventsPaginated
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: filter
+          required: false
+          schema:
+            $ref: '#/components/schemas/EventFilterCriteria'
+      responses:
+        '200':
+          description: Fetch Events Paginated response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PaginatedEventsResult'
+      description: >-
+        Paginated variant of {@link fetchEvents}. On the first call (no `cursor`), all events are fetched from the
+        exchange and cached in an in-memory snapshot. A cursor is returned along with the first page. Subsequent calls
+        with that cursor serve additional pages directly from the cached snapshot -- no additional API calls are made.
+        The snapshot is invalidated after `snapshotTTL` ms (configured via `ExchangeOptions` in the constructor). A
+        request using a cursor from an expired snapshot throws `'Cursor has expired'`.
+  '/api/{exchange}/fetchEvents':
+    get:
+      summary: Fetch Events
+      operationId: fetchEvents
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - metaculus
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - suibets
+              - rain
+              - hunch
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: For keyword search
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: 'Opaque venue pagination cursor, where supported.'
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: number
+          description: Pagination offset — number of results to skip
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - volume
+              - liquidity
+              - newest
+          description: Sort order for results
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+              - closed
+              - all
+          description: 'Filter by event status (default: ''active'', ''inactive'' and ''closed'' are interchangeable)'
+        - in: query
+          name: searchIn
+          required: false
+          schema:
+            type: string
+            enum:
+              - title
+              - description
+              - both
+          description: 'Where to search (default: ''title'')'
+        - in: query
+          name: eventId
+          required: false
+          schema:
+            type: string
+          description: Direct lookup by event ID
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+          description: Lookup by event slug
+        - in: query
+          name: series
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter events by their parent series. Accepts the venue-native series id / ticker / slug (e.g. Kalshi
+            `"KXATPMATCH"`, Polymarket `"wta"`). Passed through to the vendor where supported, otherwise applied to
+            `sourceMetadata` after fetch.
+        - in: query
+          name: filter
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/EventFilterCriteria'
+          description: Optional client-side filter applied after fetching
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter by category. Each event belongs to a venue-assigned category such as "Sports", "Politics", "Crypto",
+            "Bitcoin", "Soccer", "Economic Policy" (Polymarket) or "Sports", "Mentions" (Kalshi).
+        - in: query
+          name: tags
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: >-
+            Filter by tags. Returns events matching ANY of the provided tags. Tags are more specific than categories --
+            for example a "Politics" event might carry tags ["Politics", "Geopolitics", "Middle East", "Iran"]. Common
+            tags include "Crypto", "Elections", "Fed Rates", "FIFA World Cup", "Trump".
+        - in: query
+          name: sourceExchange
+          required: false
+          schema:
+            type: string
+          description: 'Filter by source venue (e.g. ''polymarket'', ''kalshi'', ''myriad''). `exchange` is an alias.'
+        - in: query
+          name: exchange
+          required: false
+          schema:
+            type: string
+          description: Alias for `sourceExchange`.
+      responses:
+        '200':
+          description: Fetch Events response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedEvent'
+      description: >-
+        Fetch events with optional keyword search. Events group related markets together (e.g., "Who will be Fed Chair?"
+        contains multiple candidate markets).
+  '/api/{exchange}/fetchSeries':
+    get:
+      summary: Fetch Series
+      operationId: fetchSeries
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - opinion
+              - polymarket_us
+              - gemini-titan
+              - router
+          required: true
+          description: The prediction market exchange to target.
+      responses:
+        '200':
+          description: Fetch Series response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedSeries'
+      description: >-
+        Fetch the recurring series (fourth tier above Event -> Market -> Outcome) that this venue exposes. Returns an
+        empty array on venues without a series concept (Limitless, Smarkets, Probable, Metaculus, Baozi, Hyperliquid,
+        SuiBets, Polymarket US). - `params.id` -> a single matching series with its events populated where supported. -
+        no params -> the full list, typically without nested events for payload size.
+  '/api/{exchange}/fetchMarket':
+    get:
+      summary: Fetch Market
+      operationId: fetchMarket
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: number
+          description: Pagination offset — number of results to skip
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - volume
+              - liquidity
+              - newest
+          description: Sort order for results
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+              - closed
+              - all
+          description: 'Filter by market status (default: ''active'', ''inactive'' and ''closed'' are interchangeable)'
+        - in: query
+          name: searchIn
+          required: false
+          schema:
+            type: string
+            enum:
+              - title
+              - description
+              - both
+          description: 'Where to search (default: ''title'')'
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: For keyword search
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+          description: For slug/ticker lookup
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: Direct lookup by market ID
+        - in: query
+          name: outcomeId
+          required: false
+          schema:
+            type: string
+          description: Reverse lookup -- find market containing this outcome
+        - in: query
+          name: eventId
+          required: false
+          schema:
+            type: string
+          description: Find markets belonging to an event
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+          description: For pagination (used by Limitless)
+        - in: query
+          name: similarityThreshold
+          required: false
+          schema:
+            type: number
+          description: For semantic search (used by Limitless)
+        - in: query
+          name: sourceExchange
+          required: false
+          schema:
+            type: string
+          description: 'Filter by source venue (e.g. ''polymarket'', ''kalshi'', ''myriad''). `exchange` is an alias.'
+        - in: query
+          name: exchange
+          required: false
+          schema:
+            type: string
+          description: Alias for `sourceExchange`.
+      responses:
+        '200':
+          description: Fetch Market response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UnifiedMarket'
+      description: >-
+        Fetch a single market by lookup parameters. Convenience wrapper around fetchMarkets() that returns a single
+        result or throws MarketNotFound.
+  '/api/{exchange}/fetchEvent':
+    get:
+      summary: Fetch Event
+      operationId: fetchEvent
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: For keyword search
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: 'Opaque venue pagination cursor, where supported.'
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: number
+          description: Pagination offset — number of results to skip
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - volume
+              - liquidity
+              - newest
+          description: Sort order for results
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+              - closed
+              - all
+          description: 'Filter by event status (default: ''active'', ''inactive'' and ''closed'' are interchangeable)'
+        - in: query
+          name: searchIn
+          required: false
+          schema:
+            type: string
+            enum:
+              - title
+              - description
+              - both
+          description: 'Where to search (default: ''title'')'
+        - in: query
+          name: eventId
+          required: false
+          schema:
+            type: string
+          description: Direct lookup by event ID
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+          description: Lookup by event slug
+        - in: query
+          name: series
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter events by their parent series. Accepts the venue-native series id / ticker / slug (e.g. Kalshi
+            `"KXATPMATCH"`, Polymarket `"wta"`). Passed through to the vendor where supported, otherwise applied to
+            `sourceMetadata` after fetch.
+        - in: query
+          name: filter
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/EventFilterCriteria'
+          description: Optional client-side filter applied after fetching
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: >-
+            Filter by category. Each event belongs to a venue-assigned category such as "Sports", "Politics", "Crypto",
+            "Bitcoin", "Soccer", "Economic Policy" (Polymarket) or "Sports", "Mentions" (Kalshi).
+        - in: query
+          name: tags
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: >-
+            Filter by tags. Returns events matching ANY of the provided tags. Tags are more specific than categories --
+            for example a "Politics" event might carry tags ["Politics", "Geopolitics", "Middle East", "Iran"]. Common
+            tags include "Crypto", "Elections", "Fed Rates", "FIFA World Cup", "Trump".
+        - in: query
+          name: sourceExchange
+          required: false
+          schema:
+            type: string
+          description: 'Filter by source venue (e.g. ''polymarket'', ''kalshi'', ''myriad''). `exchange` is an alias.'
+        - in: query
+          name: exchange
+          required: false
+          schema:
+            type: string
+          description: Alias for `sourceExchange`.
+      responses:
+        '200':
+          description: Fetch Event response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UnifiedEvent'
+      description: >-
+        Fetch a single event by lookup parameters. Convenience wrapper around fetchEvents() that returns a single result
+        or throws EventNotFound.
+  '/api/{exchange}/fetchEventMetadata':
+    get:
+      summary: Fetch Event Metadata
+      operationId: fetchEventMetadata
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+        - in: query
+          name: eventTicker
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fetch Event Metadata response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        additionalProperties: {}
+      description: >-
+        Fetch venue-native metadata for a specific event when the exchange exposes a dedicated metadata endpoint. Kalshi
+        implements this for `GET /events/{event_ticker}/metadata`.
+  '/api/{exchange}/fetchOHLCV':
+    get:
+      summary: Fetch OHLCV
+      operationId: fetchOHLCV
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - hyperliquid
+              - rain
+              - hunch
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: outcomeId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: resolution
+          required: false
+          schema:
+            type: string
+          description: Required for candle aggregation
+        - in: query
+          name: start
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Start of the time range
+        - in: query
+          name: end
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: End of the time range
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+      responses:
+        '200':
+          description: Fetch OHLCV response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PriceCandle'
+      description: Fetch historical OHLCV (candlestick) price data for a specific market outcome.
+  '/api/{exchange}/fetchOrderBook':
+    get:
+      summary: Fetch Order Book
+      operationId: fetchOrderBook
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - suibets
+              - rain
+              - hunch
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: outcomeId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: side
+          required: false
+          schema:
+            type: string
+            enum:
+              - 'yes'
+              - 'no'
+          description: >-
+            Outcome side: 'yes' or 'no'. Required for exchanges like Limitless where the API returns a single orderbook
+            per market.
+        - in: query
+          name: outcome
+          required: false
+          schema:
+            type: string
+          description: >-
+            Outcome alias: 'yes' or 'no', or an outcome token ID. When set, the first argument is treated as a market ID
+            and this value selects which outcome's order book to fetch. Accepts the literal strings 'yes'/'no' (resolved
+            via a market lookup) or a raw outcome token ID.
+        - in: query
+          name: since
+          required: false
+          schema:
+            type: number
+          description: >-
+            Unix timestamp (ms) — fetch a historical snapshot at or before this time, or the start of a range when
+            combined with `until` (hosted API only).
+        - in: query
+          name: until
+          required: false
+          schema:
+            type: number
+          description: >-
+            Unix timestamp (ms) — end of a historical range. When combined with `since`, returns an array of
+            reconstructed L2 OrderBook snapshots between `since` and `until` (hosted API only).
+      responses:
+        '200':
+          description: Fetch Order Book response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OrderBook'
+      description: >-
+        Fetch the order book (bids/asks) for a specific outcome. Supports live and historical queries. For historical
+        data, pass `since` to get a single snapshot, or `since` + `until` to get an array of fully reconstructed L2
+        books from the archive. Range queries return up to `limit` snapshots (default 100, max 1000).
+  '/api/{exchange}/fetchOrderBooks':
+    post:
+      summary: Fetch Order Books
+      operationId: fetchOrderBooks
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - hyperliquid
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: FetchOrderBooksRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: array
+                    items:
+                      type: string
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Fetch Order Books response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        additionalProperties:
+                          $ref: '#/components/schemas/OrderBook'
+      description: >-
+        Batch variant of {@link fetchOrderBook}. Fetches order books for multiple outcomes in a single request where the
+        exchange supports it.
+  '/api/{exchange}/fetchTrades':
+    get:
+      summary: Fetch Trades
+      operationId: fetchTrades
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - smarkets
+              - hyperliquid
+              - rain
+              - hunch
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: outcomeId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: start
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Start of the time range
+        - in: query
+          name: end
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: End of the time range
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: 'Maximum number of results to return (max {@link MAX_TRADES_LIMIT})'
+      responses:
+        '200':
+          description: Fetch Trades response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Trade'
+      description: Fetch raw trade history for a specific outcome.
+  '/api/{exchange}/createOrder':
+    post:
+      summary: Create Order
+      operationId: createOrder
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - metaculus
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - rain
+              - hunch
+          required: true
+          description: The prediction market exchange to target.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: CreateOrderRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    $ref: '#/components/schemas/CreateOrderParams'
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Create Order response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+      description: Place a new order on the exchange.
+  '/api/{exchange}/buildOrder':
+    post:
+      summary: Build Order
+      operationId: buildOrder
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - opinion
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: BuildOrderRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    $ref: '#/components/schemas/CreateOrderParams'
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Build Order response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BuiltOrder'
+      description: >-
+        Build an order payload without submitting it to the exchange. Returns the exchange-native signed order or
+        request body for inspection, forwarding through a middleware layer, or deferred submission via submitOrder().
+  '/api/{exchange}/submitOrder':
+    post:
+      summary: Submit Order
+      operationId: submitOrder
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - opinion
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: SubmitOrderRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    $ref: '#/components/schemas/BuiltOrder'
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Submit Order response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+      description: Submit a pre-built order returned by buildOrder().
+  '/api/{exchange}/cancelOrder':
+    post:
+      summary: Cancel Order
+      operationId: cancelOrder
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - opinion
+              - metaculus
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: CancelOrderRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: string
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Cancel Order response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+      description: Cancel an existing open order.
+  '/api/{exchange}/fetchOrder':
+    get:
+      summary: Fetch Order
+      operationId: fetchOrder
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - probable
+              - baozi
+              - opinion
+              - smarkets
+              - polymarket_us
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fetch Order response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Order'
+      description: Fetch a specific order by ID.
+  '/api/{exchange}/fetchOpenOrders':
+    get:
+      summary: Fetch Open Orders
+      operationId: fetchOpenOrders
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fetch Open Orders response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Order'
+      description: 'Fetch all open orders, optionally filtered by market.'
+  '/api/{exchange}/fetchMyTrades':
+    get:
+      summary: Fetch My Trades
+      operationId: fetchMyTrades
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - myriad
+              - opinion
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: outcomeId
+          required: false
+          schema:
+            type: string
+          description: filter to specific outcome/ticker
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: filter to specific market
+        - in: query
+          name: since
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Only return records after this date
+        - in: query
+          name: until
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Only return records before this date
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: for Kalshi cursor pagination
+      responses:
+        '200':
+          description: Fetch My Trades response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserTrade'
+      description: Fetch authenticated user trade history.
+  '/api/{exchange}/fetchClosedOrders':
+    get:
+      summary: Fetch Closed Orders
+      operationId: fetchClosedOrders
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - opinion
+              - smarkets
+              - hyperliquid
+              - gemini-titan
+              - rain
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: required for Limitless (slug)
+        - in: query
+          name: since
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Only return records after this date
+        - in: query
+          name: until
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Only return records before this date
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Opaque pagination cursor from a previous response
+      responses:
+        '200':
+          description: Fetch Closed Orders response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Order'
+      description: Fetch authenticated closed orders.
+  '/api/{exchange}/fetchAllOrders':
+    get:
+      summary: Fetch All Orders
+      operationId: fetchAllOrders
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - opinion
+              - smarkets
+              - hyperliquid
+              - gemini-titan
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: required for Limitless (slug)
+        - in: query
+          name: since
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Only return records after this date
+        - in: query
+          name: until
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Only return records before this date
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+          description: Maximum number of results to return
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: Opaque pagination cursor from a previous response
+      responses:
+        '200':
+          description: Fetch All Orders response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Order'
+      description: Fetch authenticated order history across open and closed orders.
+  '/api/{exchange}/fetchPositions':
+    get:
+      summary: Fetch Positions
+      operationId: fetchPositions
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - opinion
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - gemini-titan
+              - suibets
+              - rain
+              - hunch
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: address
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fetch Positions response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Position'
+      description: Fetch current user positions across all markets.
+  '/api/{exchange}/fetchBalance':
+    get:
+      summary: Fetch Balance
+      operationId: fetchBalance
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - polymarket
+              - kalshi
+              - kalshi-demo
+              - limitless
+              - probable
+              - baozi
+              - myriad
+              - smarkets
+              - polymarket_us
+              - hyperliquid
+              - rain
+              - hunch
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: address
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fetch Balance response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Balance'
+      description: Fetch account balances.
+  '/api/{exchange}/getExecutionPrice':
+    post:
+      summary: Get Execution Price
+      operationId: getExecutionPrice
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: GetExecutionPriceRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items:
+                    oneOf:
+                      - $ref: '#/components/schemas/OrderBook'
+                      - type: string
+                        enum:
+                          - buy
+                          - sell
+                      - type: number
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Get Execution Price response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: number
+      description: >-
+        Calculate the volume-weighted average execution price for a given order size. Returns 0 if the order cannot be
+        fully filled.
+  '/api/{exchange}/getExecutionPriceDetailed':
+    post:
+      summary: Get Execution Price Detailed
+      operationId: getExecutionPriceDetailed
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: GetExecutionPriceDetailedRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  items:
+                    oneOf:
+                      - $ref: '#/components/schemas/OrderBook'
+                      - type: string
+                        enum:
+                          - buy
+                          - sell
+                      - type: number
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Get Execution Price Detailed response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ExecutionPriceResult'
+      description: Calculate detailed execution price information including partial fill data.
+  '/api/{exchange}/filterMarkets':
+    post:
+      summary: Filter Markets
+      operationId: filterMarkets
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: FilterMarketsRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  minItems: 2
+                  maxItems: 2
+                  items:
+                    oneOf:
+                      - type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedMarket'
+                      - type: string
+                      - $ref: '#/components/schemas/MarketFilterCriteria'
+                      - type: object
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Filter Markets response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedMarket'
+      description: >-
+        Filter a list of markets by criteria. Can filter by string query, structured criteria object, or custom filter
+        function.
+  '/api/{exchange}/filterEvents':
+    post:
+      summary: Filter Events
+      operationId: filterEvents
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: FilterEventsRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  minItems: 2
+                  maxItems: 2
+                  items:
+                    oneOf:
+                      - type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedEvent'
+                      - type: string
+                      - $ref: '#/components/schemas/EventFilterCriteria'
+                      - type: object
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Filter Events response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UnifiedEvent'
+      description: >-
+        Filter a list of events by criteria. Can filter by string query, structured criteria object, or custom filter
+        function.
+  '/api/{exchange}/close':
+    post:
+      summary: Close
+      operationId: close
+      parameters:
+        - $ref: '#/components/parameters/ExchangeParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: CloseRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 0
+                  items: {}
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+      responses:
+        '200':
+          description: Close response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+      description: >-
+        Close all WebSocket connections and clean up resources. Call this when you're done streaming to properly release
+        connections.
+  '/api/{exchange}/fetchMarketMatches':
+    get:
+      summary: Market Matches
+      operationId: fetchMarketMatches
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: Keyword search across matched market titles.
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: Filter matches by category.
+        - in: query
+          name: market
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/UnifiedMarket'
+          description: Pass a UnifiedMarket directly instead of marketId/slug/url.
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: Lookup a specific market by ID. Omit for browse mode.
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: url
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: relation
+          required: false
+          schema:
+            type: string
+            enum:
+              - identity
+              - complement
+              - subset
+              - superset
+              - overlap
+              - disjoint
+        - in: query
+          name: minConfidence
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: includePrices
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: minDifference
+          required: false
+          schema:
+            type: number
+          description: Minimum price difference between venues. Browse mode only.
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - confidence
+              - volume
+              - priceDifference
+          description: Sort order. Browse mode only.
+      responses:
+        '200':
+          description: Market Matches response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MatchResult'
+      description: >-
+        Find the same or related market on other venues. Two modes: **Lookup mode** (marketId/slug/url provided): Given
+        a market on one venue, discover semantically equivalent markets across every other venue PMXT ingests. **Browse
+        mode** (no identifier): Returns all matched market pairs from the catalog. Supports query, category,
+        minDifference, and sort params for filtering.
+  '/api/{exchange}/fetchEventMatches':
+    get:
+      summary: Event Matches
+      operationId: fetchEventMatches
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: Keyword search across matched event titles.
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: Filter matches by category.
+        - in: query
+          name: event
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/UnifiedEvent'
+          description: Pass a UnifiedEvent directly instead of eventId/slug.
+        - in: query
+          name: eventId
+          required: false
+          schema:
+            type: string
+          description: Lookup a specific event by ID. Omit for browse mode.
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: relation
+          required: false
+          schema:
+            type: string
+            enum:
+              - identity
+              - complement
+              - subset
+              - superset
+              - overlap
+              - disjoint
+        - in: query
+          name: minConfidence
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: includePrices
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Event Matches response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EventMatchResult'
+      description: >-
+        Find the same or related event on other venues. Two modes: **Lookup mode** (eventId/slug provided): Given an
+        event on one venue, discover semantically equivalent events across every other venue PMXT ingests. **Browse
+        mode** (no identifier): Returns all matched event pairs from the catalog. Supports query and category params for
+        filtering.
+  '/api/{exchange}/compareMarketPrices':
+    post:
+      summary: Compare Prices Across Venues
+      operationId: compareMarketPrices
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: CompareMarketPricesRequest
+              type: object
+              properties:
+                args:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: object
+                  minItems: 1
+                credentials:
+                  $ref: '#/components/schemas/ExchangeCredentials'
+              required:
+                - args
+      responses:
+        '200':
+          description: Compare Prices Across Venues response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PriceComparison'
+      description: >-
+        Compare live prices for the same market across venues. Finds identity matches and returns side-by-side best
+        bid/ask prices so you can spot price differences at a glance.
+  '/api/{exchange}/fetchRelatedMarkets':
+    get:
+      summary: Find Related Markets
+      operationId: fetchRelatedMarkets
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: Keyword search across matched market titles.
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: Filter matches by category.
+        - in: query
+          name: market
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/UnifiedMarket'
+          description: Pass a UnifiedMarket directly instead of marketId/slug/url.
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: Lookup a specific market by ID. Omit for browse mode.
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: url
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: relation
+          required: false
+          schema:
+            type: string
+            enum:
+              - identity
+              - complement
+              - subset
+              - superset
+              - overlap
+              - disjoint
+        - in: query
+          name: minConfidence
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: includePrices
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: minDifference
+          required: false
+          schema:
+            type: number
+          description: Minimum price difference between venues. Browse mode only.
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - confidence
+              - volume
+              - priceDifference
+          description: Sort order. Browse mode only.
+      responses:
+        '200':
+          description: Find Related Markets response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PriceComparison'
+      description: >-
+        Find related markets across venues. Discovers subset/superset market relationships where one market's outcome
+        implies another, with live prices.
+  '/api/{exchange}/fetchMatchedMarkets':
+    get:
+      summary: Matched Markets
+      operationId: fetchMatchedMarkets
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: minDifference
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: relations
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - identity
+                - complement
+                - subset
+                - superset
+                - overlap
+                - disjoint
+          description: 'Comma-separated relation types to include (default: ''identity'').'
+      responses:
+        '200':
+          description: Matched Markets response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MatchedMarketPair'
+      deprecated: true
+  '/api/{exchange}/fetchMatchedPrices':
+    get:
+      summary: Compare Matched Market Prices
+      operationId: fetchMatchedPrices
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: minDifference
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: relations
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - identity
+                - complement
+                - subset
+                - superset
+                - overlap
+                - disjoint
+          description: 'Comma-separated relation types to include (default: ''identity'').'
+      responses:
+        '200':
+          description: Compare Matched Market Prices response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MatchedMarketPair'
+      deprecated: true
+  '/api/{exchange}/fetchHedges':
+    get:
+      summary: Find Hedging Opportunities
+      operationId: fetchHedges
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: query
+          required: false
+          schema:
+            type: string
+          description: Keyword search across matched market titles.
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: Filter matches by category.
+        - in: query
+          name: market
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/UnifiedMarket'
+          description: Pass a UnifiedMarket directly instead of marketId/slug/url.
+        - in: query
+          name: marketId
+          required: false
+          schema:
+            type: string
+          description: Lookup a specific market by ID. Omit for browse mode.
+        - in: query
+          name: slug
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: url
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: relation
+          required: false
+          schema:
+            type: string
+            enum:
+              - identity
+              - complement
+              - subset
+              - superset
+              - overlap
+              - disjoint
+        - in: query
+          name: minConfidence
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: includePrices
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: minDifference
+          required: false
+          schema:
+            type: number
+          description: Minimum price difference between venues. Browse mode only.
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum:
+              - confidence
+              - volume
+              - priceDifference
+          description: Sort order. Browse mode only.
+      responses:
+        '200':
+          description: Find Hedging Opportunities response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PriceComparison'
+      deprecated: true
+  '/api/{exchange}/fetchArbitrage':
+    get:
+      summary: Find Arbitrage Opportunities
+      operationId: fetchArbitrage
+      parameters:
+        - in: path
+          name: exchange
+          schema:
+            type: string
+            enum:
+              - router
+          required: true
+          description: The prediction market exchange to target.
+        - in: query
+          name: minSpread
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: relations
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - identity
+                - complement
+                - subset
+                - superset
+                - overlap
+                - disjoint
+          description: 'Comma-separated relation types to include (default: ''identity'').'
+      responses:
+        '200':
+          description: Find Arbitrage Opportunities response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ArbitrageOpportunity'
+      deprecated: true
+  /api/feeds:
+    get:
+      summary: List Available Feeds
+      operationId: feedList
+      description: Returns the list of available data feed providers.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: string
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/loadMarkets':
+    get:
+      summary: Load Feed Markets
+      operationId: feedLoadMarkets
+      description: Returns all trading pairs supported by this feed.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/FeedMarket'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchTicker':
+    get:
+      summary: Fetch Ticker
+      operationId: feedFetchTicker
+      description: Returns the latest ticker for a single symbol.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: symbol
+          required: true
+          schema:
+            type: string
+          description: 'Trading pair (e.g. BTC/USD, BTC/USDT)'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FeedTicker'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchTickers':
+    get:
+      summary: Fetch Tickers
+      operationId: feedFetchTickers
+      description: 'Returns the latest tickers for all symbols, or a filtered subset.'
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: symbols
+          required: false
+          schema:
+            type: string
+          description: Comma-separated symbols to filter (optional)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/FeedTicker'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchOHLCV':
+    get:
+      summary: Fetch OHLCV
+      operationId: feedFetchOHLCV
+      description: Returns OHLCV candle data for a symbol.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: symbol
+          required: true
+          schema:
+            type: string
+          description: Trading pair
+        - in: query
+          name: timeframe
+          required: false
+          schema:
+            type: string
+            default: 1h
+          description: 'Candle interval (e.g. 1m, 5m, 1h, 1d)'
+        - in: query
+          name: since
+          required: false
+          schema:
+            type: integer
+          description: Start timestamp in ms
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+          description: Max candles to return
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: number
+                      minItems: 6
+                      maxItems: 6
+                    description: 'Array of [timestamp, open, high, low, close, volume] tuples'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchOrderBook':
+    get:
+      summary: Fetch Order Book
+      operationId: feedFetchOrderBook
+      description: Returns the current order book for a symbol (where supported).
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: symbol
+          required: true
+          schema:
+            type: string
+          description: Trading pair
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+          description: Depth limit
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      asks:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: number
+                      bids:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: number
+                      timestamp:
+                        type: integer
+                      datetime:
+                        type: string
+                      symbol:
+                        type: string
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchOracleRound':
+    get:
+      summary: Fetch Oracle Round
+      operationId: feedFetchOracleRound
+      description: Returns the latest Chainlink oracle round for a price feed.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: feed
+          required: true
+          schema:
+            type: string
+          description: Price feed pair (e.g. BTC/USD)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FeedOracleRound'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchOracleHistory':
+    get:
+      summary: Fetch Oracle History
+      operationId: feedFetchOracleHistory
+      description: Returns historical Chainlink oracle rounds for a price feed.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: feed
+          required: true
+          schema:
+            type: string
+          description: Price feed pair (e.g. BTC/USD)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+          description: Max rounds to return (default 500)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeedOracleRound'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/fetchHistoricalPrices':
+    get:
+      summary: Fetch Historical Prices
+      operationId: feedFetchHistoricalPrices
+      description: Returns historical price data as tickers within a time range.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: symbol
+          required: true
+          schema:
+            type: string
+          description: Trading pair (e.g. BTC/USD)
+        - in: query
+          name: fromTimestamp
+          required: false
+          schema:
+            type: integer
+          description: Start unix timestamp (seconds)
+        - in: query
+          name: untilTimestamp
+          required: false
+          schema:
+            type: integer
+          description: End unix timestamp (seconds)
+        - in: query
+          name: maxSize
+          required: false
+          schema:
+            type: integer
+          description: Max records to return
+        - in: query
+          name: order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+          description: Sort order
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeedTicker'
+      tags:
+        - Data Feeds
+  '/api/feeds/{feed}/watchTicker':
+    get:
+      summary: Watch Ticker (WebSocket)
+      operationId: feedWatchTicker
+      description: >-
+        Stream live ticker updates for a symbol via WebSocket.
+
+
+        **Transport:** WebSocket
+
+
+        | Environment | URL |
+
+        |---|---|
+
+        | Hosted API | `wss://api.pmxt.dev/ws?apiKey=YOUR_KEY` |
+
+
+        **Subscribe:**
+
+        ```json
+
+        { "id": "btc-stream", "action": "subscribe", "method": "watchTicker", "args": ["BTC/USDT"], "feed": "binance" }
+
+        ```
+
+
+        **Server response:**
+
+        ```json
+
+        { "event": "data", "id": "btc-stream", "method": "watchTicker", "symbol": "BTC/USDT", "source": "binance",
+        "data": { "symbol": "BTC/USDT", "last": 76949.16, "timestamp": 1716148800000, ... } }
+
+        ```
+
+
+        **Unsubscribe:**
+
+        ```json
+
+        { "id": "btc-stream", "action": "unsubscribe" }
+
+        ```
+
+
+        Currently supports Binance feeds only. Tickers stream as they arrive from the Binance trade relay.
+      parameters:
+        - in: path
+          name: feed
+          schema:
+            type: string
+            enum:
+              - binance
+              - chainlink
+          required: true
+          description: The data feed provider.
+        - in: query
+          name: symbol
+          required: true
+          schema:
+            type: string
+          description: Trading pair to stream (e.g. BTC/USDT)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FeedTicker'
+      tags:
+        - Data Feeds
+components:
+  parameters:
+    ExchangeParam:
+      in: path
+      name: exchange
+      schema:
+        type: string
+        enum:
+          - polymarket
+          - kalshi
+          - kalshi-demo
+          - limitless
+          - probable
+          - baozi
+          - myriad
+          - opinion
+          - metaculus
+          - smarkets
+          - polymarket_us
+          - gemini-titan
+          - hyperliquid
+          - suibets
+          - rain
+          - hunch
+          - mock
+          - router
+      required: true
+      description: The prediction market exchange to target.
+    FeedParam:
+      in: path
+      name: feed
+      schema:
+        type: string
+        enum:
+          - binance
+          - chainlink
+      required: true
+      description: The data feed provider.
+  schemas:
+    BaseResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      description: >-
+        Structured error envelope returned inside `BaseResponse.error` and `ErrorResponse.error`. Hosted-mode endpoints
+        populate `code`, `retryable`, and optionally `exchange` / `detail`; legacy local-mode endpoints may still return
+        only `message`.
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+        code:
+          type: string
+          description: >-
+            Stable machine-readable error code. Hosted-mode errors use the `HostedTradingError` family (e.g.
+            `INSUFFICIENT_ESCROW_BALANCE`, `BUILT_ORDER_EXPIRED`); pre-hosted local errors use the legacy family (e.g.
+            `BAD_REQUEST`, `NOT_FOUND`).
+          enum:
+            - HOSTED_TRADING_ERROR
+            - INSUFFICIENT_ESCROW_BALANCE
+            - ORDER_SIZE_TOO_SMALL
+            - INVALID_API_KEY
+            - OUTCOME_NOT_FOUND
+            - CATALOG_UNAVAILABLE
+            - BUILT_ORDER_EXPIRED
+            - INVALID_SIGNATURE
+            - NO_LIQUIDITY
+            - MISSING_WALLET_ADDRESS
+            - BAD_REQUEST
+            - AUTHENTICATION_ERROR
+            - PERMISSION_DENIED
+            - NOT_FOUND
+            - ORDER_NOT_FOUND
+            - MARKET_NOT_FOUND
+            - EVENT_NOT_FOUND
+            - RATE_LIMIT_EXCEEDED
+            - INVALID_ORDER
+            - INSUFFICIENT_FUNDS
+            - VALIDATION_ERROR
+            - NETWORK_ERROR
+            - EXCHANGE_NOT_AVAILABLE
+            - NOT_SUPPORTED
+        retryable:
+          type: boolean
+          description: >-
+            Hint for clients: when `true`, the same request may succeed on retry (e.g. transient network or rate-limit
+            conditions); when `false`, the caller should not retry without modifying the request.
+        exchange:
+          type: string
+          nullable: true
+          description: 'Venue the error originated from, when known (e.g. ''polymarket'', ''kalshi'').'
+        detail:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: >-
+            Free-form hosted-mode detail blob. Shape depends on `code` — e.g. for `INSUFFICIENT_ESCROW_BALANCE` it may
+            include `{ requested, available }`; for `ORDER_SIZE_TOO_SMALL` it may include `{ min }`; for
+            `BUILT_ORDER_EXPIRED` it may include `{ expiry }`.
+    ExchangeOptions:
+      type: object
+      description: |-
+        Constructor-level options for venue clients (Polymarket, Kalshi, Opinion, etc.).
+        Hosted mode is the default when pmxtApiKey is set; otherwise the SDK runs against
+        a local sidecar with venue credentials.
+      properties:
+        pmxtApiKey:
+          type: string
+          description: >-
+            PMXT customer API key. When set, the SDK routes to api.pmxt.dev (catalog) and trade.pmxt.dev (trading). Get
+            one at pmxt.dev/dashboard.
+        walletAddress:
+          type: string
+          nullable: true
+          description: >-
+            EVM wallet address for hosted reads/writes. Required for endpoints that operate on a wallet (balances,
+            positions, trades, open orders).
+        signer:
+          type: object
+          nullable: true
+          description: >-
+            Optional pre-built signer for hosted writes. If absent and privateKey is set, the SDK auto-wraps privateKey
+            into a signer.
+        privateKey:
+          type: string
+          nullable: true
+          description: >-
+            Private key. In hosted mode, used to derive an EIP-712 signer for writes (wraps into
+            EthAccountSigner/EthersSigner). In self-hosted mode, used as the venue credential directly.
+        baseUrl:
+          type: string
+          nullable: true
+          description: >-
+            Explicit base URL override. When unset, the SDK uses api.pmxt.dev when pmxtApiKey is set, or the local
+            sidecar otherwise.
+        apiKey:
+          type: string
+          nullable: true
+          description: Venue-side API key (e.g. Polymarket CLOB key). Only relevant for self-hosted mode.
+        autoStartServer:
+          type: boolean
+          nullable: true
+          description: >-
+            Auto-start the local sidecar when running self-hosted. Defaults to true when no pmxtApiKey is set, false
+            when hosted.
+    BaseRequest:
+      type: object
+      description: Base request structure with optional credentials
+      properties:
+        credentials:
+          $ref: '#/components/schemas/ExchangeCredentials'
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+    UnifiedMarket:
+      type: object
+      properties:
+        marketId:
+          type: string
+          description: The unique identifier for this market
+        eventId:
+          type: string
+          description: Link to parent event
+        title:
+          type: string
+          description: 'The market title (e.g., "Will BTC close above $100k on Dec 31?").'
+        description:
+          type: string
+          description: Long-form market description or resolution criteria.
+        slug:
+          type: string
+          description: URL-friendly slug for the market.
+        outcomes:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketOutcome'
+          description: The possible outcomes for this market.
+        resolutionDate:
+          type: string
+          format: date-time
+          description: >-
+            When the market is scheduled to resolve. Optional because some venues do not publish a cutoff for every
+            market (e.g. Opinion categorical children) — emit `undefined` rather than coercing to epoch.
+        volume24h:
+          type: number
+          description: Trading volume over the past 24 hours (USD).
+        volume:
+          type: number
+          description: Total / Lifetime volume
+        liquidity:
+          type: number
+          description: Current market liquidity (USD).
+        openInterest:
+          type: number
+          description: Total value of outstanding contracts (USD).
+        url:
+          type: string
+          description: Canonical URL to view the market on the venue.
+        image:
+          type: string
+          description: Optional image URL for the market.
+        category:
+          type: string
+          description: >-
+            Optional category label. Venue-defined — common values include "Sports", "Politics", "Crypto", "Economics",
+            "Science", "Culture". Polymarket uses finer-grained categories like "Bitcoin", "Soccer", "Economic Policy";
+            Kalshi uses broader ones like "Sports" or "Mentions".
+        tags:
+          type: array
+          items:
+            type: string
+          description: >-
+            Optional list of tags. More granular than category — e.g. ["Crypto", "Crypto Prices", "Bitcoin"] or
+            ["Politics", "Elections", "Trump"]. Tags vary by venue: Polymarket markets carry several, Kalshi typically
+            one.
+        tickSize:
+          type: number
+          description: 'Minimum price increment (e.g., 0.01, 0.001)'
+        status:
+          type: string
+          description: 'Venue-native lifecycle status (e.g. ''active'', ''closed'', ''archived'').'
+        contractAddress:
+          type: string
+          description: 'On-chain contract / condition identifier where applicable (Polymarket conditionId, etc.).'
+        sourceMetadata:
+          type: object
+          additionalProperties: {}
+          description: >-
+            Raw venue-specific metadata not captured by first-class fields (e.g. Kalshi series_ticker / series_title
+            from the parent event, Polymarket series). Passed through verbatim so downstream consumers can recover
+            anything the unified shape omits. Each venue populates what it has.
+        sourceExchange:
+          type: string
+          description: 'The exchange/venue this market originates from (e.g. ''polymarket'', ''kalshi''). Populated by the Router.'
+        'yes':
+          allOf:
+            - $ref: '#/components/schemas/MarketOutcome'
+          description: Convenience accessor for the YES outcome on a binary market.
+        'no':
+          allOf:
+            - $ref: '#/components/schemas/MarketOutcome'
+          description: Convenience accessor for the NO outcome on a binary market.
+        up:
+          allOf:
+            - $ref: '#/components/schemas/MarketOutcome'
+          description: Convenience accessor for the UP outcome on a binary market.
+        down:
+          allOf:
+            - $ref: '#/components/schemas/MarketOutcome'
+          description: Convenience accessor for the DOWN outcome on a binary market.
+      required:
+        - marketId
+        - title
+        - description
+        - outcomes
+        - volume24h
+        - liquidity
+        - url
+    MarketOutcome:
+      type: object
+      properties:
+        outcomeId:
+          type: string
+          description: 'Outcome ID for trading operations (CLOB Token ID for Polymarket, Market Ticker for Kalshi)'
+        marketId:
+          type: string
+          description: The market this outcome belongs to (set automatically when outcomes are built)
+        label:
+          type: string
+          description: 'Human-readable outcome label (e.g., "Yes", "No", candidate name).'
+        price:
+          type: number
+          description: Probability between 0.0 and 1.0.
+        priceChange24h:
+          type: number
+          description: 'Change in price over the past 24 hours, as an absolute probability delta.'
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: 'Exchange-specific metadata (e.g., clobTokenId for Polymarket)'
+      required:
+        - outcomeId
+        - label
+        - price
+    UnifiedEvent:
+      type: object
+      description: 'A grouped collection of related markets (e.g., "Who will be Fed Chair?" contains multiple candidate markets).'
+      properties:
+        id:
+          type: string
+          description: The unique identifier for this event.
+        title:
+          type: string
+          description: 'The event title (e.g., "Who will be Fed Chair?").'
+        description:
+          type: string
+          description: Long-form event description.
+        slug:
+          type: string
+          description: URL-friendly slug for the event.
+        markets:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifiedMarket'
+          description: Markets grouped under this event.
+        volume24h:
+          type: number
+          description: Trading volume over the past 24 hours (USD).
+        volume:
+          type: number
+          description: Total / Lifetime volume (sum across markets; undefined if no market provides it)
+        url:
+          type: string
+          description: Canonical URL to view the event on the venue.
+        image:
+          type: string
+          description: Optional image URL for the event.
+        category:
+          type: string
+          description: >-
+            Optional category label. Venue-defined — common values include "Sports", "Politics", "Crypto", "Economics",
+            "Science", "Culture". Polymarket uses finer-grained categories like "Bitcoin", "Soccer", "Economic Policy";
+            Kalshi uses broader ones like "Sports" or "Mentions".
+        tags:
+          type: array
+          items:
+            type: string
+          description: >-
+            Optional list of tags. More granular than category — e.g. ["Sports", "FIFA World Cup", "2026 FIFA World
+            Cup"] or ["Politics", "Geopolitics", "Middle East"]. Tags vary by venue: Polymarket markets carry several,
+            Kalshi typically one.
+        sourceMetadata:
+          type: object
+          additionalProperties: {}
+          description: >-
+            Raw venue-specific metadata not captured by first-class fields (e.g. Kalshi series_ticker / series_title,
+            Polymarket series). Passed through verbatim so downstream consumers can recover anything the unified shape
+            omits. Each venue populates what it has.
+        sourceExchange:
+          type: string
+          description: 'The exchange/venue this event originates from (e.g. ''polymarket'', ''kalshi''). Populated by the Router.'
+      required:
+        - id
+        - title
+        - description
+        - slug
+        - markets
+        - volume24h
+        - url
+    UnifiedSeries:
+      type: object
+      description: >-
+        A recurring grouping of events on a venue — the fourth tier above Event -> Market -> Outcome. Examples: Kalshi
+        `KXATPMATCH` (every ATP tennis match), Polymarket `wta` (every WTA match), Opinion's daily `collection`. Series
+        only exists where the venue exposes a recurring-event concept; venues without one return an empty array from
+        `fetchSeries`.
+      properties:
+        id:
+          type: string
+          description: >-
+            Stable venue-native series identifier (e.g. "KXATPMATCH" on Kalshi, "atp" on Polymarket Gamma, numeric Gamma
+            id).
+        ticker:
+          type: string
+          description: 'Venue-native ticker, when distinct from `id`.'
+        slug:
+          type: string
+          description: Venue-native slug.
+        title:
+          type: string
+          description: 'Human-readable series title (e.g. "ATP Match Winner", "WTA").'
+        description:
+          type: string
+          nullable: true
+          description: Long-form series description.
+        recurrence:
+          type: string
+          nullable: true
+          description: 'Recurrence cadence the venue reports (''daily'', ''weekly'', ''annual'', ...).'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifiedEvent'
+          description: Child events. Populated when fetched by id; the list form usually omits this to keep payloads small.
+        url:
+          type: string
+          nullable: true
+          description: Canonical venue URL for the series.
+        image:
+          type: string
+          nullable: true
+          description: Venue-hosted image.
+        sourceExchange:
+          type: string
+          description: The exchange this series originates from. Populated by the Router.
+        sourceMetadata:
+          type: object
+          additionalProperties: {}
+          description: Raw venue-specific fields not promoted to first-class columns.
+      required:
+        - id
+        - title
+    PriceCandle:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          description: Unix timestamp in milliseconds marking the start of the candle.
+        open:
+          type: number
+          description: Opening price for the interval (probability between 0.0 and 1.0).
+        high:
+          type: number
+          description: Highest price during the interval (probability between 0.0 and 1.0).
+        low:
+          type: number
+          description: Lowest price during the interval (probability between 0.0 and 1.0).
+        close:
+          type: number
+          description: Closing price for the interval (probability between 0.0 and 1.0).
+        volume:
+          type: number
+          description: Trading volume during the interval.
+      required:
+        - timestamp
+        - open
+        - high
+        - low
+        - close
+    OrderBook:
+      type: object
+      properties:
+        bids:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLevel'
+          description: 'Order book bid levels, sorted by price descending.'
+        asks:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLevel'
+          description: 'Order book ask levels, sorted by price ascending.'
+        timestamp:
+          type: number
+          description: Unix timestamp in milliseconds when the snapshot was taken.
+        datetime:
+          type: string
+          description: ISO 8601 datetime string of the snapshot (CCXT-compatible).
+        isNegRisk:
+          type: boolean
+          description: Whether the venue marks this snapshot as a negative-risk market.
+        lastTradePrice:
+          type: number
+          description: Last traded price from venues that include it with the book snapshot.
+        sourceMetadata:
+          type: object
+          additionalProperties: {}
+          description: Venue-specific metadata preserved from the raw order book snapshot.
+      required:
+        - bids
+        - asks
+    OrderLevel:
+      type: object
+      properties:
+        price:
+          type: number
+          description: 0.0 to 1.0 (probability)
+        size:
+          type: number
+          description: contracts/shares
+        orderCount:
+          type: number
+      required:
+        - price
+        - size
+    Trade:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for this trade.
+        timestamp:
+          type: number
+          description: Unix timestamp in milliseconds when the trade executed.
+        price:
+          type: number
+          description: Probability between 0.0 and 1.0.
+        amount:
+          type: number
+          description: Size of the trade in contracts/shares.
+        side:
+          type: string
+          enum:
+            - buy
+            - sell
+            - unknown
+          description: Trade side from the taker's perspective.
+        outcomeId:
+          type: string
+          description: The outcome this trade is for (if known).
+      required:
+        - id
+        - timestamp
+        - price
+        - amount
+        - side
+    UserTrade:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for this trade.
+        timestamp:
+          type: number
+          description: Unix timestamp in milliseconds when the trade executed.
+        price:
+          type: number
+          description: Probability between 0.0 and 1.0.
+        amount:
+          type: number
+          description: Size of the trade in contracts/shares.
+        side:
+          type: string
+          enum:
+            - buy
+            - sell
+            - unknown
+          description: Trade side from the taker's perspective.
+        outcomeId:
+          type: string
+          description: The outcome this trade is for (if known).
+        orderId:
+          type: string
+          description: 'The order that produced this trade, if known.'
+        marketId:
+          type: string
+          description: 'The market this trade belongs to, when the venue exposes it (e.g. derivable from the fill''s coin/asset).'
+        fee:
+          type: number
+          description: 'Trading fee paid by the user for this fill, when the venue exposes it.'
+        txHash:
+          type: string
+          nullable: true
+          description: Populated in hosted mode after on-chain settlement; null for local-mode and for non-on-chain venues.
+        chain:
+          type: string
+          nullable: true
+          description: Populated in hosted mode after on-chain settlement; null for local-mode and for non-on-chain venues.
+        blockNumber:
+          type: number
+          nullable: true
+          description: Populated in hosted mode after on-chain settlement; null for local-mode and for non-on-chain venues.
+      required:
+        - id
+        - timestamp
+        - price
+        - amount
+        - side
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The exchange-assigned order identifier.
+        marketId:
+          type: string
+          description: The market this order was placed on.
+        outcomeId:
+          type: string
+          description: The outcome this order was placed on.
+        side:
+          type: string
+          enum:
+            - buy
+            - sell
+          description: 'Order side: buy or sell.'
+        type:
+          type: string
+          enum:
+            - market
+            - limit
+          description: 'Order type: market (execute immediately) or limit (resting at a price).'
+        price:
+          type: number
+          description: For limit orders
+        amount:
+          type: number
+          description: Size in contracts/shares
+        status:
+          type: string
+          enum:
+            - pending
+            - open
+            - filled
+            - canceled
+            - rejected
+          description: Lifecycle status of the order.
+        filled:
+          type: number
+          description: 'Amount filled (USDC cost for buys, shares for sells)'
+        filledShares:
+          type: number
+          description: Amount filled in shares/contracts (if different from USDC-denominated `filled`).
+        remaining:
+          type: number
+          description: Amount remaining
+        timestamp:
+          type: number
+          description: Unix timestamp in milliseconds when the order was created.
+        fee:
+          type: number
+          description: 'Fee paid for this order, if known.'
+        feeRateBps:
+          type: number
+          description: Fee rate in basis points applied to this order (e.g. 100 = 1%).
+        txHash:
+          type: string
+          nullable: true
+          description: Populated in hosted mode after on-chain settlement; null for local-mode and for non-on-chain venues.
+        chain:
+          type: string
+          nullable: true
+          description: Populated in hosted mode after on-chain settlement; null for local-mode and for non-on-chain venues.
+        blockNumber:
+          type: number
+          nullable: true
+          description: Populated in hosted mode after on-chain settlement; null for local-mode and for non-on-chain venues.
+      required:
+        - id
+        - marketId
+        - outcomeId
+        - side
+        - type
+        - amount
+        - status
+        - filled
+        - remaining
+        - timestamp
+    Position:
+      type: object
+      description: >-
+        A current position in a market. In hosted mode, `outcomeLabel`, `entryPrice`, `currentPrice` and `unrealizedPnL`
+        may be null when the server cannot derive them (e.g. `with_mtm=false` or no fill history). Venue-direct callers
+        continue to populate every field.
+      properties:
+        marketId:
+          type: string
+          description: The market this position is held in.
+        outcomeId:
+          type: string
+          description: The outcome this position is held in.
+        outcomeLabel:
+          type: string
+          nullable: true
+          description: Human-readable label for the outcome held. Optional in hosted mode.
+        size:
+          type: number
+          description: 'Positive for long, negative for short'
+        entryPrice:
+          type: number
+          nullable: true
+          description: >-
+            Average entry price for the position (probability between 0.0 and 1.0). Optional in hosted mode when no fill
+            history is available.
+        currentPrice:
+          type: number
+          nullable: true
+          description: >-
+            Current mark price for the position (probability between 0.0 and 1.0). Optional in hosted mode when
+            mark-to-market data is unavailable.
+        currentValue:
+          type: number
+          nullable: true
+          description: Current market value of the position (size * currentPrice). Null when currentPrice is unavailable.
+        unrealizedPnL:
+          type: number
+          nullable: true
+          description: >-
+            Unrealized profit or loss at the current price (USD). Optional in hosted mode when mark-to-market data is
+            unavailable.
+        realizedPnL:
+          type: number
+          description: Realized profit or loss booked so far (USD).
+        txHash:
+          type: string
+          nullable: true
+          description: >-
+            Populated in hosted mode after on-chain settlement (from the last fill); null for local-mode and for
+            non-on-chain venues.
+        chain:
+          type: string
+          nullable: true
+          description: >-
+            Populated in hosted mode after on-chain settlement (from the last fill); null for local-mode and for
+            non-on-chain venues.
+        blockNumber:
+          type: number
+          nullable: true
+          description: >-
+            Populated in hosted mode after on-chain settlement (from the last fill); null for local-mode and for
+            non-on-chain venues.
+      required:
+        - marketId
+        - outcomeId
+        - size
+    Balance:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: 'e.g., ''USDC'''
+        total:
+          type: number
+          description: Total balance including funds locked in open orders.
+        available:
+          type: number
+          description: Balance available to trade (excludes locked funds).
+        locked:
+          type: number
+          description: In open orders
+        venue:
+          type: string
+          nullable: true
+          description: >-
+            Hosted-mode: which venue this balance belongs to in a multi-venue response. Null when the balance is
+            venue-agnostic.
+      required:
+        - currency
+        - total
+        - available
+        - locked
+    ExecutionPriceResult:
+      type: object
+      properties:
+        price:
+          type: number
+        filledAmount:
+          type: number
+        fullyFilled:
+          type: boolean
+      required:
+        - price
+        - filledAmount
+        - fullyFilled
+    PaginatedMarketsResult:
+      type: object
+      description: Shape returned by fetchMarketsPaginated
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifiedMarket'
+          description: The page of unified markets
+        total:
+          type: number
+          description: Total number of markets in the snapshot
+        nextCursor:
+          type: string
+          description: 'Cursor to pass to the next call, or undefined if this is the last page'
+      required:
+        - data
+        - total
+    PaginatedEventsResult:
+      type: object
+      description: Shape returned by fetchEventsPaginated
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifiedEvent'
+          description: The page of unified events
+        total:
+          type: number
+          description: Total number of events in the snapshot
+        nextCursor:
+          type: string
+          description: 'Cursor to pass to the next call, or undefined if this is the last page'
+      required:
+        - data
+        - total
+    MarketFilterParams:
+      type: object
+      properties:
+        limit:
+          type: number
+          description: Maximum number of results to return
+        offset:
+          type: number
+          description: Pagination offset — number of results to skip
+        sort:
+          type: string
+          enum:
+            - volume
+            - liquidity
+            - newest
+          description: Sort order for results
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - closed
+            - all
+          description: 'Filter by market status (default: ''active'', ''inactive'' and ''closed'' are interchangeable)'
+        searchIn:
+          type: string
+          enum:
+            - title
+            - description
+            - both
+          description: 'Where to search (default: ''title'')'
+        query:
+          type: string
+          description: For keyword search
+        slug:
+          type: string
+          description: For slug/ticker lookup
+        marketId:
+          type: string
+          description: Direct lookup by market ID
+        outcomeId:
+          type: string
+          description: Reverse lookup -- find market containing this outcome
+        eventId:
+          type: string
+          description: Find markets belonging to an event
+        page:
+          type: number
+          description: For pagination (used by Limitless)
+        similarityThreshold:
+          type: number
+          description: For semantic search (used by Limitless)
+        sourceExchange:
+          type: string
+          description: 'Filter by source venue (e.g. ''polymarket'', ''kalshi'', ''myriad''). `exchange` is an alias.'
+        exchange:
+          type: string
+          description: Alias for `sourceExchange`.
+    EventFetchParams:
+      type: object
+      properties:
+        query:
+          type: string
+          description: For keyword search
+        limit:
+          type: number
+          description: Maximum number of results to return
+        cursor:
+          type: string
+          description: 'Opaque venue pagination cursor, where supported.'
+        offset:
+          type: number
+          description: Pagination offset — number of results to skip
+        sort:
+          type: string
+          enum:
+            - volume
+            - liquidity
+            - newest
+          description: Sort order for results
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - closed
+            - all
+          description: 'Filter by event status (default: ''active'', ''inactive'' and ''closed'' are interchangeable)'
+        searchIn:
+          type: string
+          enum:
+            - title
+            - description
+            - both
+          description: 'Where to search (default: ''title'')'
+        eventId:
+          type: string
+          description: Direct lookup by event ID
+        slug:
+          type: string
+          description: Lookup by event slug
+        series:
+          type: string
+          description: >-
+            Filter events by their parent series. Accepts the venue-native series id / ticker / slug (e.g. Kalshi
+            `"KXATPMATCH"`, Polymarket `"wta"`). Passed through to the vendor where supported, otherwise applied to
+            `sourceMetadata` after fetch.
+        filter:
+          allOf:
+            - $ref: '#/components/schemas/EventFilterCriteria'
+          description: Optional client-side filter applied after fetching
+        category:
+          type: string
+          description: >-
+            Filter by category. Each event belongs to a venue-assigned category such as "Sports", "Politics", "Crypto",
+            "Bitcoin", "Soccer", "Economic Policy" (Polymarket) or "Sports", "Mentions" (Kalshi).
+        tags:
+          type: array
+          items:
+            type: string
+          description: >-
+            Filter by tags. Returns events matching ANY of the provided tags. Tags are more specific than categories --
+            for example a "Politics" event might carry tags ["Politics", "Geopolitics", "Middle East", "Iran"]. Common
+            tags include "Crypto", "Elections", "Fed Rates", "FIFA World Cup", "Trump".
+        sourceExchange:
+          type: string
+          description: 'Filter by source venue (e.g. ''polymarket'', ''kalshi'', ''myriad''). `exchange` is an alias.'
+        exchange:
+          type: string
+          description: Alias for `sourceExchange`.
+    HistoryFilterParams:
+      type: object
+      description: Deprecated - use OHLCVParams or TradesParams instead. Resolution is optional for backward compatibility.
+      properties:
+        resolution:
+          type: string
+          description: Optional for backward compatibility
+        start:
+          type: string
+          format: date-time
+          description: Start of the time range
+        end:
+          type: string
+          format: date-time
+          description: End of the time range
+        limit:
+          type: number
+          description: Maximum number of results to return
+    OHLCVParams:
+      type: object
+      properties:
+        resolution:
+          type: string
+          description: Required for candle aggregation
+        start:
+          type: string
+          format: date-time
+          description: Start of the time range
+        end:
+          type: string
+          format: date-time
+          description: End of the time range
+        limit:
+          type: number
+          description: Maximum number of results to return
+      required:
+        - resolution
+    FetchOrderBookParams:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+            - 'yes'
+            - 'no'
+          description: >-
+            Outcome side: 'yes' or 'no'. Required for exchanges like Limitless where the API returns a single orderbook
+            per market.
+        outcome:
+          type: string
+          description: >-
+            Outcome alias: 'yes' or 'no', or an outcome token ID. When set, the first argument is treated as a market ID
+            and this value selects which outcome's order book to fetch. Accepts the literal strings 'yes'/'no' (resolved
+            via a market lookup) or a raw outcome token ID.
+        since:
+          type: number
+          description: >-
+            Unix timestamp (ms) — fetch a historical snapshot at or before this time, or the start of a range when
+            combined with `until` (hosted API only).
+        until:
+          type: number
+          description: >-
+            Unix timestamp (ms) — end of a historical range. When combined with `since`, returns an array of
+            reconstructed L2 OrderBook snapshots between `since` and `until` (hosted API only).
+    TradesParams:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Start of the time range
+        end:
+          type: string
+          format: date-time
+          description: End of the time range
+        limit:
+          type: number
+          description: 'Maximum number of results to return (max {@link MAX_TRADES_LIMIT})'
+    CreateOrderParams:
+      type: object
+      properties:
+        marketId:
+          type: string
+          description: The market to trade on.
+        outcomeId:
+          type: string
+          description: The outcome to trade.
+        side:
+          type: string
+          enum:
+            - buy
+            - sell
+          description: 'Order side: buy or sell.'
+        type:
+          type: string
+          enum:
+            - market
+            - limit
+          description: 'Order type: market (execute immediately) or limit (resting at a price).'
+        amount:
+          type: number
+          description: Size of the order in contracts/shares.
+        price:
+          type: number
+          description: Required for limit orders
+        denom:
+          type: string
+          enum:
+            - usdc
+            - shares
+          description: 'Hosted mode: amount unit.'
+        slippage_pct:
+          type: number
+          description: 'Hosted mode: maximum market-order slippage percentage.'
+        fee:
+          type: number
+          description: 'Optional fee rate (e.g., 1000 for 0.1%)'
+        builder:
+          type: string
+          description: Hyperliquid builder address to attach to the order action.
+        builderFee:
+          type: number
+          description: Hyperliquid builder fee in tenths of a basis point (e.g. 10 = 1 bp).
+        tickSize:
+          type: number
+          description: Optional override for Limitless/Polymarket
+        negRisk:
+          type: boolean
+          description: Optional override to skip neg-risk lookup (Polymarket)
+        onBehalfOf:
+          type: number
+          description: 'Limitless delegated signing: profile ID to trade on behalf of'
+      required:
+        - marketId
+        - outcomeId
+        - side
+        - type
+        - amount
+    BuiltOrder:
+      type: object
+      properties:
+        exchange:
+          type: string
+          description: The exchange name this order was built for.
+        params:
+          allOf:
+            - $ref: '#/components/schemas/CreateOrderParams'
+          description: The original params used to build this order.
+        signedOrder:
+          type: object
+          additionalProperties: {}
+          description: 'For CLOB exchanges (Polymarket): the EIP-712 signed order ready to POST to the exchange''s order endpoint.'
+        tx:
+          type: object
+          properties:
+            to:
+              type: string
+            data:
+              type: string
+            value:
+              type: string
+            chainId:
+              type: number
+          required:
+            - to
+            - data
+            - value
+            - chainId
+          description: >-
+            For on-chain AMM exchanges: the EVM transaction payload. Reserved for future exchanges; no current exchange
+            populates this.
+        raw:
+          description: 'The raw, exchange-native payload. Always present.'
+        expiry:
+          type: number
+          nullable: true
+          description: >-
+            Unix epoch (ms) when this built order expires server-side. Submitting after expiry returns
+            BUILT_ORDER_EXPIRED.
+      required:
+        - exchange
+        - params
+        - raw
+    MyTradesParams:
+      type: object
+      properties:
+        outcomeId:
+          type: string
+          description: filter to specific outcome/ticker
+        marketId:
+          type: string
+          description: filter to specific market
+        since:
+          type: string
+          format: date-time
+          description: Only return records after this date
+        until:
+          type: string
+          format: date-time
+          description: Only return records before this date
+        limit:
+          type: number
+          description: Maximum number of results to return
+        cursor:
+          type: string
+          description: for Kalshi cursor pagination
+    OrderHistoryParams:
+      type: object
+      properties:
+        marketId:
+          type: string
+          description: required for Limitless (slug)
+        since:
+          type: string
+          format: date-time
+          description: Only return records after this date
+        until:
+          type: string
+          format: date-time
+          description: Only return records before this date
+        limit:
+          type: number
+          description: Maximum number of results to return
+        cursor:
+          type: string
+          description: Opaque pagination cursor from a previous response
+    MarketFilterCriteria:
+      type: object
+      properties:
+        text:
+          type: string
+        searchIn:
+          type: array
+          items:
+            type: string
+            enum:
+              - title
+              - description
+              - category
+              - tags
+              - outcomes
+          description: 'Default: [''title'']'
+        volume24h:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+        volume:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+          description: Filter by total (lifetime) volume range
+        liquidity:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+          description: Filter by current liquidity range
+        openInterest:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+          description: Filter by open interest range
+        resolutionDate:
+          type: object
+          properties:
+            before:
+              type: string
+              format: date-time
+            after:
+              type: string
+              format: date-time
+        category:
+          type: string
+          description: >-
+            Filter by category. Common values: "Sports", "Politics", "Crypto", "Bitcoin", "Soccer", "Economic Policy"
+            (Polymarket) or "Sports", "Mentions" (Kalshi).
+        tags:
+          type: array
+          items:
+            type: string
+          description: >-
+            Match markets that have ANY of these tags. Examples: ["Crypto", "Crypto Prices"], ["Politics", "Elections"],
+            ["Sports", "FIFA World Cup"].
+        price:
+          type: object
+          properties:
+            outcome:
+              type: string
+              enum:
+                - 'yes'
+                - 'no'
+                - up
+                - down
+            min:
+              type: number
+            max:
+              type: number
+          required:
+            - outcome
+        priceChange24h:
+          type: object
+          properties:
+            outcome:
+              type: string
+              enum:
+                - 'yes'
+                - 'no'
+                - up
+                - down
+            min:
+              type: number
+            max:
+              type: number
+          required:
+            - outcome
+    EventFilterCriteria:
+      type: object
+      properties:
+        text:
+          type: string
+        searchIn:
+          type: array
+          items:
+            type: string
+            enum:
+              - title
+              - description
+              - category
+              - tags
+          description: 'Default: [''title'']'
+        category:
+          type: string
+          description: >-
+            Filter by category. Common values: "Sports", "Politics", "Crypto", "Bitcoin", "Soccer", "Economic Policy"
+            (Polymarket) or "Sports", "Mentions" (Kalshi).
+        tags:
+          type: array
+          items:
+            type: string
+          description: >-
+            Match events that have ANY of these tags. Examples: ["Crypto"], ["Politics", "Geopolitics", "Middle East"],
+            ["Sports", "FIFA World Cup"].
+        marketCount:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+        totalVolume:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+          description: Sum of market volumes
+    FetchMarketMatchesParams:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Keyword search across matched market titles.
+        category:
+          type: string
+          description: Filter matches by category.
+        market:
+          allOf:
+            - $ref: '#/components/schemas/UnifiedMarket'
+          description: Pass a UnifiedMarket directly instead of marketId/slug/url.
+        marketId:
+          type: string
+          description: Lookup a specific market by ID. Omit for browse mode.
+        slug:
+          type: string
+        url:
+          type: string
+        relation:
+          type: string
+          enum:
+            - identity
+            - complement
+            - subset
+            - superset
+            - overlap
+            - disjoint
+        minConfidence:
+          type: number
+        limit:
+          type: number
+        includePrices:
+          type: boolean
+        minDifference:
+          type: number
+          description: Minimum price difference between venues. Browse mode only.
+        sort:
+          type: string
+          enum:
+            - confidence
+            - volume
+            - priceDifference
+          description: Sort order. Browse mode only.
+    FetchEventMatchesParams:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Keyword search across matched event titles.
+        category:
+          type: string
+          description: Filter matches by category.
+        event:
+          allOf:
+            - $ref: '#/components/schemas/UnifiedEvent'
+          description: Pass a UnifiedEvent directly instead of eventId/slug.
+        eventId:
+          type: string
+          description: Lookup a specific event by ID. Omit for browse mode.
+        slug:
+          type: string
+        relation:
+          type: string
+          enum:
+            - identity
+            - complement
+            - subset
+            - superset
+            - overlap
+            - disjoint
+        minConfidence:
+          type: number
+        limit:
+          type: number
+        includePrices:
+          type: boolean
+    FetchArbitrageParams:
+      type: object
+      properties:
+        minSpread:
+          type: number
+        category:
+          type: string
+        limit:
+          type: number
+        relations:
+          type: array
+          items:
+            type: string
+            enum:
+              - identity
+              - complement
+              - subset
+              - superset
+              - overlap
+              - disjoint
+          description: 'Comma-separated relation types to include (default: ''identity'').'
+    MatchResult:
+      type: object
+      properties:
+        market:
+          $ref: '#/components/schemas/UnifiedMarket'
+        sourceMarket:
+          allOf:
+            - $ref: '#/components/schemas/UnifiedMarket'
+          description: 'The source market this was matched against. Present in browse mode (no marketId), absent in lookup mode.'
+        relation:
+          type: string
+          enum:
+            - identity
+            - complement
+            - subset
+            - superset
+            - overlap
+            - disjoint
+        confidence:
+          type: number
+        reasoning:
+          type: string
+          nullable: true
+        bestBid:
+          type: number
+          nullable: true
+        bestAsk:
+          type: number
+          nullable: true
+      required:
+        - market
+        - relation
+        - confidence
+        - reasoning
+        - bestBid
+        - bestAsk
+    EventMatchResult:
+      type: object
+      properties:
+        event:
+          $ref: '#/components/schemas/UnifiedEvent'
+        marketMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatchResult'
+      required:
+        - event
+        - marketMatches
+    PriceComparison:
+      type: object
+      properties:
+        market:
+          $ref: '#/components/schemas/UnifiedMarket'
+        relation:
+          type: string
+          enum:
+            - identity
+            - complement
+            - subset
+            - superset
+            - overlap
+            - disjoint
+        confidence:
+          type: number
+        reasoning:
+          type: string
+          nullable: true
+        bestBid:
+          type: number
+          nullable: true
+        bestAsk:
+          type: number
+          nullable: true
+        venue:
+          type: string
+      required:
+        - market
+        - relation
+        - confidence
+        - reasoning
+        - bestBid
+        - bestAsk
+        - venue
+    ArbitrageOpportunity:
+      type: object
+      properties:
+        marketA:
+          $ref: '#/components/schemas/UnifiedMarket'
+        marketB:
+          $ref: '#/components/schemas/UnifiedMarket'
+        spread:
+          type: number
+        buyVenue:
+          type: string
+        sellVenue:
+          type: string
+        buyPrice:
+          type: number
+        sellPrice:
+          type: number
+        relation:
+          type: string
+          enum:
+            - identity
+            - complement
+            - subset
+            - superset
+            - overlap
+            - disjoint
+          description: 'The set-theoretic relation between the two markets (e.g. identity, subset).'
+        confidence:
+          type: number
+          description: Match confidence score (0.0 to 1.0).
+      required:
+        - marketA
+        - marketB
+        - spread
+        - buyVenue
+        - sellVenue
+        - buyPrice
+        - sellPrice
+    FetchMatchedMarketsParams:
+      type: object
+      properties:
+        minDifference:
+          type: number
+        category:
+          type: string
+        limit:
+          type: number
+        relations:
+          type: array
+          items:
+            type: string
+            enum:
+              - identity
+              - complement
+              - subset
+              - superset
+              - overlap
+              - disjoint
+          description: 'Comma-separated relation types to include (default: ''identity'').'
+    MatchedMarketPair:
+      type: object
+      properties:
+        marketA:
+          $ref: '#/components/schemas/UnifiedMarket'
+        marketB:
+          $ref: '#/components/schemas/UnifiedMarket'
+        priceDifference:
+          type: number
+        venueA:
+          type: string
+        venueB:
+          type: string
+        priceA:
+          type: number
+        priceB:
+          type: number
+        relation:
+          type: string
+          enum:
+            - identity
+            - complement
+            - subset
+            - superset
+            - overlap
+            - disjoint
+          description: 'The set-theoretic relation between the two markets (e.g. identity, subset).'
+        confidence:
+          type: number
+          description: Match confidence score (0.0 to 1.0).
+        reasoning:
+          type: string
+          nullable: true
+          description: Why the two markets were matched.
+      required:
+        - marketA
+        - marketB
+        - priceDifference
+        - venueA
+        - venueB
+        - priceA
+        - priceB
+    ExchangeCredentials:
+      type: object
+      description: Optional authentication credentials for exchange operations.
+      properties:
+        apiKey:
+          type: string
+        apiSecret:
+          type: string
+          description: Standard API secret for HMAC-authenticated exchanges
+        passphrase:
+          type: string
+          description: Standard API passphrase for HMAC-authenticated exchanges
+        apiToken:
+          type: string
+          description: 'Metaculus: `Authorization: Token <apiToken>` for higher rate limits'
+        privateKey:
+          type: string
+          description: Required for Polymarket L1 auth
+        signatureType:
+          oneOf:
+            - type: number
+            - type: string
+          description: '0 = EOA, 1 = Poly Proxy, 2 = Gnosis Safe (Can also use ''eoa'', ''polyproxy'', ''gnosis_safe'')'
+        funderAddress:
+          type: string
+          description: The address funding the trades (defaults to signer address)
+        walletAddress:
+          type: string
+        baseUrl:
+          type: string
+    FeedTicker:
+      type: object
+      description: CCXT-compatible ticker with last trade price and metadata.
+      properties:
+        symbol:
+          type: string
+          description: Trading pair symbol (e.g. BTC/USD)
+        info:
+          description: Raw provider-specific data
+        timestamp:
+          type: integer
+          description: Unix timestamp in milliseconds
+        datetime:
+          type: string
+          format: date-time
+        high:
+          type: number
+        low:
+          type: number
+        bid:
+          type: number
+        bidVolume:
+          type: number
+        ask:
+          type: number
+        askVolume:
+          type: number
+        vwap:
+          type: number
+        open:
+          type: number
+        close:
+          type: number
+        last:
+          type: number
+          description: Last trade price
+        previousClose:
+          type: number
+        change:
+          type: number
+        percentage:
+          type: number
+        average:
+          type: number
+        quoteVolume:
+          type: number
+        baseVolume:
+          type: number
+        indexPrice:
+          type: number
+        markPrice:
+          type: number
+      required:
+        - symbol
+    FeedMarket:
+      type: object
+      description: CCXT-compatible market descriptor for a data feed.
+      properties:
+        id:
+          type: string
+        symbol:
+          type: string
+        base:
+          type: string
+        quote:
+          type: string
+        active:
+          type: boolean
+        type:
+          type: string
+        info:
+          description: Provider-specific metadata
+      required:
+        - id
+        - symbol
+        - base
+        - quote
+    FeedOracleRound:
+      type: object
+      description: Chainlink oracle price round.
+      properties:
+        feed:
+          type: string
+          description: Price feed pair (e.g. BTC/USD)
+        roundId:
+          type: string
+        answer:
+          type: number
+          description: Oracle price
+        startedAt:
+          type: integer
+        updatedAt:
+          type: integer
+        answeredInRound:
+          type: string
+        decimals:
+          type: integer
+        description:
+          type: string
+      required:
+        - feed
+        - roundId
+        - answer
+        - startedAt
+        - updatedAt
+        - answeredInRound
+        - decimals
+x-sdk-constructors:
+  polymarket:
+    className: Polymarket
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: api_secret
+        tsName: apiSecret
+        type: string
+        description: API secret for authentication
+      - name: passphrase
+        tsName: passphrase
+        type: string
+        description: Passphrase for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+      - name: proxy_address
+        tsName: proxyAddress
+        type: string
+        description: Proxy/smart wallet address
+      - name: signature_type
+        tsName: signatureType
+        type: string
+        description: Signature type
+        default: gnosis-safe
+  limitless:
+    className: Limitless
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: api_secret
+        tsName: apiSecret
+        type: string
+        description: API secret for authentication
+      - name: passphrase
+        tsName: passphrase
+        type: string
+        description: Passphrase for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  kalshi:
+    className: Kalshi
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  kalshi-demo:
+    className: KalshiDemo
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  probable:
+    className: Probable
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: api_secret
+        tsName: apiSecret
+        type: string
+        description: API secret for authentication
+      - name: passphrase
+        tsName: passphrase
+        type: string
+        description: Passphrase for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  baozi:
+    className: Baozi
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  myriad:
+    className: Myriad
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: wallet_address
+        tsName: walletAddress
+        type: string
+        description: Wallet address (required for positions and balance)
+  opinion:
+    className: Opinion
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+      - name: proxy_address
+        tsName: proxyAddress
+        type: string
+        description: Proxy/smart wallet address
+  metaculus:
+    className: Metaculus
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_token
+        tsName: apiToken
+        type: string
+        description: API token for authentication
+  smarkets:
+    className: Smarkets
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  polymarket_us:
+    className: PolymarketUS
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  hyperliquid:
+    className: Hyperliquid
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  gemini-titan:
+    className: GeminiTitan
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: api_key
+        tsName: apiKey
+        type: string
+        description: API key for authentication
+      - name: api_secret
+        tsName: apiSecret
+        type: string
+        description: API secret for authentication
+  suibets:
+    className: SuiBets
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+  rain:
+    className: Rain
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  hunch:
+    className: Hunch
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+      - name: private_key
+        tsName: privateKey
+        type: string
+        description: Private key for authentication
+  mock:
+    className: Mock
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access
+  router:
+    className: Router
+    params:
+      - name: pmxt_api_key
+        tsName: pmxtApiKey
+        type: string
+        description: PMXT API key for hosted access

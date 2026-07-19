@@ -1,0 +1,43 @@
+---
+title: Fetch OHLCV
+openapi: GET /api/{exchange}/fetchOHLCV
+---
+
+<Info>
+**Hosted and self-hosted data depth** — Hosted `api.pmxt.dev` calls require a PMXT API key. If you omit the key, SDK calls route through your local `pmxt-core` process and use venue-native APIs. `fetchOHLCV` returns normalized `PriceCandle` rows for venues whose implementation supports `fetchOHLCV`; history length, volume, and rate limits remain venue-specific. Check [Feature Support & Compliance](https://github.com/pmxt-dev/pmxt/blob/main/core/COMPLIANCE.md) for the current matrix. [Get your API key](https://pmxt.dev/dashboard).
+</Info>
+
+## Use cases
+
+### Get hourly candles for a market
+
+<CodeGroup>
+```python Python
+import pmxt
+
+# Hosted route: include pmxt_api_key. Omit it for self-hosted/local pmxt-core.
+api = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+market = api.fetch_market(slug="will-alexandria-ocasio-cortez-win-the-2028-us-presidential-election")
+
+candles = api.fetch_ohlcv(market.yes, resolution="1h", limit=100)
+for c in candles:
+    print(f"{c.open:.2f}  {c.high:.2f}  {c.low:.2f}  {c.close:.2f}  V:{c.volume}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+// Hosted route: include pmxtApiKey. Omit it for self-hosted/local pmxt-core.
+const api = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+const market = await api.fetchMarket({ slug: "will-alexandria-ocasio-cortez-win-the-2028-us-presidential-election" });
+
+const candles = await api.fetchOHLCV(market.yes, { resolution: "1h", limit: 100 });
+candles.forEach((c) => console.log(`${c.open}  ${c.high}  ${c.low}  ${c.close}  V:${c.volume}`));
+```
+
+```bash curl
+# First get the outcome ID from a market, then pass it as the outcomeId parameter
+curl "https://api.pmxt.dev/api/polymarket/fetchOHLCV?outcomeId=YOUR_OUTCOME_ID&resolution=1h&limit=100" \
+  -H "Authorization: Bearer $PMXT_API_KEY"
+```
+</CodeGroup>

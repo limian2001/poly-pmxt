@@ -1,0 +1,132 @@
+---
+title: watchOrderBooks
+description: Stream real-time orderbook updates for multiple outcomes via WebSocket
+---
+
+<Info>
+**WebSocket endpoint** — This method uses WebSocket streaming, not HTTP. Connect to `wss://api.pmxt.dev/ws?apiKey=YOUR_KEY` (hosted) or `ws://localhost:3847/ws` (local server).
+</Info>
+
+Supported venues: `polymarket`, `kalshi`, `limitless`, `opinion`, `polymarket_us`, `probable`, `baozi`, `myriad`, `gemini-titan`, `rain`, `hunch`.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `outcomeIds` | string[] | Yes | Array of outcome token IDs to watch |
+| `limit` | number | No | Optional depth limit for each streamed order book |
+| `params` | object | No | Optional exchange-specific parameters |
+
+## Response
+
+Returns a `Record<string, OrderBook>` — one `OrderBook` per outcome, keyed by outcome ID. Each update arrives as a separate data event.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `bids` | `OrderLevel[]` | Bid orders, sorted high to low |
+| `asks` | `OrderLevel[]` | Ask orders, sorted low to high |
+| `timestamp` | number | Unix timestamp in milliseconds |
+
+## Usage
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+exchange = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+ids = ["OUTCOME_ID_1", "OUTCOME_ID_2", "OUTCOME_ID_3"]
+while True:
+    books = exchange.watch_order_books(ids, limit=10)
+    for outcome_id, book in books.items():
+        bid = book.bids[0].price if book.bids else None
+        ask = book.asks[0].price if book.asks else None
+        print(f"{outcome_id[:20]}... bid={bid} ask={ask}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+const exchange = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+const ids = ["OUTCOME_ID_1", "OUTCOME_ID_2", "OUTCOME_ID_3"];
+while (true) {
+  const books = await exchange.watchOrderBooks(ids, 10);
+  for (const [id, book] of Object.entries(books)) {
+    console.log(`${id.slice(0, 20)}... bid=${book.bids[0]?.price} ask=${book.asks[0]?.price}`);
+  }
+}
+```
+
+```json WebSocket
+// → Subscribe to multiple outcomes at once
+{
+  "id": "req-1",
+  "action": "subscribe",
+  "exchange": "polymarket",
+  "method": "watchOrderBooks",
+  "args": [["OUTCOME_ID_1", "OUTCOME_ID_2", "OUTCOME_ID_3"], 10]
+}
+
+// ← One data event per outcome, per update
+{
+  "event": "data",
+  "id": "req-1",
+  "method": "watchOrderBooks",
+  "symbol": "OUTCOME_ID_1",
+  "source": "polymarket",
+  "data": {
+    "bids": [{ "price": 0.42, "size": 100 }],
+    "asks": [{ "price": 0.58, "size": 200 }],
+    "timestamp": 1778450010713
+  }
+}
+```
+
+</CodeGroup>
+
+## Use cases
+
+### Watch all outcomes in a market
+
+Fetch a market's outcomes, then stream all their orderbooks:
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+poly = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Get all outcomes for a market
+market = poly.fetch_market(market_id="MARKET_ID")
+ids = [o.outcome_id for o in market.outcomes]
+
+# Stream all orderbooks
+while True:
+    books = poly.watch_order_books(ids)
+    for outcome_id, book in books.items():
+        mid = (book.bids[0].price + book.asks[0].price) / 2 if book.bids and book.asks else 0
+        print(f"{outcome_id[:20]}... mid={mid:.1%}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+const poly = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+const market = await poly.fetchMarket({ marketId: "MARKET_ID" });
+const ids = market.outcomes.map((o) => o.outcomeId);
+
+while (true) {
+  const books = await poly.watchOrderBooks(ids);
+  for (const [id, book] of Object.entries(books)) {
+    const mid = book.bids[0] && book.asks[0]
+      ? (book.bids[0].price + book.asks[0].price) / 2 : 0;
+    console.log(`${id.slice(0, 20)}... mid=${(mid * 100).toFixed(1)}%`);
+  }
+}
+```
+
+</CodeGroup>

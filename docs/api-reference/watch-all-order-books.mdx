@@ -1,0 +1,325 @@
+---
+title: watchAllOrderBooks
+description: Stream live orderbook updates across one venue or all venues via WebSocket
+---
+
+<Info>
+**Hosted only** — This method requires a PMXT API key and connects to the hosted WebSocket API at `wss://api.pmxt.dev/ws?apiKey=YOUR_KEY`. Not available on the local server.
+</Info>
+
+<Note>
+SDK defaults depend on which client you instantiate. `Router` streams all venues by default. Venue clients such as `Kalshi`, `Polymarket`, `Limitless`, and `Opinion` stream only their own venue by default. Pass an explicit `venues` list to override either default.
+</Note>
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `venues` | string[] | No | Optional venue filter. Omit to use the SDK client's default; pass `[]` to force all venues from SDK clients. |
+
+Available venues: `polymarket`, `kalshi`, `limitless`, `opinion`.
+
+Raw WebSocket subscriptions do not have an SDK client default. For raw WebSocket, connect to the WebSocket URL, send one JSON text frame, then read JSON text frames. Omit `args` to stream all venues, or send `args: [["kalshi"]]` to stream only Kalshi.
+
+## Response
+
+Returns a `FirehoseEvent` object for each orderbook update in the selected stream:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source` | string | The venue (e.g. `"polymarket"`, `"limitless"`) |
+| `symbol` | string | The outcome token ID |
+| `orderbook` | `OrderBook` | The orderbook snapshot (`bids`, `asks`, `timestamp`) |
+
+## Usage
+
+### All venues with Router
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+router = pmxt.Router(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+while True:
+    event = router.watch_all_order_books()
+    book = event.orderbook
+    if not book.bids or not book.asks:
+        continue
+    print(f"[{event.source}] {event.symbol[:20]}...")
+    print(f"  bid={book.bids[0].price} ask={book.asks[0].price}")
+```
+
+```javascript JavaScript
+import { Router } from "pmxtjs";
+
+const router = new Router({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+while (true) {
+  const event = await router.watchAllOrderBooks();
+  const { bids, asks } = event.orderbook;
+  if (!bids.length || !asks.length) continue;
+  console.log(`[${event.source}] ${event.symbol.slice(0, 20)}...`);
+  console.log(`  bid=${bids[0].price} ask=${asks[0].price}`);
+}
+```
+
+</CodeGroup>
+
+### Raw WebSocket without an SDK
+
+Use this when you are not using the Python or TypeScript SDKs, or when you are implementing the stream in Rust, Go, Java, or another WebSocket client.
+
+| Environment | URL |
+|-------------|-----|
+| Hosted PMXT | `wss://api.pmxt.dev/ws?apiKey=YOUR_PMXT_API_KEY` |
+
+This Python example does not use the PMXT SDK; it connects to the same raw WebSocket URL that a Rust or Go client would use.
+
+```bash
+pip install websockets
+PMXT_API_KEY="YOUR_PMXT_API_KEY" python raw-watch-all-order-books.py
+```
+
+```python raw-watch-all-order-books.py
+import asyncio
+import json
+import os
+
+import websockets
+
+PMXT_API_KEY = os.environ["PMXT_API_KEY"]
+
+
+async def main():
+    url = f"wss://api.pmxt.dev/ws?apiKey={PMXT_API_KEY}"
+    async with websockets.connect(url) as ws:
+        await ws.send(json.dumps({
+            "id": "all-books",
+            "action": "subscribe",
+            "method": "watchAllOrderBooks",
+        }))
+
+        async for raw in ws:
+            print(raw)
+
+
+asyncio.run(main())
+```
+
+For any other language, the wire protocol is the same: open the WebSocket URL, send this JSON text frame, then read JSON text frames from the server.
+
+```json
+{
+  "id": "kalshi-books",
+  "action": "subscribe",
+  "method": "watchAllOrderBooks",
+  "args": [["kalshi"]]
+}
+```
+
+Data frames look like this:
+
+```json
+{
+  "event": "data",
+  "id": "kalshi-books",
+  "method": "watchAllOrderBooks",
+  "symbol": "OUTCOME_ID",
+  "source": "kalshi",
+  "data": {
+    "bids": [{ "price": 0.42, "size": 100 }],
+    "asks": [{ "price": 0.58, "size": 200 }],
+    "timestamp": 1778450010713
+  }
+}
+```
+
+### One venue with a venue client
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+kalshi = pmxt.Kalshi(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Defaults to Kalshi events only
+while True:
+    event = kalshi.watch_all_order_books()
+    if not event.orderbook.asks:
+        continue
+    print(f"[{event.source}] ask={event.orderbook.asks[0].price}")
+```
+
+```javascript JavaScript
+import { Kalshi } from "pmxtjs";
+
+const kalshi = new Kalshi({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+// Defaults to Kalshi events only
+while (true) {
+  const event = await kalshi.watchAllOrderBooks();
+  if (!event.orderbook.asks.length) continue;
+  console.log(`[${event.source}] ask=${event.orderbook.asks[0].price}`);
+}
+```
+
+</CodeGroup>
+
+### Explicit venue filter
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+router = pmxt.Router(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Only Polymarket and Limitless events
+while True:
+    event = router.watch_all_order_books(["polymarket", "limitless"])
+    if not event.orderbook.bids:
+        continue
+    print(f"[{event.source}] bid={event.orderbook.bids[0].price}")
+```
+
+```javascript JavaScript
+import { Router } from "pmxtjs";
+
+const router = new Router({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+// Only Polymarket and Limitless events
+while (true) {
+  const event = await router.watchAllOrderBooks(["polymarket", "limitless"]);
+  if (!event.orderbook.bids.length) continue;
+  console.log(`[${event.source}] bid=${event.orderbook.bids[0].price}`);
+}
+```
+
+</CodeGroup>
+
+### Force all venues from a venue client
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+kalshi = pmxt.Kalshi(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Empty list overrides the Kalshi default and streams all venues
+event = kalshi.watch_all_order_books([])
+```
+
+```javascript JavaScript
+import { Kalshi } from "pmxtjs";
+
+const kalshi = new Kalshi({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+// Empty array overrides the Kalshi default and streams all venues
+const event = await kalshi.watchAllOrderBooks([]);
+```
+
+</CodeGroup>
+
+## Use cases
+
+### Cross-venue monitoring dashboard
+
+Build a real-time dashboard showing all orderbook activity:
+
+<CodeGroup>
+
+```python Python
+import pmxt
+from collections import defaultdict
+
+router = pmxt.Router(pmxt_api_key="YOUR_PMXT_API_KEY")
+counts = defaultdict(int)
+
+while True:
+    event = router.watch_all_order_books()
+    counts[event.source] += 1
+    total = sum(counts.values())
+    if total % 100 == 0:
+        print(f"Events: {dict(counts)} (total: {total})")
+```
+
+```javascript JavaScript
+import { Router } from "pmxtjs";
+
+const router = new Router({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+const counts = {};
+
+while (true) {
+  const event = await router.watchAllOrderBooks();
+  counts[event.source] = (counts[event.source] || 0) + 1;
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total % 100 === 0) {
+    console.log(`Events:`, counts, `(total: ${total})`);
+  }
+}
+```
+
+</CodeGroup>
+
+### Real-time arbitrage scanner
+
+Detect cross-venue price discrepancies as they happen:
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+router = pmxt.Router(pmxt_api_key="YOUR_PMXT_API_KEY")
+latest = {}  # symbol -> {source -> mid_price}
+
+while True:
+    event = router.watch_all_order_books()
+    book = event.orderbook
+    if not book.bids or not book.asks:
+        continue
+    mid = (book.bids[0].price + book.asks[0].price) / 2
+
+    if event.symbol not in latest:
+        latest[event.symbol] = {}
+    latest[event.symbol][event.source] = mid
+
+    prices = latest[event.symbol]
+    if len(prices) >= 2:
+        venues = list(prices.keys())
+        spread = abs(prices[venues[0]] - prices[venues[1]])
+        if spread > 0.03:
+            print(f"Spread {spread:.1%}: {venues[0]}={prices[venues[0]]:.1%} vs {venues[1]}={prices[venues[1]]:.1%}")
+```
+
+```javascript JavaScript
+import { Router } from "pmxtjs";
+
+const router = new Router({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+const latest = new Map();
+
+while (true) {
+  const event = await router.watchAllOrderBooks();
+  const { bids, asks } = event.orderbook;
+  if (!bids.length || !asks.length) continue;
+  const mid = (bids[0].price + asks[0].price) / 2;
+
+  if (!latest.has(event.symbol)) latest.set(event.symbol, {});
+  latest.get(event.symbol)[event.source] = mid;
+
+  const prices = latest.get(event.symbol);
+  const venues = Object.keys(prices);
+  if (venues.length >= 2) {
+    const spread = Math.abs(prices[venues[0]] - prices[venues[1]]);
+    if (spread > 0.03) {
+      console.log(`Spread ${(spread * 100).toFixed(1)}%: ${venues[0]}=${(prices[venues[0]] * 100).toFixed(1)}% vs ${venues[1]}=${(prices[venues[1]] * 100).toFixed(1)}%`);
+    }
+  }
+}
+```
+
+</CodeGroup>

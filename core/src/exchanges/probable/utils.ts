@@ -1,0 +1,144 @@
+import { UnifiedMarket, UnifiedEvent, MarketOutcome } from '../../types';
+import { addBinaryOutcomes } from '../../utils/market-utils';
+import { buildSourceMetadata } from '../../utils/metadata';
+
+// Raw Probable fields already promoted to first-class Unified columns — omitted
+// from sourceMetadata so we capture only what the unified shape would drop.
+const PROBABLE_PROMOTED_EVENT_KEYS = [
+    'id', 'title', 'description', 'slug', 'icon', 'image', 'category', 'tags', 'markets',
+] as const;
+
+const PROBABLE_PROMOTED_MARKET_KEYS = [
+    'id', 'question', 'title', 'description', 'slug', 'endDate',
+    'volume24hr', 'volume', 'liquidity', 'icon', 'category', 'tags', 'tokens', 'event_id',
+] as const;
+
+export const DEFAULT_BASE_URL = 'https://market-api.probable.markets';
+export const SEARCH_PATH = '/public/api/v1/public-search/';
+export const EVENTS_PATH = '/public/api/v1/events/';
+export const MARKETS_PATH = '/public/api/v1/markets/';
+
+export function mapMarketToUnified(market: any, event?: any): UnifiedMarket | null {
+    if (!market) return null;
+
+    const outcomes: MarketOutcome[] = [];
+
+    // Probable API provides tokens array with token_id and outcome label.
+    // The outcomes field is a JSON string like '["Yes","No"]'.
+    // Prices are not included in the search response.
+    if (market.tokens && Array.isArray(market.tokens)) {
+        for (const token of market.tokens) {
+            outcomes.push({
+                outcomeId: String(token.token_id),
+                marketId: String(market.id),
+                label: token.outcome || '',
+                price: 0,
+                priceChange24h: 0,
+            });
+        }
+    }
+
+    const um = {
+        marketId: String(market.id),
+        eventId: event ? String(event.id) : (market.event_id ? String(market.event_id) : undefined),
+        title: market.question || market.title || '',
+        description: market.description || '',
+        outcomes,
+        resolutionDate: market.endDate ? new Date(market.endDate) : new Date(),
+        volume24h: Number(market.volume24hr || 0),
+        volume: Number(market.volume || 0),
+        liquidity: Number(market.liquidity || 0),
+        openInterest: 0,
+        url: (() => {
+            const eventSlug = event?.slug || (market as any)._parentEvent?.slug;
+            const marketId = market.id;
+            if (eventSlug) {
+                return `https://probable.markets/event/${eventSlug}?market=${marketId}`;
+            }
+            const eventId = event?.id || market.event_id;
+            if (eventId) {
+                return `https://probable.markets/event/${eventId}?market=${marketId}`;
+            }
+            return `https://probable.markets/event/?market=${marketId}`;
+        })(),
+        image: market.icon || event?.icon || event?.image || undefined,
+        category: event?.category || market.category || undefined,
+        tags: market.tags || event?.tags || [],
+        sourceMetadata: buildSourceMetadata(
+            market as unknown as Record<string, unknown>,
+            PROBABLE_PROMOTED_MARKET_KEYS,
+            // event_slug is not promoted to any first-class column — attach it so
+            // markets remain queryable by their parent event slug.
+            event ? { event_slug: event.slug } : undefined,
+        ),
+    } as UnifiedMarket;
+
+    addBinaryOutcomes(um);
+    return um;
+}
+
+export function mapEventToUnified(event: any): UnifiedEvent | null {
+    if (!event) return null;
+
+    const markets: UnifiedMarket[] = [];
+    if (event.markets && Array.isArray(event.markets)) {
+        for (const market of event.markets) {
+            const mapped = mapMarketToUnified(market, event);
+            if (mapped) markets.push(mapped);
+        }
+    }
+
+    const unifiedEvent: UnifiedEvent = {
+        id: String(event.id),
+        title: event.title || '',
+        description: event.description || '',
+        slug: event.slug || '',
+        markets,
+        volume24h: markets.reduce((sum, m) => sum + m.volume24h, 0),
+        volume: markets.some(m => m.volume !== undefined) ? markets.reduce((sum, m) => sum + (m.volume ?? 0), 0) : undefined,
+        url: `https://probable.markets/event/${event.slug || event.id}`,
+        image: event.icon || event.image || undefined,
+        category: event.category || undefined,
+        tags: event.tags || [],
+        // Captures non-promoted event fields; markets child array is already
+        // promoted to the unified markets column so it is excluded.
+        sourceMetadata: buildSourceMetadata(
+            event as unknown as Record<string, unknown>,
+            PROBABLE_PROMOTED_EVENT_KEYS,
+        ),
+    };
+
+    return unifiedEvent;
+}
+
+export async function enrichMarketsWithPrices(markets: UnifiedMarket[], callMidpoint: (tokenId: string) => Promise<any>): Promise<void> {
+    const outcomes: MarketOutcome[] = [];
+    for (const market of markets) {
+        for (const outcome of market.outcomes) {
+            if (outcome.outcomeId) outcomes.push(outcome);
+        }
+    }
+    if (outcomes.length === 0) return;
+
+    const results = await Promise.allSettled(
+        outcomes.map(async (outcome) => {
+            const response = await callMidpoint(outcome.outcomeId);
+            return { outcomeId: outcome.outcomeId, mid: Number(response?.mid ?? 0) };
+        })
+    );
+
+    const priceMap: Record<string, number> = {};
+    for (const result of results) {
+        if (result.status === 'fulfilled') {
+            priceMap[result.value.outcomeId] = result.value.mid;
+        }
+    }
+
+    for (const market of markets) {
+        for (const outcome of market.outcomes) {
+            const price = priceMap[outcome.outcomeId];
+            if (price !== undefined) outcome.price = price;
+        }
+        addBinaryOutcomes(market);
+    }
+}

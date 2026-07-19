@@ -1,0 +1,21 @@
+---
+title: Server Management
+description: "The SDK auto-spawns and manages pmxt-core when running self-hosted."
+---
+
+<Note>
+This page covers the **self-hosted** local server. If you're using a
+`pmxt_api_key`, you can ignore this page — the SDK talks to PMXT's
+[hosts](/authentication#hosts) directly and never spawns a local
+process. See [Hosted trading](/concepts/hosted-trading).
+</Note>
+
+When you create an exchange instance without a hosted API key, the SDK
+spawns a local `pmxt-core` server, waits for it to become healthy, and
+routes every request through it. You rarely need to touch the server
+lifecycle yourself.
+
+For setup, see [Self-hosted](/guides/self-hosted). For the full server
+lifecycle API (`start`, `stop`, `restart`, `status`, `health`, `logs`)
+and environment variables, see the
+[pmxt GitHub README](https://github.com/pmxt-dev/pmxt).

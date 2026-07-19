@@ -1,0 +1,69 @@
+---
+title: Coming from Polymarket's official SDK
+description: "Credential and signatureType mapping for users moving off @polymarket/clob-client."
+---
+
+<Note>
+If you're not already using Polymarket's SDK (`@polymarket/clob-client` / `py-clob-client`), skip this page. Start at [Trading quickstart](/trading-quickstart).
+</Note>
+
+The migration is **not** a 1:1 credential swap. PMXT's hosted trading replaces Polymarket's L2 auth and CTF-proxy custody with a service-role API key plus an EIP-712 escrow contract on Polygon. The two tables below are the load-bearing part.
+
+## Credential mapping
+
+Polymarket's L2 auth — `apiKey` / `apiSecret` / `passphrase` derived from a one-time signature and used to HMAC every order — does not translate. Hosted PMXT collapses authentication to two things: a service-role `pmxt_api_key` and the same EOA private key you already use for EIP-712 signing.
+
+| Polymarket | PMXT hosted |
+| ---------- | ----------- |
+| `apiKey` + `apiSecret` + `passphrase` (L2) | `pmxt_api_key` (server secret) |
+| `signer` private key (EOA) | `private_key` (same EOA) |
+| `funder` address (proxy or EOA) | `wallet_address` (EOA, not the proxy) |
+
+**Discard:** the L2 key derivation, the HMAC code path, any per-user persistence of `apiSecret` / `passphrase`.
+**Keep:** the EVM signer key.
+
+## signatureType mapping
+
+Polymarket's `signatureType` flag tells the CLOB which custody shape to expect:
+
+- `0` — EOA signs, EOA holds funds.
+- `1` — EOA signs, USDC proxy ("magic wallet") holds funds.
+- `2` — EOA signs, Gnosis Safe proxy holds funds.
+
+Hosted PMXT does not speak any of these. The hosted exchange signs EIP-712 against `PreFundedEscrow` on Polygon (chainId 137); settlement is `PreFundedEscrow.settleBuy` / `.settleSell`, not Polymarket's `Exchange.fillOrder`. **Delete any order-construction code that branches on `signatureType`.** There is one shape.
+
+Your EOA still signs. Any EVM key (raw, hardware, AA) works.
+
+## USDC.e is the same, allowances are not
+
+Both stacks settle in Polygon **USDC.e** (`0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`), not native USDC (`0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359`). No swap needed.
+
+But an existing approval to your Polymarket CTF proxy does **not** carry over — that allowance is to the proxy, not to `PreFundedEscrow`. Approve + deposit once:
+
+<CodeGroup>
+```python Python
+tx = client.escrow.approve_tx("usdc")   # once per EOA
+tx = client.escrow.deposit_tx(amount=500.0)  # per top-up
+```
+
+```typescript TypeScript
+const approve = await client.escrow.approveTx("usdc");
+const deposit = await client.escrow.depositTx(500);
+```
+</CodeGroup>
+
+Your Polymarket-proxy balance is untouched — withdraw it via Polymarket's UI, or leave it parked and fund PMXT with fresh capital. Both stacks coexist on the same EOA.
+
+## Identifier migration: avoid bare conditionId / tokenId
+
+`trade.pmxt.dev` does not accept bare Polymarket `conditionId` / `tokenId` strings. Use catalog UUIDs when you have them, or send an explicit `venue` + `venue_outcome_id` pair; the SDK does this automatically when you pass outcomes returned by `client.fetch_markets`. That venue tuple gives PMXT enough context to resolve the catalog row. Reverse-resolve a saved universe via the Router or the SQL endpoint — see [Catalog UUID vs venue ID](/concepts/catalog-uuid-vs-venue-id).
+
+## Rollback
+
+Drop `pmxt_api_key` from the constructor and the SDK falls back to venue-direct mode against a local `pmxt-core`. Withdraw any escrow balance via `client.escrow.withdraw_tx`.
+
+## See also
+
+- [Trading quickstart](/trading-quickstart)
+- [Escrow lifecycle](/guides/escrow-lifecycle)
+- [Hosted errors](/guides/hosted-errors)

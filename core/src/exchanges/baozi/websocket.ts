@@ -1,0 +1,130 @@
+import { Connection, PublicKey } from '@solana/web3.js';
+import { OrderBook } from '../../types';
+import { DEFAULT_WATCH_TIMEOUT_MS, withWatchTimeout } from '../../utils/watch-timeout';
+import {
+    MARKET_DISCRIMINATOR,
+    RACE_MARKET_DISCRIMINATOR,
+    parseMarket,
+    parseRaceMarket,
+    mapBooleanToUnified,
+    mapRaceToUnified,
+} from './utils';
+
+interface QueuedPromise<T> {
+    resolve: (value: T | PromiseLike<T>) => void;
+    reject: (reason?: any) => void;
+}
+
+export interface BaoziWebSocketConfig {
+    /** Timeout in ms for watch methods to receive data (default: 30000). 0 = no timeout. */
+    watchTimeoutMs?: number;
+}
+
+/**
+ * Uses Solana's onAccountChange to watch market PDA updates.
+ * When the account data changes (new bet placed), we re-parse
+ * and emit a new synthetic order book.
+ */
+export class BaoziWebSocket {
+    private config: BaoziWebSocketConfig;
+    private orderBookResolvers = new Map<string, QueuedPromise<OrderBook>[]>();
+    private subscriptions = new Map<string, number>();
+
+    constructor(config: BaoziWebSocketConfig = {}) {
+        this.config = config;
+    }
+
+    async watchOrderBook(connection: Connection, outcomeId: string): Promise<OrderBook> {
+        const marketPubkey = outcomeId.replace(/-YES$|-NO$|-\d+$/, '');
+        const marketKey = new PublicKey(marketPubkey);
+
+        if (!this.subscriptions.has(marketPubkey)) {
+            const subId = connection.onAccountChange(
+                marketKey,
+                (accountInfo) => {
+                    try {
+                        const data = accountInfo.data;
+                        const discriminator = data.subarray(0, 8);
+                        let market;
+
+                        if (Buffer.from(discriminator).equals(MARKET_DISCRIMINATOR)) {
+                            const parsed = parseMarket(data);
+                            market = mapBooleanToUnified(parsed, marketPubkey);
+                        } else if (Buffer.from(discriminator).equals(RACE_MARKET_DISCRIMINATOR)) {
+                            const parsed = parseRaceMarket(data);
+                            market = mapRaceToUnified(parsed, marketPubkey);
+                        }
+
+                        if (!market) return;
+
+                        const outcome = market.outcomes.find(o => o.outcomeId === outcomeId);
+                        const price = outcome?.price ?? 0.5;
+
+                        const orderBook: OrderBook = {
+                            bids: [{ price, size: market.liquidity }],
+                            asks: [{ price, size: market.liquidity }],
+                            timestamp: Date.now(),
+                        };
+
+                        this.resolveOrderBook(marketPubkey, orderBook);
+                    } catch (error: unknown) {
+                        // Reject pending resolvers so callers fail fast
+                        const rejecters = this.orderBookResolvers.get(marketPubkey) || [];
+                        this.orderBookResolvers.set(marketPubkey, []);
+                        for (const r of rejecters) {
+                            r.reject(error instanceof Error ? error : new Error(String(error)));
+                        }
+                    }
+                },
+                'confirmed',
+            );
+            this.subscriptions.set(marketPubkey, subId);
+        }
+
+        const dataPromise = new Promise<OrderBook>((resolve, reject) => {
+            this.getOrderBookQueue(marketPubkey).push({ resolve, reject });
+        });
+
+        return withWatchTimeout(
+            dataPromise,
+            this.config.watchTimeoutMs ?? DEFAULT_WATCH_TIMEOUT_MS,
+            `watchOrderBook('${outcomeId}')`,
+        );
+    }
+
+    private resolveOrderBook(marketPubkey: string, orderBook: OrderBook): void {
+        const resolvers = this.orderBookResolvers.get(marketPubkey);
+        if (resolvers && resolvers.length > 0) {
+            for (const r of resolvers) {
+                r.resolve(orderBook);
+            }
+            this.orderBookResolvers.set(marketPubkey, []);
+        }
+    }
+
+    private getOrderBookQueue(marketPubkey: string): QueuedPromise<OrderBook>[] {
+        const resolvers = this.orderBookResolvers.get(marketPubkey);
+        if (resolvers) {
+            return resolvers;
+        }
+
+        const queue: QueuedPromise<OrderBook>[] = [];
+        this.orderBookResolvers.set(marketPubkey, queue);
+        return queue;
+    }
+
+    async close(connection: Connection): Promise<void> {
+        for (const [, subId] of this.subscriptions) {
+            await connection.removeAccountChangeListener(subId);
+        }
+        this.subscriptions.clear();
+
+        // Reject pending resolvers
+        for (const [, resolvers] of this.orderBookResolvers) {
+            for (const r of resolvers) {
+                r.reject(new Error('WebSocket closed'));
+            }
+        }
+        this.orderBookResolvers.clear();
+    }
+}

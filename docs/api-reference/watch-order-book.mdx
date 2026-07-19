@@ -1,0 +1,172 @@
+---
+title: watchOrderBook
+description: Stream real-time orderbook updates for a single outcome via WebSocket
+---
+
+<Info>
+**WebSocket endpoint** — This method uses WebSocket streaming, not HTTP. Connect to `wss://api.pmxt.dev/ws?apiKey=YOUR_KEY` (hosted) or `ws://localhost:3847/ws` (local server).
+</Info>
+
+Supported venues: `polymarket`, `kalshi`, `limitless`, `opinion`, `polymarket_us`, `probable`, `baozi`, `myriad`, `gemini-titan`, `rain`, `hunch`.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `outcomeId` | string | Yes | The outcome token ID to watch |
+| `limit` | number | No | Optional depth limit for the streamed order book |
+| `params` | object | No | Optional exchange-specific parameters |
+
+## Response
+
+Returns an `OrderBook` object each time the orderbook updates:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `bids` | `OrderLevel[]` | Bid orders, sorted high to low |
+| `asks` | `OrderLevel[]` | Ask orders, sorted low to high |
+| `timestamp` | number | Unix timestamp in milliseconds |
+
+Each `OrderLevel` has `price` (0–1 probability) and `size` (number of contracts).
+
+## Usage
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+exchange = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Stream orderbook updates — each call returns the next snapshot
+while True:
+    book = exchange.watch_order_book("OUTCOME_ID", limit=10)
+    if not book.bids or not book.asks:
+        continue
+    print(f"Best bid: {book.bids[0].price} ({book.bids[0].size} contracts)")
+    print(f"Best ask: {book.asks[0].price} ({book.asks[0].size} contracts)")
+    print(f"Spread: {book.asks[0].price - book.bids[0].price:.4f}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+const exchange = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+// Stream orderbook updates — each call returns the next snapshot
+while (true) {
+  const book = await exchange.watchOrderBook("OUTCOME_ID", 10);
+  if (!book.bids.length || !book.asks.length) continue;
+  console.log(`Best bid: ${book.bids[0].price} (${book.bids[0].size} contracts)`);
+  console.log(`Best ask: ${book.asks[0].price} (${book.asks[0].size} contracts)`);
+  console.log(`Spread: ${(book.asks[0].price - book.bids[0].price).toFixed(4)}`);
+}
+```
+
+```json WebSocket
+// → Subscribe
+{ "id": "req-1", "action": "subscribe", "exchange": "polymarket", "method": "watchOrderBook", "args": ["OUTCOME_ID", 10] }
+
+// ← Subscription confirmed
+{ "event": "subscribed", "id": "req-1" }
+
+// ← Data event (repeats on each orderbook change)
+{
+  "event": "data",
+  "id": "req-1",
+  "method": "watchOrderBook",
+  "symbol": "OUTCOME_ID",
+  "source": "polymarket",
+  "data": {
+    "bids": [{ "price": 0.42, "size": 100 }, { "price": 0.41, "size": 250 }],
+    "asks": [{ "price": 0.58, "size": 200 }, { "price": 0.59, "size": 300 }],
+    "timestamp": 1778450010713
+  }
+}
+
+// → Unsubscribe
+{ "id": "req-1", "action": "unsubscribe", "exchange": "polymarket", "method": "watchOrderBook", "args": ["OUTCOME_ID"] }
+```
+
+</CodeGroup>
+
+## Use cases
+
+### Monitor a specific market
+
+Track the "Will Trump win 2028?" market on Polymarket:
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+poly = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Use the outcome's token_id from fetchMarket
+while True:
+    book = poly.watch_order_book("48388283710620338...")
+    bid = book.bids[0].price if book.bids else 0
+    ask = book.asks[0].price if book.asks else 1
+    print(f"YES price: {(bid + ask) / 2:.1%}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+const poly = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+while (true) {
+  const book = await poly.watchOrderBook("48388283710620338...");
+  const bid = book.bids[0]?.price ?? 0;
+  const ask = book.asks[0]?.price ?? 1;
+  console.log(`YES price: ${((bid + ask) / 2 * 100).toFixed(1)}%`);
+}
+```
+
+</CodeGroup>
+
+### Cross-venue spread detection
+
+Watch the same market on two venues to detect arbitrage:
+
+<CodeGroup>
+
+```python Python
+import pmxt
+import asyncio
+
+poly = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+kalshi = pmxt.Kalshi(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+# Run both in parallel (simplified)
+while True:
+    poly_book = poly.watch_order_book("POLY_OUTCOME_ID")
+    kalshi_book = kalshi.watch_order_book("KALSHI_OUTCOME_ID")
+    if not poly_book.bids or not kalshi_book.asks:
+        continue
+    spread = poly_book.bids[0].price - kalshi_book.asks[0].price
+    if spread > 0.02:
+        print(f"Arbitrage opportunity: {spread:.4f}")
+```
+
+```javascript JavaScript
+import { Polymarket, Kalshi } from "pmxtjs";
+
+const poly = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+const kalshi = new Kalshi({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+while (true) {
+  const [polyBook, kalshiBook] = await Promise.all([
+    poly.watchOrderBook("POLY_OUTCOME_ID"),
+    kalshi.watchOrderBook("KALSHI_OUTCOME_ID"),
+  ]);
+  if (!polyBook.bids.length || !kalshiBook.asks.length) continue;
+  const spread = polyBook.bids[0].price - kalshiBook.asks[0].price;
+  if (spread > 0.02) {
+    console.log(`Arbitrage opportunity: ${spread.toFixed(4)}`);
+  }
+}
+```
+
+</CodeGroup>

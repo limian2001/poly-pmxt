@@ -1,0 +1,34 @@
+---
+title: MCP Server
+description: "Give AI assistants access to prediction markets via the Model Context Protocol."
+---
+
+PMXT hosts a Streamable HTTP MCP server at `https://api.pmxt.dev/mcp`. Any
+MCP-compatible client — Claude Code, Cursor, or your own agent — can connect
+and use the full PMXT tool surface. No install required.
+
+## Claude Code
+
+Add to `~/.claude.json` (global) or `.mcp.json` (per-project):
+
+```json
+{
+  "mcpServers": {
+    "pmxt": {
+      "type": "streamableHttp",
+      "url": "https://api.pmxt.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer pmxt_live_..."
+      }
+    }
+  }
+}
+```
+
+## Other clients
+
+Cursor uses the same config shape in its MCP settings. For custom clients,
+connect to `https://api.pmxt.dev/mcp` with any MCP SDK and pass your key as
+a `Bearer` token in the `Authorization` header.
+
+Source and local-process install at [`@pmxt/mcp`](https://www.npmjs.com/package/@pmxt/mcp).

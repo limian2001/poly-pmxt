@@ -1,0 +1,67 @@
+---
+title: Rate Limits
+description: "How much traffic your API key gives you."
+---
+
+Every API key includes the full surface — cross-venue search, unified
+schema, and the supported venue pass-through.
+
+Limits are **per API key** and apply across both hosts (`api.pmxt.dev`
+and `trade.pmxt.dev`) — see [hosts](/authentication#hosts).
+
+## Limits
+
+{/* HOSTED-AUTOGEN:rate-limits-table:START */}
+| Plan | Monthly credits | Per-minute | WebSocket streams | Price |
+| ---- | --------------- | ---------- | ----------------- | ----- |
+| Free | 25,000 | 60 | 5 | $0/mo |
+| Starter | 250,000 | 300 | 20 | $29.99/mo |
+| Pro | 1,000,000 | 1,000 | 100 | $99.99/mo |
+| Enterprise | Custom | Custom | Custom | [Contact us](https://pmxt.dev/pricing) |
+{/* HOSTED-AUTOGEN:rate-limits-table:END */}
+
+Limits apply per API key across both hosts (`api.pmxt.dev` and
+`trade.pmxt.dev`). Credit accounting: **1 REST call = 1 credit**, **1
+WebSocket message = 0.1 credits**. Health checks are free.
+
+## Rate limit responses
+
+When you hit a limit, the API returns `429 Too Many Requests` with the
+window and retry timing. The SDKs handle short bursts automatically with
+exponential backoff.
+
+<Tabs>
+  <Tab title="Per-minute">
+    ```json
+    {
+      "error": "rate_limit_exceeded",
+      "plan": "free",
+      "limit": 60,
+      "used": 60,
+      "window": "1 minute"
+    }
+    ```
+  </Tab>
+  <Tab title="Per-month">
+    ```json
+    {
+      "error": "monthly_quota_exceeded",
+      "plan": "free",
+      "limit": 25000,
+      "used": 25000
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Usage dashboard
+
+Every request shows up under **Usage > Request Log** with endpoint,
+status, and latency. The same counts power the quotas — what you see
+is what's being counted.
+
+## Need more?
+
+<Card title="Pricing" icon="tag" href="https://pmxt.dev/pricing">
+  See plans and limits, or reach out for custom quotas.
+</Card>

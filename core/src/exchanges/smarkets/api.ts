@@ -1,0 +1,10695 @@
+// Generated from core/specs/smarkets/Smarkets.yaml
+export const smarketsApiSpec = {
+    "components": {
+        "schemas": {
+            "InternalServerError": {
+                "additionalProperties": false,
+                "properties": {
+                    "data": {
+                        "type": "object"
+                    },
+                    "error_type": {
+                        "enum": [
+                            "INTERNAL_ERROR"
+                        ],
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "data",
+                    "error_type"
+                ],
+                "type": "object"
+            },
+            "RateLimitError": {
+                "additionalProperties": false,
+                "properties": {
+                    "data": {
+                        "additionalProperties": false,
+                        "properties": {
+                            "count": {
+                                "type": "number"
+                            },
+                            "expiry": {
+                                "type": "string"
+                            },
+                            "limit": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "count",
+                            "expiry",
+                            "limit"
+                        ],
+                        "type": "object"
+                    },
+                    "error_type": {
+                        "enum": [
+                            "RATE_LIMIT_EXCEEDED"
+                        ],
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "data",
+                    "error_type"
+                ],
+                "type": "object"
+            },
+            "RequestValidationError": {
+                "additionalProperties": false,
+                "properties": {
+                    "data": {
+                        "type": "string"
+                    },
+                    "error_type": {
+                        "enum": [
+                            "REQUEST_VALIDATION_ERROR"
+                        ],
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "data",
+                    "error_type"
+                ],
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "api_key": {
+                "in": "header",
+                "name": "Authorization",
+                "type": "apiKey"
+            }
+        }
+    },
+    "info": {
+        "contact": {
+            "email": "api@smarkets.com"
+        },
+        "description": "This is the HTTP trading API for Smarkets. It can be used to trade on our exchange.\n    <br><br>For authenticated requests:<br>\n    <ul>\n    <li>Get a session token using the login route:\n    <a class=\"nostyle\" href=\"#/sessions/create_session\"><span>GET /v3/sessions/</span></a></li>\n    <li>Click on 'Authorize 🔓', enter your token after 'Session-Token '\nand click on the 'Authorize' button</li>\n    </ul>\n    <p>In order to place bets and get the latest prices without restrictions\n    using this API, you need to be a Smarkets API user.<br></p>\n    <p>We are not onboarding new API users at this time, so please check back at a later\n    date if you are interested in obtaining access.<br></p>\n    ",
+        "title": "Smarkets HTTP API",
+        "version": "3"
+    },
+    "openapi": "3.0.2",
+    "paths": {
+        "/v3/account_activity_csv/{start_datetime}/{end_datetime}/": {
+            "get": {
+                "description": "## Description\nStart and end datetimes have to be separated by an hour, also these have to be exactly on the hour.\n\n",
+                "operationId": "account_activity_csv",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "start_datetime",
+                        "required": true,
+                        "schema": {
+                            "example": "2026-03-26T06:57:05Z",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "end_datetime",
+                        "required": true,
+                        "schema": {
+                            "example": "2026-03-26T06:57:05Z",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "INVALID_DATETIMES"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, INVALID_DATETIMES"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "NO_CSV_AVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "NO_CSV_AVAILABLE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "\n    Return the account activity between the two specified datetimes as a gzipped CSV.",
+                "tags": [
+                    "account_activity"
+                ]
+            }
+        },
+        "/v3/accounts/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_account",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Account fetch success",
+                                    "properties": {
+                                        "account": {
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "account_id": {
+                                                    "description": "Unique identifier of the account",
+                                                    "example": "123556546",
+                                                    "type": "string"
+                                                },
+                                                "available_balance": {
+                                                    "description": "Current available balance on the account,\nit is equal to the balance deducted by the exposure",
+                                                    "example": "100.00",
+                                                    "type": "string"
+                                                },
+                                                "balance": {
+                                                    "description": "Current balance on the account",
+                                                    "example": "150.00",
+                                                    "type": "string"
+                                                },
+                                                "bonus_balance": {
+                                                    "description": "Current bonus balance on the account;\n                    losses will be refunded up to this amount",
+                                                    "example": "10.00",
+                                                    "type": "string"
+                                                },
+                                                "commission_type": {
+                                                    "description": "Commission charged by Smarkets on the account",
+                                                    "example": "0.02",
+                                                    "type": "string"
+                                                },
+                                                "currency": {
+                                                    "description": "Currency of the account",
+                                                    "enum": [
+                                                        "AUD",
+                                                        "BRL",
+                                                        "CAD",
+                                                        "CHF",
+                                                        "CZK",
+                                                        "DKK",
+                                                        "EUR",
+                                                        "GBP",
+                                                        "HKD",
+                                                        "HUF",
+                                                        "JPY",
+                                                        "NOK",
+                                                        "PLN",
+                                                        "SEK",
+                                                        "USD"
+                                                    ],
+                                                    "example": "GBP",
+                                                    "type": "string"
+                                                },
+                                                "exposure": {
+                                                    "description": "Current exposure on the account",
+                                                    "example": "-50.00",
+                                                    "type": "string"
+                                                },
+                                                "signup_date": {
+                                                    "description": "Date the account was created",
+                                                    "example": "2021-01-01T00:00:00.000000",
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "account_id",
+                                                "available_balance",
+                                                "currency",
+                                                "exposure",
+                                                "balance"
+                                            ],
+                                            "title": "account",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "account"
+                                    ],
+                                    "title": "account_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Account fetch success"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Retrieve account information.",
+                "tags": [
+                    "accounts"
+                ]
+            }
+        },
+        "/v3/accounts/activity/": {
+            "get": {
+                "description": "## Description\nThis information should be used for accounting reconciliation.<br>\nThis data is what is being used in <a href=\"https://smarkets.com/account/statement\">our statement page</a>\n\n",
+                "operationId": "get_activity",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "Maximum datetime for records",
+                        "in": "query",
+                        "name": "timestamp_max",
+                        "schema": {
+                            "description": "Maximum datetime for records",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Minimum datetime for records",
+                        "in": "query",
+                        "name": "timestamp_min",
+                        "schema": {
+                            "description": "Minimum datetime for records",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Maximum number of account activity rows to return on a single call",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 20,
+                            "description": "Maximum number of account activity rows to return on a single call",
+                            "maximum": 500,
+                            "minimum": 0,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Market IDs to filter by",
+                        "in": "query",
+                        "name": "market_id",
+                        "schema": {
+                            "description": "Market IDs to filter by",
+                            "items": {
+                                "description": "This ID uniquely identifies the market",
+                                "example": "128939",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Order IDs to filter by",
+                        "in": "query",
+                        "name": "order_id",
+                        "schema": {
+                            "description": "Order IDs to filter by",
+                            "items": {
+                                "description": "This ID uniquely identifies an order",
+                                "example": "1518455672861",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Last sequence number of the previous page.\nThis parameter should be used for paginated requests",
+                        "in": "query",
+                        "name": "pagination_last_seq",
+                        "schema": {
+                            "description": "Last sequence number of the previous page.\nThis parameter should be used for paginated requests",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Last sub-sequence number of the previous page.\nThis parameter should be used for paginated requests",
+                        "in": "query",
+                        "name": "pagination_last_subseq",
+                        "schema": {
+                            "description": "Last sub-sequence number of the previous page.\nThis parameter should be used for paginated requests",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nHow to sort the results. When making paginated requests,\npagination_last_seq and pagination_last_subseq should be used\nwith the values from the last record of the previous page",
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "default": "-seq,-subseq",
+                            "description": "\nHow to sort the results. When making paginated requests,\npagination_last_seq and pagination_last_subseq should be used\nwith the values from the last record of the previous page",
+                            "enum": [
+                                "seq,subseq",
+                                "-seq,-subseq"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Account activity sources to filter by.",
+                        "in": "query",
+                        "name": "source",
+                        "schema": {
+                            "description": "Account activity sources to filter by.",
+                            "items": {
+                                "description": "The source of the account activity row is the\ntrigger that generated the transaction to occur",
+                                "enum": [
+                                    "admin.credit",
+                                    "admin.debit",
+                                    "bonus.credit",
+                                    "bonus.debit",
+                                    "commission.update",
+                                    "contract.reduce",
+                                    "contract.resettle",
+                                    "contract.settle",
+                                    "contract.unsettle",
+                                    "contract.void",
+                                    "contract.unreduce",
+                                    "deposit",
+                                    "deposit.approve",
+                                    "deposit.deny",
+                                    "deposit.request",
+                                    "execution.reduce",
+                                    "execution.settle",
+                                    "execution.unsettle",
+                                    "execution.unvoid",
+                                    "execution.void",
+                                    "market.partial_unsettle",
+                                    "market.resettle",
+                                    "market.settle",
+                                    "market.unsettle",
+                                    "market.unvoid",
+                                    "market.void",
+                                    "order.book.accept",
+                                    "order.book.cancel",
+                                    "order.book.reduce_qty",
+                                    "order.book.reject",
+                                    "order.cancel.reject",
+                                    "order.cancel_replace.book.accept",
+                                    "order.cancel_replace.book.reject",
+                                    "order.create",
+                                    "order.execute",
+                                    "order.execute.confirm",
+                                    "order.execute.void",
+                                    "order.pending.replace",
+                                    "order.reduce",
+                                    "order.reject.account_suspended",
+                                    "order.reject.insufficient_funds",
+                                    "order.reject.invalid_quantity",
+                                    "order.reject.limit_exceeded",
+                                    "order.reject.market_not_found",
+                                    "order.reject.stake_limit_exceeded",
+                                    "order.settle",
+                                    "order.unsettle",
+                                    "order.unvoid",
+                                    "order.void",
+                                    "withdraw",
+                                    "withdrawal.approve",
+                                    "withdrawal.deny",
+                                    "withdrawal.request",
+                                    "cash_out.complete",
+                                    "cash_out.request"
+                                ],
+                                "example": "admin.credit",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Should response be enhanced with include event information",
+                        "in": "query",
+                        "name": "event_info",
+                        "schema": {
+                            "default": false,
+                            "description": "Should response be enhanced with include event information",
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Account activity fetch success",
+                                    "properties": {
+                                        "account_activity": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "amount": {
+                                                        "description": "Amount relative to the order",
+                                                        "example": "-19.00",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "bet_token_type": {
+                                                        "enum": [
+                                                            "free_bet",
+                                                            "boost_bet",
+                                                            null
+                                                        ],
+                                                        "example": "free_bet",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "bonus_bet": {
+                                                        "example": false,
+                                                        "type": "boolean"
+                                                    },
+                                                    "bonus_change": {
+                                                        "description": "A change in the bonus balance",
+                                                        "example": "10.00",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "commission": {
+                                                        "description": "How much commission was charged",
+                                                        "example": "2.20",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "contract_id": {
+                                                        "description": "This ID uniquely identifies the contract",
+                                                        "example": "123456",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "event_id": {
+                                                        "description": "This ID uniquely identifies an event",
+                                                        "example": "565413",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "exposure": {
+                                                        "description": "Current exposure on the account",
+                                                        "example": "-50.00",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "extra": {
+                                                        "description": "Additional information about this row",
+                                                        "example": "market_halted",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "label": {
+                                                        "description": "Label is a user-defined string that will be stored in the order.\nIt can be used to identify different trading strategies",
+                                                        "example": "strategy_1",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "market_id": {
+                                                        "description": "This ID uniquely identifies the market",
+                                                        "example": "128939",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "money": {
+                                                        "description": "Balance of the account",
+                                                        "example": "483.56",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "money_change": {
+                                                        "description": "Change in the account's balance",
+                                                        "example": "2.20",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "order_id": {
+                                                        "description": "This ID uniquely identifies an order",
+                                                        "example": "1518455672861",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "price": {
+                                                        "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                                        "example": 5000,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity": {
+                                                        "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/100 of a UK penny.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                        "example": 10000,
+                                                        "maximum": 4294967295,
+                                                        "minimum": 0,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_change": {
+                                                        "description": "Change in the quantity in GBP",
+                                                        "example": -290023,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_user_currency": {
+                                                        "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/10000 * one unit of the user's currency.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                        "example": 10000,
+                                                        "maximum": 4294967295,
+                                                        "minimum": 0,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_user_currency_change": {
+                                                        "description": "Change in the quantity in user's currency",
+                                                        "example": -2819,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "seq": {
+                                                        "description": "Sequence number for the statement row",
+                                                        "example": 11423,
+                                                        "type": "integer"
+                                                    },
+                                                    "side": {
+                                                        "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                                                        "enum": [
+                                                            "buy",
+                                                            "sell"
+                                                        ],
+                                                        "example": "buy",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "source": {
+                                                        "description": "The source of the account activity row is the\ntrigger that generated the transaction to occur",
+                                                        "enum": [
+                                                            "admin.credit",
+                                                            "admin.debit",
+                                                            "bonus.credit",
+                                                            "bonus.debit",
+                                                            "commission.update",
+                                                            "contract.reduce",
+                                                            "contract.resettle",
+                                                            "contract.settle",
+                                                            "contract.unsettle",
+                                                            "contract.void",
+                                                            "contract.unreduce",
+                                                            "deposit",
+                                                            "deposit.approve",
+                                                            "deposit.deny",
+                                                            "deposit.request",
+                                                            "execution.reduce",
+                                                            "execution.settle",
+                                                            "execution.unsettle",
+                                                            "execution.unvoid",
+                                                            "execution.void",
+                                                            "market.partial_unsettle",
+                                                            "market.resettle",
+                                                            "market.settle",
+                                                            "market.unsettle",
+                                                            "market.unvoid",
+                                                            "market.void",
+                                                            "order.book.accept",
+                                                            "order.book.cancel",
+                                                            "order.book.reduce_qty",
+                                                            "order.book.reject",
+                                                            "order.cancel.reject",
+                                                            "order.cancel_replace.book.accept",
+                                                            "order.cancel_replace.book.reject",
+                                                            "order.create",
+                                                            "order.execute",
+                                                            "order.execute.confirm",
+                                                            "order.execute.void",
+                                                            "order.pending.replace",
+                                                            "order.reduce",
+                                                            "order.reject.account_suspended",
+                                                            "order.reject.insufficient_funds",
+                                                            "order.reject.invalid_quantity",
+                                                            "order.reject.limit_exceeded",
+                                                            "order.reject.market_not_found",
+                                                            "order.reject.stake_limit_exceeded",
+                                                            "order.settle",
+                                                            "order.unsettle",
+                                                            "order.unvoid",
+                                                            "order.void",
+                                                            "withdraw",
+                                                            "withdrawal.approve",
+                                                            "withdrawal.deny",
+                                                            "withdrawal.request",
+                                                            "cash_out.complete",
+                                                            "cash_out.request"
+                                                        ],
+                                                        "example": "admin.credit",
+                                                        "type": "string"
+                                                    },
+                                                    "subseq": {
+                                                        "description": "Sub sequence number for the statement row",
+                                                        "example": 123242,
+                                                        "type": "integer"
+                                                    },
+                                                    "timestamp": {
+                                                        "description": "When this transaction took place",
+                                                        "example": "2017-02-01T10:23:54.361612",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "title": "account_activity_transaction",
+                                                "type": "object"
+                                            },
+                                            "title": "account_activity",
+                                            "type": "array"
+                                        },
+                                        "contracts": {
+                                            "description": "Array of contracts",
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "description": "Contract information required to display statement",
+                                                "properties": {
+                                                    "name": {
+                                                        "description": "Name for the contract, as displayed in our website.<br>\nExamples can be team names, horse names or other winning outcomes for each market.<br>\nIt should not be used to identify the contract.<br>\nThe contract_type field should be used instead.",
+                                                        "example": "Arsenal",
+                                                        "type": "string"
+                                                    },
+                                                    "state_or_outcome": {
+                                                        "description": "\nstate_or_outcome can have the following values:\n<ul>\n<li>new: The contract was just created and is still not available for betting\n<li>open: open for betting\n<li>live: open and trading live in-play\n<li>halted: Trading on this contract has halted\n<li>winner: settled as winner.\n<li>loser:  settled as loser.\n<li>deadheat: settled as a deadheat - a tie with other contract.\n<li>reduced: withdrawn and a reduction factor was applied.\n<li>voided: no longer available for betting\n<li>unavailable: not currently available for betting\n</ul>\n    ",
+                                                        "enum": [
+                                                            "live",
+                                                            "open",
+                                                            "new",
+                                                            "halted",
+                                                            "winner",
+                                                            "loser",
+                                                            "deadheat",
+                                                            "reduced",
+                                                            "voided",
+                                                            "unavailable"
+                                                        ],
+                                                        "example": "live",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "state_or_outcome"
+                                                ],
+                                                "title": "statement_event",
+                                                "type": "object"
+                                            },
+                                            "title": "contracts",
+                                            "type": "array"
+                                        },
+                                        "events": {
+                                            "description": "Array of events",
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "description": "Event information required to display statement",
+                                                "properties": {
+                                                    "full_slug": {
+                                                        "description": "The URL slug for the event page",
+                                                        "example": "/sport/horse-racing/ascot/2017/12/22/15:40",
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "description": "The name of the event",
+                                                        "example": "15:40",
+                                                        "type": "string"
+                                                    },
+                                                    "parent_id": {
+                                                        "description": "This ID uniquely identifies the parent of the event",
+                                                        "example": "565413",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "slug": {
+                                                        "description": "An easier way to identify the event",
+                                                        "example": "ascot-2017-12-22T00:00:00-15-40",
+                                                        "type": "string"
+                                                    },
+                                                    "state": {
+                                                        "description": "\nEvent state can have the following values:\n<ul>\n<li>upcoming: the event is now open for betting\n<li>live: the event is now live in-play\n<li>ended: the event has ended and its markets should be settled\n<li>settled: the event has ended and its markets should be settled\n<li>cancelled: the event was cancelled and didn't take place\n<li>suspended: the event was suspended and during play time\n</ul>\n    ",
+                                                        "enum": [
+                                                            "new",
+                                                            "upcoming",
+                                                            "live",
+                                                            "ended",
+                                                            "settled",
+                                                            "cancelled",
+                                                            "suspended"
+                                                        ],
+                                                        "example": "new",
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "description": "The type of the event, for instance, the name of the sport<br>",
+                                                        "oneOf": [
+                                                            {
+                                                                "enum": [
+                                                                    "american_football_match",
+                                                                    "american_football_outright",
+                                                                    "baseball_match",
+                                                                    "baseball_outright",
+                                                                    "basketball_esports_match",
+                                                                    "basketball_match",
+                                                                    "boxing_match",
+                                                                    "call_of_duty_match",
+                                                                    "cricket_match",
+                                                                    "cricket_outright",
+                                                                    "csgo_match",
+                                                                    "current_affairs",
+                                                                    "cycling",
+                                                                    "darts_match",
+                                                                    "darts_outright",
+                                                                    "dota_2_match",
+                                                                    "football_esports_match",
+                                                                    "football_match",
+                                                                    "football_outright",
+                                                                    "golf_match",
+                                                                    "golf_outright",
+                                                                    "greyhound_racing_race",
+                                                                    "handball_match",
+                                                                    "horse_racing_race",
+                                                                    "ice_hockey_match",
+                                                                    "league_of_legends_match",
+                                                                    "mma_match",
+                                                                    "motorsports_race",
+                                                                    "motorsports_outright",
+                                                                    "politics",
+                                                                    "politics_outright",
+                                                                    "rowing",
+                                                                    "rugby_league_match",
+                                                                    "rugby_league_outright",
+                                                                    "rugby_union_match",
+                                                                    "rugby_union_outright",
+                                                                    "sailing_race",
+                                                                    "sailing_outright",
+                                                                    "snooker_match",
+                                                                    "snooker_outright",
+                                                                    "table_tennis_match",
+                                                                    "table_tennis_outright",
+                                                                    "tennis_match",
+                                                                    "tennis_outright",
+                                                                    "volleyball_match",
+                                                                    "generic",
+                                                                    "top_level_event",
+                                                                    "tv_entertainment"
+                                                                ],
+                                                                "example": "horse_racing_race",
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "example": {
+                                                                    "domain": "football",
+                                                                    "scope": "single_event"
+                                                                },
+                                                                "properties": {
+                                                                    "domain": {
+                                                                        "description": "The domain part of the type (football, politics, horse_racing, etc)",
+                                                                        "enum": [
+                                                                            "accumulator",
+                                                                            "american_football",
+                                                                            "australian_rules",
+                                                                            "baseball",
+                                                                            "basketball",
+                                                                            "basketball_esports",
+                                                                            "boxing",
+                                                                            "call_of_duty",
+                                                                            "chess",
+                                                                            "cricket",
+                                                                            "csgo",
+                                                                            "current_affairs",
+                                                                            "cycling",
+                                                                            "darts",
+                                                                            "dota_2",
+                                                                            "esports",
+                                                                            "football",
+                                                                            "football_esports",
+                                                                            "golf",
+                                                                            "greyhound_racing",
+                                                                            "handball",
+                                                                            "horse_racing",
+                                                                            "ice_hockey",
+                                                                            "king_of_glory",
+                                                                            "league_of_legends",
+                                                                            "lol_wild_rift",
+                                                                            "mma",
+                                                                            "motorsports",
+                                                                            "olympics",
+                                                                            "overwatch",
+                                                                            "poker",
+                                                                            "politics",
+                                                                            "pubg",
+                                                                            "rainbow_six_siege",
+                                                                            "rocket_league",
+                                                                            "rowing",
+                                                                            "rugby_league",
+                                                                            "rugby_union",
+                                                                            "sailing",
+                                                                            "snooker",
+                                                                            "starcraft",
+                                                                            "starcraft_2",
+                                                                            "tv_and_entertainment",
+                                                                            "table_tennis",
+                                                                            "tennis",
+                                                                            "valorant",
+                                                                            "volleyball",
+                                                                            "winter_sports",
+                                                                            "gaelic_football",
+                                                                            "gaelic_hurling"
+                                                                        ],
+                                                                        "example": "football",
+                                                                        "type": "string"
+                                                                    },
+                                                                    "scope": {
+                                                                        "description": "The scope part of the event type (single_event, outright, acca, etc)",
+                                                                        "enum": [
+                                                                            "root",
+                                                                            "round",
+                                                                            "category_root",
+                                                                            "category",
+                                                                            "single_event",
+                                                                            "acca_root",
+                                                                            "acca_category",
+                                                                            "acca",
+                                                                            "outright_root",
+                                                                            "outright_category",
+                                                                            "outright",
+                                                                            "tour",
+                                                                            "antepost_root",
+                                                                            "antepost_category",
+                                                                            "antepost"
+                                                                        ],
+                                                                        "example": "single_event",
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "domain",
+                                                                    "scope"
+                                                                ],
+                                                                "type": "object"
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "type",
+                                                    "state",
+                                                    "full_slug",
+                                                    "slug",
+                                                    "parent_id"
+                                                ],
+                                                "title": "statement_event",
+                                                "type": "object"
+                                            },
+                                            "title": "events",
+                                            "type": "array"
+                                        },
+                                        "markets": {
+                                            "description": "Array of markets",
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "description": "Market information required to display statement",
+                                                "properties": {
+                                                    "contract_selections": {
+                                                        "description": "\nThese particular contracts are not related to markets in the\nsame way that most contracts are related to markets.<br>\nThe contract_selections field is only set for accumulator markets and it\nrefers to the contract IDs that the acca is made up of, an example:<br>\n<br>\nM1 (Winner market in Man Utd - Liverpool)\n<ul>\n<li>M1-C1 (Man Utd)\n<li>M1-C2 (Draw)\n<li>M1-C3 (Liverpool)\n</ul>\n</ul>\nM2 (Winner market in Arsenal - Chelsea)\n<ul>\n<li>M2-C1 (Arsenal)\n<li>M2-C2 (Draw)\n<li>M2-C3 (Chelsea)\n</ul>\n<br>\nNow an accumulator market is created:<br>\nM3 (Man Utd and Arsenal both to win on 23rd of February)\n<ul>\n<li>M3-C1 (Yes)\n<li>M3-C2 (No)\n</ul>\n<br>\nIn this case, M3 will have two contracts (M3-C1 and M3-C2) but contract_selections\nwill be M1-C1 (Man Utd) and M2-C1 (Arsenal).<br>",
+                                                        "example": [
+                                                            254245,
+                                                            4565452,
+                                                            7894545
+                                                        ],
+                                                        "items": {
+                                                            "type": "integer"
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "array"
+                                                    },
+                                                    "market_type": {
+                                                        "additionalProperties": false,
+                                                        "description": "\nMarket type uniquely identifies the market within an event.<br>\nMarket types are consistent across events of the same type.<br>\nIt is the recommended way to identify markets.",
+                                                        "example": {
+                                                            "name": "OVER_UNDER",
+                                                            "param": "2.5"
+                                                        },
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "name": {
+                                                                "example": "OVER_UNDER",
+                                                                "type": "string"
+                                                            },
+                                                            "param": {
+                                                                "example": "2.5",
+                                                                "type": "string"
+                                                            },
+                                                            "params": {
+                                                                "example": {
+                                                                    "HANDICAP": "1.5",
+                                                                    "TOTAL": "151.5"
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "name": {
+                                                        "description": "\nName of the market. This field is for display purposes and should not be used to identify the market.<br>\nThe market_type field should be used instead.",
+                                                        "example": "To win",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name",
+                                                    "market_type",
+                                                    "contract_selections"
+                                                ],
+                                                "title": "statement_event",
+                                                "type": "object"
+                                            },
+                                            "title": "markets",
+                                            "type": "array"
+                                        },
+                                        "pagination": {
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "next_page": {
+                                                    "description": "The url query string for clients\nto fetch the next page of account activity",
+                                                    "example": "?limit=20&sort=seq,subseq&pagination_last_seq=20&pagination_last_seq=3",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "next_page"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "account_activity"
+                                    ],
+                                    "title": "account_activity_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Account activity fetch success"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "RECKONATOR_REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, RECKONATOR_REQUEST_TOO_LARGE"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "RECKONATOR_UNAVAILABLE",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, RECKONATOR_UNAVAILABLE, EVENTS_UNAVAILABLE"
+                    },
+                    "504": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RECKONATOR_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RECKONATOR_UNAVAILABLE"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Retrieve statement information for your account.",
+                "tags": [
+                    "account_activity"
+                ]
+            }
+        },
+        "/v3/currencies/{code}/": {
+            "get": {
+                "description": "## Description\nThis can be used to convert quantities from GBP to the user's currency\n\n",
+                "operationId": "get_currency",
+                "parameters": [
+                    {
+                        "description": "Currency code",
+                        "in": "path",
+                        "name": "code",
+                        "required": true,
+                        "schema": {
+                            "enum": [
+                                "AUD",
+                                "BRL",
+                                "CAD",
+                                "CHF",
+                                "CZK",
+                                "DKK",
+                                "EUR",
+                                "GBP",
+                                "HKD",
+                                "HUF",
+                                "JPY",
+                                "NOK",
+                                "PLN",
+                                "SEK",
+                                "USD"
+                            ],
+                            "example": "AUD",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Currency success response",
+                                    "properties": {
+                                        "code": {
+                                            "description": "3 letter currency code, according to ISO 4217",
+                                            "example": "EUR",
+                                            "pattern": "^[A-Z]{3}$",
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "description": "Currency name",
+                                            "example": "Euro",
+                                            "type": "string"
+                                        },
+                                        "rate_to_gbp": {
+                                            "description": "Currency rate when converting to GBP",
+                                            "example": "1.14",
+                                            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "name"
+                                    ],
+                                    "title": "currency",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Currency success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FOREX_SERVICE_INTERNAL_ERROR",
+                                                "FOREX_SERVICE_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FOREX_SERVICE_INTERNAL_ERROR, FOREX_SERVICE_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve the conversion rate for one specific currency.",
+                "tags": [
+                    "currencies"
+                ]
+            }
+        },
+        "/v3/events/": {
+            "get": {
+                "description": "## Description\nEvents in Smarkets follow a tree structure per sport,\nwhere events can have several child events, but only one parent event.<br>\nAs an example for football, we have:<ul>\n<li>The root event which is the sport - Football\n<li>Child events which are leagues - Premier League, La Liga, etc\n<li>Grandchild events which are football matches - Man U vs Chelsea, ...\n</ul><br>\n<p>In the case of most sports, we have 3 levels in the tree. However,\nthere are cases where we can have a different number.</p>\n<p>To identify whether an event is a leaf node in this tree, one can look at the bettable flag.</p>\n<p>Only leaf events can have markets, which in turn will have contracts.</p>\n\n",
+                "operationId": "get_events",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "Event IDs to filter by",
+                        "in": "query",
+                        "name": "id",
+                        "schema": {
+                            "description": "Event IDs to filter by",
+                            "items": {
+                                "description": "This ID uniquely identifies an event",
+                                "example": "565413",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "True if trading will be open when the markets go live in-play",
+                        "in": "query",
+                        "name": "inplay_enabled",
+                        "schema": {
+                            "description": "True if trading will be open when the markets go live in-play",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Event states to filter by",
+                        "in": "query",
+                        "name": "state",
+                        "schema": {
+                            "default": [
+                                "new",
+                                "upcoming",
+                                "live"
+                            ],
+                            "description": "Event states to filter by",
+                            "items": {
+                                "description": "\nEvent state can have the following values:\n<ul>\n<li>upcoming: the event is now open for betting\n<li>live: the event is now live in-play\n<li>ended: the event has ended and its markets should be settled\n<li>settled: the event has ended and its markets should be settled\n<li>cancelled: the event was cancelled and didn't take place\n<li>suspended: the event was suspended and during play time\n</ul>\n    ",
+                                "enum": [
+                                    "new",
+                                    "upcoming",
+                                    "live",
+                                    "ended",
+                                    "settled",
+                                    "cancelled",
+                                    "suspended"
+                                ],
+                                "example": "new",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Event types to filter by",
+                        "in": "query",
+                        "name": "type",
+                        "schema": {
+                            "description": "Event types to filter by",
+                            "items": {
+                                "enum": [
+                                    "american_football_match",
+                                    "american_football_outright",
+                                    "baseball_match",
+                                    "baseball_outright",
+                                    "basketball_esports_match",
+                                    "basketball_match",
+                                    "boxing_match",
+                                    "call_of_duty_match",
+                                    "cricket_match",
+                                    "cricket_outright",
+                                    "csgo_match",
+                                    "current_affairs",
+                                    "cycling",
+                                    "darts_match",
+                                    "darts_outright",
+                                    "dota_2_match",
+                                    "football_esports_match",
+                                    "football_match",
+                                    "football_outright",
+                                    "golf_match",
+                                    "golf_outright",
+                                    "greyhound_racing_race",
+                                    "handball_match",
+                                    "horse_racing_race",
+                                    "ice_hockey_match",
+                                    "league_of_legends_match",
+                                    "mma_match",
+                                    "motorsports_race",
+                                    "motorsports_outright",
+                                    "politics",
+                                    "politics_outright",
+                                    "rowing",
+                                    "rugby_league_match",
+                                    "rugby_league_outright",
+                                    "rugby_union_match",
+                                    "rugby_union_outright",
+                                    "sailing_race",
+                                    "sailing_outright",
+                                    "snooker_match",
+                                    "snooker_outright",
+                                    "table_tennis_match",
+                                    "table_tennis_outright",
+                                    "tennis_match",
+                                    "tennis_outright",
+                                    "volleyball_match",
+                                    "generic",
+                                    "top_level_event",
+                                    "tv_entertainment"
+                                ],
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nAllows filtering by 'domains' - a feature of the new, improved typing system for events.<br>\nThe domain of an event denotes the category of events this event belongs to. In most cases\nthis will be the sport (football, tennis, golf, etc) but for non-sports the domain could be\npolitics, tv_and_entertainment, to mention some examples.\nIf you want to use this, you might also want to opt into the new typing system (see\n`with_new_type`).\n            ",
+                        "in": "query",
+                        "name": "type_domain",
+                        "schema": {
+                            "description": "\nAllows filtering by 'domains' - a feature of the new, improved typing system for events.<br>\nThe domain of an event denotes the category of events this event belongs to. In most cases\nthis will be the sport (football, tennis, golf, etc) but for non-sports the domain could be\npolitics, tv_and_entertainment, to mention some examples.\nIf you want to use this, you might also want to opt into the new typing system (see\n`with_new_type`).\n            ",
+                            "items": {
+                                "enum": [
+                                    "accumulator",
+                                    "american_football",
+                                    "australian_rules",
+                                    "baseball",
+                                    "basketball",
+                                    "basketball_esports",
+                                    "boxing",
+                                    "call_of_duty",
+                                    "chess",
+                                    "cricket",
+                                    "csgo",
+                                    "current_affairs",
+                                    "cycling",
+                                    "darts",
+                                    "dota_2",
+                                    "esports",
+                                    "football",
+                                    "football_esports",
+                                    "golf",
+                                    "greyhound_racing",
+                                    "handball",
+                                    "horse_racing",
+                                    "ice_hockey",
+                                    "king_of_glory",
+                                    "league_of_legends",
+                                    "lol_wild_rift",
+                                    "mma",
+                                    "motorsports",
+                                    "olympics",
+                                    "overwatch",
+                                    "poker",
+                                    "politics",
+                                    "pubg",
+                                    "rainbow_six_siege",
+                                    "rocket_league",
+                                    "rowing",
+                                    "rugby_league",
+                                    "rugby_union",
+                                    "sailing",
+                                    "snooker",
+                                    "starcraft",
+                                    "starcraft_2",
+                                    "tv_and_entertainment",
+                                    "table_tennis",
+                                    "tennis",
+                                    "valorant",
+                                    "volleyball",
+                                    "winter_sports",
+                                    "gaelic_football",
+                                    "gaelic_hurling"
+                                ],
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nAllows filtering by 'scopes' - a feature of the new, improved typing system for events.<br>\nThe scope of an event denotes the kind of event you want, potential values include\nsingle_event (your typical football match, horse race, political event), outright (an event\nwho's outcome spans multiple events), acca (an accumulator), etc.<br>\nIf you want to use this, you might also want to opt into the new typing system (see\n`with_new_type`).\n            ",
+                        "in": "query",
+                        "name": "type_scope",
+                        "schema": {
+                            "description": "\nAllows filtering by 'scopes' - a feature of the new, improved typing system for events.<br>\nThe scope of an event denotes the kind of event you want, potential values include\nsingle_event (your typical football match, horse race, political event), outright (an event\nwho's outcome spans multiple events), acca (an accumulator), etc.<br>\nIf you want to use this, you might also want to opt into the new typing system (see\n`with_new_type`).\n            ",
+                            "items": {
+                                "enum": [
+                                    "root",
+                                    "round",
+                                    "category_root",
+                                    "category",
+                                    "single_event",
+                                    "acca_root",
+                                    "acca_category",
+                                    "acca",
+                                    "outright_root",
+                                    "outright_category",
+                                    "outright",
+                                    "tour",
+                                    "antepost_root",
+                                    "antepost_category",
+                                    "antepost"
+                                ],
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nEnables a new, improved typing system for events.<br>\nIf this flag is set to true, the format of the type field in the event response will change.<br>\nUsers of the API are urged to make use of the new typing system, as the old typing system will be\ndeprecated in the next version of the API.",
+                        "in": "query",
+                        "name": "with_new_type",
+                        "schema": {
+                            "default": false,
+                            "description": "\nEnables a new, improved typing system for events.<br>\nIf this flag is set to true, the format of the type field in the event response will change.<br>\nUsers of the API are urged to make use of the new typing system, as the old typing system will be\ndeprecated in the next version of the API.",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Filter by events with these parent IDs",
+                        "in": "query",
+                        "name": "parent_id",
+                        "schema": {
+                            "description": "Filter by events with these parent IDs",
+                            "items": {
+                                "description": "This ID uniquely identifies the parent of the event",
+                                "example": "565413",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "When the event is scheduled to go live",
+                        "in": "query",
+                        "name": "start_datetime_min",
+                        "schema": {
+                            "description": "When the event is scheduled to go live",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "When the event is scheduled to go live",
+                        "in": "query",
+                        "name": "start_datetime_max",
+                        "schema": {
+                            "description": "When the event is scheduled to go live",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "The timestamp when any of the properties of the event was last modified",
+                        "in": "query",
+                        "name": "last_modified_min",
+                        "schema": {
+                            "description": "The timestamp when any of the properties of the event was last modified",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "The timestamp when any of the properties of the event was last modified",
+                        "in": "query",
+                        "name": "last_modified_max",
+                        "schema": {
+                            "description": "The timestamp when any of the properties of the event was last modified",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nDisplay order for the last event of the previous page.<br>\nThis parameter should be used in conjunction with sorting by display_order,...",
+                        "in": "query",
+                        "name": "pagination_last_display_order",
+                        "schema": {
+                            "description": "\nDisplay order for the last event of the previous page.<br>\nThis parameter should be used in conjunction with sorting by display_order,...",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nStart datetime for the last event of the previous page.<br>\nThis parameter should be used in conjunction with sorting by start_datetime",
+                        "in": "query",
+                        "name": "pagination_last_start_datetime",
+                        "schema": {
+                            "description": "\nStart datetime for the last event of the previous page.<br>\nThis parameter should be used in conjunction with sorting by start_datetime",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nThe last event id from the previous page, so we can retrieve the subsequent events.<br>\nThis should be used in conjunction with sorting by id",
+                        "in": "query",
+                        "name": "pagination_last_id",
+                        "schema": {
+                            "description": "\nThe last event id from the previous page, so we can retrieve the subsequent events.<br>\nThis should be used in conjunction with sorting by id",
+                            "pattern": "^[0-9]+$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nThe name of the last event from the previous page, so we can retrieve the subsequent events.<br>\nThis should be used in conjunction with sorting by name",
+                        "in": "query",
+                        "name": "pagination_last_name",
+                        "schema": {
+                            "description": "\nThe name of the last event from the previous page, so we can retrieve the subsequent events.<br>\nThis should be used in conjunction with sorting by name",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nThe sorting order for the resulting events.<br>\nIt should be used in conjunction with pagination parameters.<br>\nThe default and recommended sorting order and pagination is by event id.<br>\nThe links to the next page returned on every request help clients navigate through all the relevant events\n",
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "default": "id",
+                            "description": "\nThe sorting order for the resulting events.<br>\nIt should be used in conjunction with pagination parameters.<br>\nThe default and recommended sorting order and pagination is by event id.<br>\nThe links to the next page returned on every request help clients navigate through all the relevant events\n",
+                            "enum": [
+                                "display_order,start_datetime,name",
+                                "display_order,start_datetime,id",
+                                "start_datetime,name",
+                                "start_datetime,id",
+                                "id"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "The number of events to retrieve in the API call",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 20,
+                            "description": "The number of events to retrieve in the API call",
+                            "maximum": 1000,
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Choose to include in the response events that are not visible on the website. Hidden\nevents may not be displayed for a varied number of reasons (for example the start date is too far away).\nBetting is not available for hidden events.",
+                        "in": "query",
+                        "name": "include_hidden",
+                        "schema": {
+                            "default": false,
+                            "description": "Choose to include in the response events that are not visible on the website. Hidden\nevents may not be displayed for a varied number of reasons (for example the start date is too far away).\nBetting is not available for hidden events.",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Jurisdiction of user",
+                        "in": "query",
+                        "name": "jurisdiction",
+                        "schema": {
+                            "description": "Jurisdiction of user",
+                            "enum": [
+                                "CDG",
+                                "DGA",
+                                "IGC",
+                                "MGA",
+                                "SGA",
+                                "UKGC"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Platform used by user",
+                        "in": "query",
+                        "name": "platform",
+                        "schema": {
+                            "description": "Platform used by user",
+                            "enum": [
+                                "exchange",
+                                "sbk"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Events success response",
+                                    "properties": {
+                                        "events": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "bet_allowed": {
+                                                        "description": "Determines whether bets are allowed in the given jurisdiction",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "bettable": {
+                                                        "description": "This needs to be True for events to be open for trading",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "chart_time_period": {
+                                                        "description": "A string to be used by frontend to show/default selectable chart time periods",
+                                                        "example": "3w,2w*,1w",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "created": {
+                                                        "description": "When was the event created in the Smarkets exchange",
+                                                        "example": "2017-12-16T00:16:25.936519Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "description": "Additional description for this event",
+                                                        "example": "1 mile 7 furlongs 152 yards National Hunt",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "display_order": {
+                                                        "description": "On Smarkets listings pages,\nevents will be sorted according to these numbers, in descending order",
+                                                        "example": 100,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "end_date": {
+                                                        "description": "When the event is scheduled to end",
+                                                        "example": "2017-12-21",
+                                                        "format": "date",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "full_slug": {
+                                                        "description": "The URL slug for the event page",
+                                                        "example": "/sport/horse-racing/ascot/2017/12/22/15:40",
+                                                        "type": "string"
+                                                    },
+                                                    "hidden": {
+                                                        "description": "True if the event is hidden from the Smarkets website",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "id": {
+                                                        "description": "This ID uniquely identifies an event",
+                                                        "example": "565413",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "inplay_enabled": {
+                                                        "description": "True if trading will be open when the markets go live in-play",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "modified": {
+                                                        "description": "The datetime of the last modification made by Smarkets to the event properties",
+                                                        "example": "2017-12-21T10:58:09.279148Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "description": "The name of the event",
+                                                        "example": "15:40",
+                                                        "type": "string"
+                                                    },
+                                                    "parent_id": {
+                                                        "description": "This ID uniquely identifies the parent of the event",
+                                                        "example": "565413",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "seo_description": {
+                                                        "description": "Additional description for this event used for SEO",
+                                                        "example": "1 mile 7 furlongs 152 yards National Hunt",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "short_name": {
+                                                        "description": "A shorter version of the name of the event",
+                                                        "example": "15:40 @ Ascot",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "slug": {
+                                                        "description": "An easier way to identify the event",
+                                                        "example": "ascot-2017-12-22T00:00:00-15-40",
+                                                        "type": "string"
+                                                    },
+                                                    "special_rules": {
+                                                        "description": "Special rules to be defined for this market",
+                                                        "example": "Additional contracts may be added",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "start_date": {
+                                                        "description": "In what day the event will go live,\nThis can be useful for events that still have an unknown start_datetime",
+                                                        "example": "2017-12-21T10:58:09.279148Z",
+                                                        "format": "date",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "start_datetime": {
+                                                        "description": "When the event is scheduled to go live",
+                                                        "example": "2017-12-21T10:58:09.279148Z",
+                                                        "format": "date-time",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "state": {
+                                                        "description": "\nEvent state can have the following values:\n<ul>\n<li>upcoming: the event is now open for betting\n<li>live: the event is now live in-play\n<li>ended: the event has ended and its markets should be settled\n<li>settled: the event has ended and its markets should be settled\n<li>cancelled: the event was cancelled and didn't take place\n<li>suspended: the event was suspended and during play time\n</ul>\n    ",
+                                                        "enum": [
+                                                            "new",
+                                                            "upcoming",
+                                                            "live",
+                                                            "ended",
+                                                            "settled",
+                                                            "cancelled",
+                                                            "suspended"
+                                                        ],
+                                                        "example": "new",
+                                                        "type": "string"
+                                                    },
+                                                    "super_sub_enabled": {
+                                                        "description": "True for events that are in super-sub leagues",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "type": {
+                                                        "description": "The type of the event, for instance, the name of the sport<br>",
+                                                        "oneOf": [
+                                                            {
+                                                                "enum": [
+                                                                    "american_football_match",
+                                                                    "american_football_outright",
+                                                                    "baseball_match",
+                                                                    "baseball_outright",
+                                                                    "basketball_esports_match",
+                                                                    "basketball_match",
+                                                                    "boxing_match",
+                                                                    "call_of_duty_match",
+                                                                    "cricket_match",
+                                                                    "cricket_outright",
+                                                                    "csgo_match",
+                                                                    "current_affairs",
+                                                                    "cycling",
+                                                                    "darts_match",
+                                                                    "darts_outright",
+                                                                    "dota_2_match",
+                                                                    "football_esports_match",
+                                                                    "football_match",
+                                                                    "football_outright",
+                                                                    "golf_match",
+                                                                    "golf_outright",
+                                                                    "greyhound_racing_race",
+                                                                    "handball_match",
+                                                                    "horse_racing_race",
+                                                                    "ice_hockey_match",
+                                                                    "league_of_legends_match",
+                                                                    "mma_match",
+                                                                    "motorsports_race",
+                                                                    "motorsports_outright",
+                                                                    "politics",
+                                                                    "politics_outright",
+                                                                    "rowing",
+                                                                    "rugby_league_match",
+                                                                    "rugby_league_outright",
+                                                                    "rugby_union_match",
+                                                                    "rugby_union_outright",
+                                                                    "sailing_race",
+                                                                    "sailing_outright",
+                                                                    "snooker_match",
+                                                                    "snooker_outright",
+                                                                    "table_tennis_match",
+                                                                    "table_tennis_outright",
+                                                                    "tennis_match",
+                                                                    "tennis_outright",
+                                                                    "volleyball_match",
+                                                                    "generic",
+                                                                    "top_level_event",
+                                                                    "tv_entertainment"
+                                                                ],
+                                                                "example": "horse_racing_race",
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "example": {
+                                                                    "domain": "football",
+                                                                    "scope": "single_event"
+                                                                },
+                                                                "properties": {
+                                                                    "domain": {
+                                                                        "description": "The domain part of the type (football, politics, horse_racing, etc)",
+                                                                        "enum": [
+                                                                            "accumulator",
+                                                                            "american_football",
+                                                                            "australian_rules",
+                                                                            "baseball",
+                                                                            "basketball",
+                                                                            "basketball_esports",
+                                                                            "boxing",
+                                                                            "call_of_duty",
+                                                                            "chess",
+                                                                            "cricket",
+                                                                            "csgo",
+                                                                            "current_affairs",
+                                                                            "cycling",
+                                                                            "darts",
+                                                                            "dota_2",
+                                                                            "esports",
+                                                                            "football",
+                                                                            "football_esports",
+                                                                            "golf",
+                                                                            "greyhound_racing",
+                                                                            "handball",
+                                                                            "horse_racing",
+                                                                            "ice_hockey",
+                                                                            "king_of_glory",
+                                                                            "league_of_legends",
+                                                                            "lol_wild_rift",
+                                                                            "mma",
+                                                                            "motorsports",
+                                                                            "olympics",
+                                                                            "overwatch",
+                                                                            "poker",
+                                                                            "politics",
+                                                                            "pubg",
+                                                                            "rainbow_six_siege",
+                                                                            "rocket_league",
+                                                                            "rowing",
+                                                                            "rugby_league",
+                                                                            "rugby_union",
+                                                                            "sailing",
+                                                                            "snooker",
+                                                                            "starcraft",
+                                                                            "starcraft_2",
+                                                                            "tv_and_entertainment",
+                                                                            "table_tennis",
+                                                                            "tennis",
+                                                                            "valorant",
+                                                                            "volleyball",
+                                                                            "winter_sports",
+                                                                            "gaelic_football",
+                                                                            "gaelic_hurling"
+                                                                        ],
+                                                                        "example": "football",
+                                                                        "type": "string"
+                                                                    },
+                                                                    "scope": {
+                                                                        "description": "The scope part of the event type (single_event, outright, acca, etc)",
+                                                                        "enum": [
+                                                                            "root",
+                                                                            "round",
+                                                                            "category_root",
+                                                                            "category",
+                                                                            "single_event",
+                                                                            "acca_root",
+                                                                            "acca_category",
+                                                                            "acca",
+                                                                            "outright_root",
+                                                                            "outright_category",
+                                                                            "outright",
+                                                                            "tour",
+                                                                            "antepost_root",
+                                                                            "antepost_category",
+                                                                            "antepost"
+                                                                        ],
+                                                                        "example": "single_event",
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "domain",
+                                                                    "scope"
+                                                                ],
+                                                                "type": "object"
+                                                            }
+                                                        ]
+                                                    },
+                                                    "venue": {
+                                                        "description": "Additional information about the state of this event",
+                                                        "example": {
+                                                            "capacity": 60463,
+                                                            "city": "London",
+                                                            "country_code": "ENG",
+                                                            "country_name": "England",
+                                                            "latitude": 51.6042,
+                                                            "longitude": 0.0662,
+                                                            "name": "Tottenham Hotspur Stadium",
+                                                            "neutral": true
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "created",
+                                                    "type",
+                                                    "description",
+                                                    "full_slug",
+                                                    "id",
+                                                    "name",
+                                                    "short_name",
+                                                    "parent_id",
+                                                    "slug",
+                                                    "state",
+                                                    "start_date",
+                                                    "start_datetime",
+                                                    "end_date",
+                                                    "modified",
+                                                    "hidden"
+                                                ],
+                                                "title": "event",
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "pagination": {
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "next_page": {
+                                                    "description": "The url query string for clients to fetch the next page of results",
+                                                    "example": "?limit=20&sort=id&pagination_last_id=20",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "next_page"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "events"
+                                    ],
+                                    "title": "events",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Events success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve events that are available on Smarkets to bet on.",
+                "tags": [
+                    "events"
+                ]
+            }
+        },
+        "/v3/events/{event_ids}/competitors/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_competitors",
+                "parameters": [
+                    {
+                        "description": "maxItems:300",
+                        "in": "path",
+                        "name": "event_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 300,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Competitors success response",
+                                    "properties": {
+                                        "competitors": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "country_code": {
+                                                        "description": "Country code of the competitor",
+                                                        "example": "USA",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "event_id": {
+                                                        "description": "This ID uniquely identifies an event",
+                                                        "example": "565413",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "description": "This id identifies the competitor, it is unique per event type.",
+                                                        "example": "1",
+                                                        "type": "string"
+                                                    },
+                                                    "info": {
+                                                        "properties": {
+                                                            "color_primary": {
+                                                                "description": "Primary color for the competitor, for display purposes",
+                                                                "example": "EF0107",
+                                                                "maxLength": 6,
+                                                                "minLength": 6,
+                                                                "type": "string"
+                                                            },
+                                                            "color_secondary": {
+                                                                "description": "Secondary color for the competitor, for display purposes",
+                                                                "example": "063672",
+                                                                "maxLength": 6,
+                                                                "minLength": 6,
+                                                                "type": "string"
+                                                            },
+                                                            "keywords": {
+                                                                "description": "Keywords associated with this competitor",
+                                                                "example": "gooners gunners london",
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "name": {
+                                                        "description": "Name of the competitor",
+                                                        "example": "Arsenal FC",
+                                                        "type": "string"
+                                                    },
+                                                    "short_code": {
+                                                        "description": "Short code for the competitor",
+                                                        "example": "ARS",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "short_name": {
+                                                        "description": "Short name for the competitor",
+                                                        "example": "Arsenal",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "slug": {
+                                                        "description": "An easier way to identify the competitor",
+                                                        "example": "arsenal",
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "description": "Used to identify which of the competitors for the event it is.\n            a,b are used when there is no concept of home/away, for example in tennis matches",
+                                                        "enum": [
+                                                            "a",
+                                                            "b",
+                                                            "home",
+                                                            "away",
+                                                            "Runner",
+                                                            "NonRunner"
+                                                        ],
+                                                        "example": "home",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "event_id",
+                                                    "id",
+                                                    "name",
+                                                    "short_code",
+                                                    "short_name",
+                                                    "slug",
+                                                    "type",
+                                                    "country_code"
+                                                ],
+                                                "title": "competitor",
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "competitors"
+                                    ],
+                                    "title": "competitors",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Competitors success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "INVALID_EVENT_DATA",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, INVALID_EVENT_DATA, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve competitors of a set of events.",
+                "tags": [
+                    "competitors"
+                ]
+            }
+        },
+        "/v3/events/{event_ids}/markets/": {
+            "get": {
+                "description": "## Description\nEach bettable event has a set of markets. Each market will have a set of contracts.\n\n",
+                "operationId": "get_markets_by_event_ids",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "The only sorting option for markets is\nto sort by event_id and then by display order",
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "default": "event_id,display_order",
+                            "description": "The only sorting option for markets is\nto sort by event_id and then by display order",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "How many markets to retrieve per event, sorted by display order",
+                        "in": "query",
+                        "name": "limit_by_event",
+                        "schema": {
+                            "description": "How many markets to retrieve per event, sorted by display order",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Filter market types by the popular market types for the event type",
+                        "in": "query",
+                        "name": "popular",
+                        "schema": {
+                            "default": false,
+                            "description": "Filter market types by the popular market types for the event type",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Filter markets by a list of market types separated with `,`",
+                        "in": "query",
+                        "name": "market_types",
+                        "schema": {
+                            "default": null,
+                            "description": "Filter markets by a list of market types separated with `,`",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Choose to include in the response markets that are not visible on the website. Hidden\nmarkets may not be displayed for a varied number of reasons, and are not available to bet on.",
+                        "in": "query",
+                        "name": "include_hidden",
+                        "schema": {
+                            "default": false,
+                            "description": "Choose to include in the response markets that are not visible on the website. Hidden\nmarkets may not be displayed for a varied number of reasons, and are not available to bet on.",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Jurisdiction of user",
+                        "in": "query",
+                        "name": "jurisdiction",
+                        "schema": {
+                            "description": "Jurisdiction of user",
+                            "enum": [
+                                "CDG",
+                                "DGA",
+                                "IGC",
+                                "MGA",
+                                "SGA",
+                                "UKGC"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Event IDs to filter by<br>maxItems:50",
+                        "in": "path",
+                        "name": "event_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 50,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Markets success response",
+                                    "properties": {
+                                        "markets": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "bet_delay": {
+                                                        "description": "How much is the bet delay for this market,\"\nthe interval between order placement and acceptance",
+                                                        "example": 5,
+                                                        "type": "integer"
+                                                    },
+                                                    "cashout_enabled": {
+                                                        "description": "\nCashout enabled determines whether instant cashout is enabled for this market. If true, trading out of this\nmarket will cause the settlement result to be immediatelly reflected in the customer's balance (before the\nfinal settlement of the market).",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "categories": {
+                                                        "description": "List of categories of this market",
+                                                        "example": [
+                                                            "goals",
+                                                            "half_time"
+                                                        ],
+                                                        "items": {
+                                                            "enum": [
+                                                                "goals",
+                                                                "half_time",
+                                                                "handicap",
+                                                                "totals",
+                                                                "corners",
+                                                                "cards",
+                                                                "players",
+                                                                "winner",
+                                                                "other",
+                                                                "teams",
+                                                                "place",
+                                                                "relegation",
+                                                                "nationality",
+                                                                "make_the_cut",
+                                                                "first_round_leader",
+                                                                "one_eighty",
+                                                                "set",
+                                                                "game",
+                                                                "half",
+                                                                "quarter",
+                                                                "frame",
+                                                                "hole_in_one",
+                                                                "hole_group_betting",
+                                                                "hole_match_bet",
+                                                                "bet_builder",
+                                                                "popular",
+                                                                "overs",
+                                                                "next_action",
+                                                                "flash"
+                                                            ],
+                                                            "type": "string"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "category": {
+                                                        "description": "Main category of this market",
+                                                        "enum": [
+                                                            "goals",
+                                                            "half_time",
+                                                            "handicap",
+                                                            "totals",
+                                                            "corners",
+                                                            "cards",
+                                                            "players",
+                                                            "winner",
+                                                            "other",
+                                                            "teams",
+                                                            "place",
+                                                            "relegation",
+                                                            "nationality",
+                                                            "make_the_cut",
+                                                            "first_round_leader",
+                                                            "one_eighty",
+                                                            "set",
+                                                            "game",
+                                                            "half",
+                                                            "quarter",
+                                                            "frame",
+                                                            "hole_in_one",
+                                                            "hole_group_betting",
+                                                            "hole_match_bet",
+                                                            "bet_builder",
+                                                            "popular",
+                                                            "overs",
+                                                            "next_action",
+                                                            "flash"
+                                                        ],
+                                                        "example": "goals",
+                                                        "type": "string"
+                                                    },
+                                                    "complete": {
+                                                        "description": "Complete markets cannot have additional contracts added after market creation",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "contract_selections": {
+                                                        "description": "\nThese particular contracts are not related to markets in the\nsame way that most contracts are related to markets.<br>\nThe contract_selections field is only set for accumulator markets and it\nrefers to the contract IDs that the acca is made up of, an example:<br>\n<br>\nM1 (Winner market in Man Utd - Liverpool)\n<ul>\n<li>M1-C1 (Man Utd)\n<li>M1-C2 (Draw)\n<li>M1-C3 (Liverpool)\n</ul>\n</ul>\nM2 (Winner market in Arsenal - Chelsea)\n<ul>\n<li>M2-C1 (Arsenal)\n<li>M2-C2 (Draw)\n<li>M2-C3 (Chelsea)\n</ul>\n<br>\nNow an accumulator market is created:<br>\nM3 (Man Utd and Arsenal both to win on 23rd of February)\n<ul>\n<li>M3-C1 (Yes)\n<li>M3-C2 (No)\n</ul>\n<br>\nIn this case, M3 will have two contracts (M3-C1 and M3-C2) but contract_selections\nwill be M1-C1 (Man Utd) and M2-C1 (Arsenal).<br>",
+                                                        "example": [
+                                                            254245,
+                                                            4565452,
+                                                            7894545
+                                                        ],
+                                                        "items": {
+                                                            "type": "integer"
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "array"
+                                                    },
+                                                    "created": {
+                                                        "description": "When was the market created in the Smarkets exchange",
+                                                        "example": "2017-12-16T00:16:25.936519Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "description": "A summary about this market",
+                                                        "example": "To win the event",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "display_order": {
+                                                        "description": "Markets are sorted in the website according to these numbers in descending order",
+                                                        "example": 100,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "display_type": {
+                                                        "default": "default",
+                                                        "description": "\nThe display type can be used by frontend to define how the odds of the contracts of<br>\nthe market will appear on the website.",
+                                                        "enum": [
+                                                            "bars",
+                                                            "bars2",
+                                                            "cross",
+                                                            "default",
+                                                            "donut",
+                                                            "population",
+                                                            "poster",
+                                                            "graph",
+                                                            "top",
+                                                            "prices",
+                                                            "line",
+                                                            "gauge",
+                                                            "leaderboard"
+                                                        ],
+                                                        "example": "bars",
+                                                        "type": "string"
+                                                    },
+                                                    "event_id": {
+                                                        "description": "This ID uniquely identifies an event",
+                                                        "example": "565413",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "hidden": {
+                                                        "description": "Hidden markets aren't displayed in our website",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "id": {
+                                                        "description": "This ID uniquely identifies the market",
+                                                        "example": "128939",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "info": {
+                                                        "description": "Extra information about the market",
+                                                        "example": {
+                                                            "commission_rate": "0.02"
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "object"
+                                                    },
+                                                    "inplay_enabled": {
+                                                        "description": "True if trading will be open when the markets go live in-play",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "market_type": {
+                                                        "additionalProperties": false,
+                                                        "description": "\nMarket type uniquely identifies the market within an event.<br>\nMarket types are consistent across events of the same type.<br>\nIt is the recommended way to identify markets.",
+                                                        "example": {
+                                                            "name": "OVER_UNDER",
+                                                            "param": "2.5"
+                                                        },
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "name": {
+                                                                "example": "OVER_UNDER",
+                                                                "type": "string"
+                                                            },
+                                                            "param": {
+                                                                "example": "2.5",
+                                                                "type": "string"
+                                                            },
+                                                            "params": {
+                                                                "example": {
+                                                                    "HANDICAP": "1.5",
+                                                                    "TOTAL": "151.5"
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "modified": {
+                                                        "description": "The datetime of the last modification made by Smarkets to the market properties",
+                                                        "example": "2017-12-21T10:58:09.279148Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "description": "\nName of the market. This field is for display purposes and should not be used to identify the market.<br>\nThe market_type field should be used instead.",
+                                                        "example": "To win",
+                                                        "type": "string"
+                                                    },
+                                                    "slug": {
+                                                        "description": "\nSlug concisely represents the market.<br>\nIt should not be used to identify the market.<br>\nThe market_type field should be used instead.",
+                                                        "example": "to-win",
+                                                        "type": "string"
+                                                    },
+                                                    "state": {
+                                                        "description": "\nMarket state can have the following values:<br>\n-new: just created, still not open for trading<br>\n-open: open for trading not live in-play<br>\n-live: open for trading, live in-play<br>\n-halted: trading is halted temporarily, usually due to material events<br>\n-settled: traded has ceased and the market has settled<br>\n-voided: the market was voided and no winner was chosen<br>\n-unavailable: the maret is not available for betting",
+                                                        "enum": [
+                                                            "new",
+                                                            "open",
+                                                            "live",
+                                                            "halted",
+                                                            "settled",
+                                                            "voided",
+                                                            "unavailable"
+                                                        ],
+                                                        "example": "new",
+                                                        "type": "string"
+                                                    },
+                                                    "winner_count": {
+                                                        "description": "\nHow many winners will the market have.<br>\nUsually this number is 1, except for \"To Place\", \"Top x Finish\" type markets\n    ",
+                                                        "example": 1,
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "bet_delay",
+                                                    "complete",
+                                                    "created",
+                                                    "event_id",
+                                                    "id",
+                                                    "modified",
+                                                    "name",
+                                                    "slug",
+                                                    "state",
+                                                    "winner_count",
+                                                    "market_type",
+                                                    "hidden",
+                                                    "display_type",
+                                                    "cashout_enabled"
+                                                ],
+                                                "title": "market",
+                                                "type": "object"
+                                            },
+                                            "title": "markets",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "markets"
+                                    ],
+                                    "title": "markets_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Markets success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "BAD_REQUEST"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, BAD_REQUEST"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve markets by event ids. This should be done after getting events.",
+                "tags": [
+                    "markets"
+                ]
+            }
+        },
+        "/v3/events/{event_ids}/markets_count/": {
+            "get": {
+                "description": "## Description\nEach bettable event has a set of markets.\n\n",
+                "operationId": "get_markets_count_by_event_ids",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "Choose to include in the response markets that are not visible on the website. Hidden\nmarkets may not be displayed for a varied number of reasons, and are not available to bet on.",
+                        "in": "query",
+                        "name": "include_hidden",
+                        "schema": {
+                            "default": false,
+                            "description": "Choose to include in the response markets that are not visible on the website. Hidden\nmarkets may not be displayed for a varied number of reasons, and are not available to bet on.",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Jurisdiction of user",
+                        "in": "query",
+                        "name": "jurisdiction",
+                        "schema": {
+                            "description": "Jurisdiction of user",
+                            "enum": [
+                                "CDG",
+                                "DGA",
+                                "IGC",
+                                "MGA",
+                                "SGA",
+                                "UKGC"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Event IDs to filter by<br>maxItems:50",
+                        "in": "path",
+                        "name": "event_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 50,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Number of markets per event",
+                                    "properties": {
+                                        "events": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "id": {
+                                                        "description": "This ID uniquely identifies the market",
+                                                        "example": "128939",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "markets_count": {
+                                                        "example": 222,
+                                                        "title": "markets_count",
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "markets_count"
+                                                ],
+                                                "title": "market",
+                                                "type": "object"
+                                            },
+                                            "title": "markets",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "events"
+                                    ],
+                                    "title": "markets_count_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Number of markets per event"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve markets_count by event ids. This should be done after getting events.",
+                "tags": [
+                    "markets"
+                ]
+            }
+        },
+        "/v3/events/{event_ids}/states/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_event_states",
+                "parameters": [
+                    {
+                        "description": "Event IDs to filter by<br>maxItems:300",
+                        "in": "path",
+                        "name": "event_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 300,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Events States success response",
+                                    "properties": {
+                                        "event_states": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "actual_end_datetime": {
+                                                        "description": "When the event actually ended",
+                                                        "example": "2017-12-21T12:28:01.381112Z",
+                                                        "format": "date-time",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "actual_start_datetime": {
+                                                        "description": "When the event actually went live",
+                                                        "example": "2017-12-21T10:58:09.279148Z",
+                                                        "format": "date-time",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "aggregate": {
+                                                        "description": "\nThe score of the first leg in an aggregate.<br>\nThe first value corresponds to the score of the team playing<br>\nas the home team in the first leg and second value to the away team.",
+                                                        "example": [
+                                                            2,
+                                                            3
+                                                        ],
+                                                        "items": {
+                                                            "type": "integer"
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "array"
+                                                    },
+                                                    "clock": {
+                                                        "description": "Clock information for the event",
+                                                        "example": {
+                                                            "match_time": "16:23",
+                                                            "stopped": false
+                                                        },
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "match_time": {
+                                                                "description": "The current match time",
+                                                                "example": "16:23",
+                                                                "type": "string"
+                                                            },
+                                                            "remaining_time": {
+                                                                "description": "Remaining time",
+                                                                "example": "1:19",
+                                                                "type": "string"
+                                                            },
+                                                            "remaining_time_in_period": {
+                                                                "description": "Remaining time in the current period",
+                                                                "example": "2:57",
+                                                                "type": "string"
+                                                            },
+                                                            "stoppage_time": {
+                                                                "description": "Stoppage time of the current period",
+                                                                "example": "4:43",
+                                                                "type": "string"
+                                                            },
+                                                            "stoppage_time_announced": {
+                                                                "example": "2:00",
+                                                                "type": "string"
+                                                            },
+                                                            "stopped": {
+                                                                "description": "Indicates whether the clock is stopped",
+                                                                "example": false,
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "has_league_table": {
+                                                        "description": "Shows whether there is league table information linked to this event",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "hidden": {
+                                                        "description": "True if the event is hidden from the Smarkets website",
+                                                        "example": true,
+                                                        "nullable": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "id": {
+                                                        "description": "This ID uniquely identifies an event",
+                                                        "example": "565413",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "info": {
+                                                        "description": "Additional information about the state of this event",
+                                                        "example": {
+                                                            "chart_contracts_count": 2,
+                                                            "is_tie_break_last_set": true,
+                                                            "tennis_scoring_system": 3
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "object"
+                                                    },
+                                                    "instant_match": {
+                                                        "description": "\nWill instant match be enabled for this event. <br>\nFor more information about this feature read this\n<a href=\"https://help.smarkets.com/hc/en-gb/articles/212106249-Instant-Match\">help article</a>\n    ",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "match_period": {
+                                                        "description": "The current period of the match",
+                                                        "enum": [
+                                                            "unknown",
+                                                            "first_half",
+                                                            "second_half",
+                                                            "extra_time_first_half",
+                                                            "extra_time_second_half",
+                                                            "penalty_shootout",
+                                                            "half_time",
+                                                            "end_of_second_half",
+                                                            "extra_time_half_time",
+                                                            "end_of_extra_time",
+                                                            "full_time",
+                                                            "pre_match",
+                                                            "awaiting_sudden_death",
+                                                            "sudden_death",
+                                                            "end_of_sudden_death",
+                                                            "awaiting_extra_time",
+                                                            "awaiting_penalties",
+                                                            "end_of_penalty_shootout",
+                                                            "first_pause",
+                                                            "third_pause",
+                                                            "overtime",
+                                                            "extra_innings",
+                                                            "pre_toss",
+                                                            "post_toss",
+                                                            "suspended",
+                                                            "in_progress",
+                                                            "break",
+                                                            "first_break",
+                                                            "second_break",
+                                                            "super_over_1",
+                                                            "super_over_2",
+                                                            "awaiting_super_over",
+                                                            "awaiting_overtime",
+                                                            "awaiting_golden_set",
+                                                            "golden_set",
+                                                            "after_golden_set",
+                                                            "delayed",
+                                                            "abandoned",
+                                                            "finished",
+                                                            "at_the_post",
+                                                            "going_down",
+                                                            "off",
+                                                            "dormant",
+                                                            "photograph",
+                                                            "result",
+                                                            "weighed_in",
+                                                            "amended_result",
+                                                            "race_void",
+                                                            "going_behind",
+                                                            "false_start",
+                                                            "parading",
+                                                            "rerun",
+                                                            "app_traps",
+                                                            "start_delay",
+                                                            "going_in_traps",
+                                                            "hare_running",
+                                                            "hare_stopped",
+                                                            "stopped_for_safety",
+                                                            "traps_failed",
+                                                            "no_race",
+                                                            "frame_1",
+                                                            "frame_2",
+                                                            "frame_3",
+                                                            "frame_4",
+                                                            "frame_5",
+                                                            "frame_6",
+                                                            "frame_7",
+                                                            "frame_8",
+                                                            "frame_9",
+                                                            "frame_10",
+                                                            "frame_11",
+                                                            "frame_12",
+                                                            "frame_13",
+                                                            "frame_14",
+                                                            "frame_15",
+                                                            "frame_16",
+                                                            "frame_17",
+                                                            "frame_18",
+                                                            "frame_19",
+                                                            "frame_20",
+                                                            "frame_21",
+                                                            "frame_22",
+                                                            "frame_23",
+                                                            "frame_24",
+                                                            "frame_25",
+                                                            "frame_26",
+                                                            "frame_27",
+                                                            "frame_28",
+                                                            "frame_29",
+                                                            "frame_30",
+                                                            "frame_31",
+                                                            "frame_32",
+                                                            "frame_33",
+                                                            "frame_34",
+                                                            "frame_35",
+                                                            "innings_1",
+                                                            "innings_2",
+                                                            "innings_3",
+                                                            "innings_4",
+                                                            "inning_1",
+                                                            "inning_2",
+                                                            "inning_3",
+                                                            "inning_4",
+                                                            "inning_5",
+                                                            "inning_6",
+                                                            "inning_7",
+                                                            "inning_8",
+                                                            "inning_9",
+                                                            "quarter_1",
+                                                            "quarter_2",
+                                                            "quarter_3",
+                                                            "quarter_4",
+                                                            "set_1",
+                                                            "set_2",
+                                                            "set_3",
+                                                            "set_4",
+                                                            "set_5",
+                                                            "set_6",
+                                                            "set_7",
+                                                            "set_8",
+                                                            "set_9",
+                                                            "set_10",
+                                                            "set_11",
+                                                            "set_12",
+                                                            "set_13",
+                                                            "map_1",
+                                                            "map_2",
+                                                            "map_3",
+                                                            "map_4",
+                                                            "map_5",
+                                                            "map_6",
+                                                            "map_7",
+                                                            "break_1",
+                                                            "break_2",
+                                                            "break_3",
+                                                            "break_4",
+                                                            "break_5",
+                                                            "break_6",
+                                                            "period_1",
+                                                            "period_2",
+                                                            "period_3"
+                                                        ],
+                                                        "example": "quarter_2",
+                                                        "type": "string"
+                                                    },
+                                                    "probable_pitcher": {
+                                                        "additionalProperties": false,
+                                                        "description": "\nProbable pitcher information for Baseball games.<br>\nThis field will be null for other sports, and can be empty for some\nBaseball games if we don't have this information available.",
+                                                        "example": {
+                                                            "away": {
+                                                                "id": "852",
+                                                                "name": "J. Johnson",
+                                                                "team": "18"
+                                                            },
+                                                            "home": {
+                                                                "id": "633",
+                                                                "name": "R. Wolf",
+                                                                "team": "22"
+                                                            }
+                                                        },
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "away": {
+                                                                "additionalProperties": false,
+                                                                "description": "Pitcher specific information for a team",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "description": "Pitcher ID",
+                                                                        "example": "44",
+                                                                        "type": "string"
+                                                                    },
+                                                                    "name": {
+                                                                        "description": "Pitcher name",
+                                                                        "example": "S. Feldman",
+                                                                        "type": "string"
+                                                                    },
+                                                                    "team": {
+                                                                        "description": "Team ID",
+                                                                        "example": "13",
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "team",
+                                                                    "id",
+                                                                    "name"
+                                                                ],
+                                                                "type": "object"
+                                                            },
+                                                            "home": {
+                                                                "additionalProperties": false,
+                                                                "description": "Pitcher specific information for a team",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "description": "Pitcher ID",
+                                                                        "example": "44",
+                                                                        "type": "string"
+                                                                    },
+                                                                    "name": {
+                                                                        "description": "Pitcher name",
+                                                                        "example": "S. Feldman",
+                                                                        "type": "string"
+                                                                    },
+                                                                    "team": {
+                                                                        "description": "Team ID",
+                                                                        "example": "13",
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "team",
+                                                                    "id",
+                                                                    "name"
+                                                                ],
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "provider_metadata": {
+                                                        "description": "Additional metadata from our events provider",
+                                                        "example": {
+                                                            "gsm_competition_id": "9",
+                                                            "team_a_id": "970"
+                                                        },
+                                                        "nullable": true,
+                                                        "type": "object"
+                                                    },
+                                                    "reversed": {
+                                                        "description": "True if the event name is written in the form <Away Team> at <Home Team>",
+                                                        "example": false,
+                                                        "nullable": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "scores": {
+                                                        "anyOf": [
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "title": "point_based_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "game": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "golden_set": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "leg": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_10": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_11": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_12": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_13": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_5": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_6": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_7": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_8": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "set_9": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "sets": {
+                                                                        "items": {
+                                                                            "additionalProperties": false,
+                                                                            "properties": {
+                                                                                "score_a": {
+                                                                                    "description": "Score for `a` competitor",
+                                                                                    "example": 1,
+                                                                                    "type": "integer"
+                                                                                },
+                                                                                "score_b": {
+                                                                                    "description": "Score for `b` competitor",
+                                                                                    "example": 1,
+                                                                                    "type": "integer"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "score_a",
+                                                                                "score_b"
+                                                                            ],
+                                                                            "type": "object"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "tiebreak": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "tiebreak_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "tiebreak_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "tiebreak_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "tiebreak_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "tiebreak_5": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "title": "set_based_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "a_innings": {
+                                                                        "items": {
+                                                                            "description": "Score for innings",
+                                                                            "example": "335 - 10 (113.5)",
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": "array"
+                                                                    },
+                                                                    "b_innings": {
+                                                                        "items": {
+                                                                            "description": "Score for innings",
+                                                                            "example": "335 - 10 (113.5)",
+                                                                            "type": "string"
+                                                                        },
+                                                                        "type": "array"
+                                                                    },
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "scorecard": {
+                                                                        "properties": {
+                                                                            "commentary": {
+                                                                                "example": "Team has won 3 by wickets",
+                                                                                "nullable": true,
+                                                                                "type": "string"
+                                                                            },
+                                                                            "innings_1": {
+                                                                                "example": null,
+                                                                                "nullable": true,
+                                                                                "properties": {
+                                                                                    "batsmen": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "balls": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "bowler_name": {
+                                                                                                    "example": "John",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "bowler_nid": {
+                                                                                                    "example": "sr:player:720795",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "description": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "did_not_bat": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "fielder_id": {
+                                                                                                    "example": "sr:player:641530",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fielder_name": {
+                                                                                                    "example": "CR Woakes",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fours": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "on_strike": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "to_come": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "bowlers": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "fours": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "is_active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "maidens": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "overs": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 4,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wickets": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "competitor_id": {
+                                                                                        "example": "sr:competitor:142704",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "competitor_name": {
+                                                                                        "example": "Pakistan",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "conclusion": {
+                                                                                        "example": "Completed",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "extras_summary": {
+                                                                                        "example": {
+                                                                                            "byes": 1
+                                                                                        },
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "byes": {
+                                                                                                    "example": 8,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "leg_byes": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "penalties": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "has_target": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "innings_number": {
+                                                                                        "example": 1,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "is_final_innings": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "is_follow_on": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "overs": {
+                                                                                        "example": "50",
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "overs_available": {
+                                                                                        "example": 20,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "runs": {
+                                                                                        "example": 348,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "target": {
+                                                                                        "example": 2,
+                                                                                        "nullable": true,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "wickets": {
+                                                                                        "example": 8,
+                                                                                        "type": "integer"
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            },
+                                                                            "innings_2": {
+                                                                                "example": null,
+                                                                                "nullable": true,
+                                                                                "properties": {
+                                                                                    "batsmen": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "balls": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "bowler_name": {
+                                                                                                    "example": "John",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "bowler_nid": {
+                                                                                                    "example": "sr:player:720795",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "description": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "did_not_bat": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "fielder_id": {
+                                                                                                    "example": "sr:player:641530",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fielder_name": {
+                                                                                                    "example": "CR Woakes",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fours": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "on_strike": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "to_come": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "bowlers": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "fours": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "is_active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "maidens": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "overs": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 4,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wickets": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "competitor_id": {
+                                                                                        "example": "sr:competitor:142704",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "competitor_name": {
+                                                                                        "example": "Pakistan",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "conclusion": {
+                                                                                        "example": "Completed",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "extras_summary": {
+                                                                                        "example": {
+                                                                                            "byes": 1
+                                                                                        },
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "byes": {
+                                                                                                    "example": 8,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "leg_byes": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "penalties": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "has_target": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "innings_number": {
+                                                                                        "example": 1,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "is_final_innings": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "is_follow_on": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "overs": {
+                                                                                        "example": "50",
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "overs_available": {
+                                                                                        "example": 20,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "runs": {
+                                                                                        "example": 348,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "target": {
+                                                                                        "example": 2,
+                                                                                        "nullable": true,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "wickets": {
+                                                                                        "example": 8,
+                                                                                        "type": "integer"
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            },
+                                                                            "innings_3": {
+                                                                                "example": null,
+                                                                                "nullable": true,
+                                                                                "properties": {
+                                                                                    "batsmen": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "balls": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "bowler_name": {
+                                                                                                    "example": "John",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "bowler_nid": {
+                                                                                                    "example": "sr:player:720795",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "description": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "did_not_bat": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "fielder_id": {
+                                                                                                    "example": "sr:player:641530",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fielder_name": {
+                                                                                                    "example": "CR Woakes",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fours": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "on_strike": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "to_come": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "bowlers": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "fours": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "is_active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "maidens": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "overs": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 4,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wickets": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "competitor_id": {
+                                                                                        "example": "sr:competitor:142704",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "competitor_name": {
+                                                                                        "example": "Pakistan",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "conclusion": {
+                                                                                        "example": "Completed",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "extras_summary": {
+                                                                                        "example": {
+                                                                                            "byes": 1
+                                                                                        },
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "byes": {
+                                                                                                    "example": 8,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "leg_byes": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "penalties": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "has_target": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "innings_number": {
+                                                                                        "example": 1,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "is_final_innings": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "is_follow_on": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "overs": {
+                                                                                        "example": "50",
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "overs_available": {
+                                                                                        "example": 20,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "runs": {
+                                                                                        "example": 348,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "target": {
+                                                                                        "example": 2,
+                                                                                        "nullable": true,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "wickets": {
+                                                                                        "example": 8,
+                                                                                        "type": "integer"
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            },
+                                                                            "innings_4": {
+                                                                                "example": null,
+                                                                                "nullable": true,
+                                                                                "properties": {
+                                                                                    "batsmen": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "balls": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "bowler_name": {
+                                                                                                    "example": "John",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "bowler_nid": {
+                                                                                                    "example": "sr:player:720795",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "description": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "did_not_bat": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "fielder_id": {
+                                                                                                    "example": "sr:player:641530",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fielder_name": {
+                                                                                                    "example": "CR Woakes",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fours": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "on_strike": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "to_come": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "bowlers": {
+                                                                                        "example": [
+                                                                                            {
+                                                                                                "name": "steve"
+                                                                                            }
+                                                                                        ],
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "fours": {
+                                                                                                    "example": "Fielder Catch",
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "is_active": {
+                                                                                                    "example": false,
+                                                                                                    "type": "boolean"
+                                                                                                },
+                                                                                                "maidens": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "name": {
+                                                                                                    "example": "Steve",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 3,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "overs": {
+                                                                                                    "example": 59,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "player_id": {
+                                                                                                    "example": "sr:player:1322744",
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "runs": {
+                                                                                                    "example": 23,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "sixes": {
+                                                                                                    "example": 4,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wickets": {
+                                                                                                    "example": 1,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "competitor_id": {
+                                                                                        "example": "sr:competitor:142704",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "competitor_name": {
+                                                                                        "example": "Pakistan",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "conclusion": {
+                                                                                        "example": "Completed",
+                                                                                        "nullable": true,
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "extras_summary": {
+                                                                                        "example": {
+                                                                                            "byes": 1
+                                                                                        },
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "byes": {
+                                                                                                    "example": 8,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "leg_byes": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "no_balls": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "penalties": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                },
+                                                                                                "wides": {
+                                                                                                    "example": 2,
+                                                                                                    "type": "integer"
+                                                                                                }
+                                                                                            },
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "nullable": true,
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "has_target": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "innings_number": {
+                                                                                        "example": 1,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "is_final_innings": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "is_follow_on": {
+                                                                                        "example": false,
+                                                                                        "nullable": true,
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "overs": {
+                                                                                        "example": "50",
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "overs_available": {
+                                                                                        "example": 20,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "runs": {
+                                                                                        "example": 348,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "target": {
+                                                                                        "example": 2,
+                                                                                        "nullable": true,
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "wickets": {
+                                                                                        "example": 8,
+                                                                                        "type": "integer"
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            },
+                                                                            "recent_overs": {
+                                                                                "items": {
+                                                                                    "example": {
+                                                                                        "is_active": false
+                                                                                    },
+                                                                                    "type": "object"
+                                                                                },
+                                                                                "type": "array"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    "winner": {
+                                                                        "description": "Winner of the event",
+                                                                        "example": "a",
+                                                                        "nullable": true,
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "title": "cricket_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "extra": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "extra_innings": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_5": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_6": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_7": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_8": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "inning_9": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_5": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_6": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_7": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_8": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "map_9": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "overtime": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_5": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_6": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_7": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_8": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "part_9": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "penalty": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "period_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "period_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "period_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "shootout": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "total_score": {
+                                                                        "description": "Total score for this event",
+                                                                        "example": 0,
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "winner": {
+                                                                        "description": "Winner of the event",
+                                                                        "enum": [
+                                                                            "home",
+                                                                            "away"
+                                                                        ],
+                                                                        "example": "home",
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "title": "parts_based_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "positions": {
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "title": "golf_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "first_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "overtime": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "second_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "title": "rugby_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "first_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "over_time": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "quarter_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "quarter_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "quarter_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "quarter_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "second_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "title": "basketball_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "extra_time": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "extra_time_first_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "extra_time_second_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "first_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "normal_time": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "penalties": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "second_half": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "title": "football_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "horse_results": {
+                                                                        "description": "result of each horse",
+                                                                        "properties": {
+                                                                            "beaten_distance": {
+                                                                                "example": "36 lengths",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "close_up": {
+                                                                                "example": "raced keenly, tracked clear winner,",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "horse_id": {
+                                                                                "example": "1234",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "example": "Saint Xavier",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "position": {
+                                                                                "example": "1",
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "horse_results"
+                                                                ],
+                                                                "title": "horse_race_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "greyhound_results": {
+                                                                        "description": "result of each greyhound",
+                                                                        "properties": {
+                                                                            "beaten_distance": {
+                                                                                "example": "36 lengths",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "greyhound_id": {
+                                                                                "example": "1234",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "example": "Saint Xavier",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "position": {
+                                                                                "example": "1",
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "greyhound_results"
+                                                                ],
+                                                                "title": "greyhound_race_score",
+                                                                "type": "object"
+                                                            },
+                                                            {
+                                                                "additionalProperties": false,
+                                                                "properties": {
+                                                                    "current": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_1": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_10": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_11": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_12": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_13": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_14": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_15": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_16": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_17": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_18": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_19": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_2": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_20": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_21": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_22": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_23": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_24": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_25": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_26": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_27": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_28": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_29": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_3": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_30": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_31": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_32": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_33": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_34": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_35": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_4": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_5": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_6": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_7": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_8": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "frame_9": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "full": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "game": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    },
+                                                                    "sets": {
+                                                                        "example": [
+                                                                            1,
+                                                                            4
+                                                                        ],
+                                                                        "items": {
+                                                                            "description": "Score for this competitor",
+                                                                            "example": 1,
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "title": "score",
+                                                                        "type": "array"
+                                                                    }
+                                                                },
+                                                                "title": "snooker_score",
+                                                                "type": "object"
+                                                            }
+                                                        ],
+                                                        "description": "football, point based, set based, cricket, part based, golf, rugby",
+                                                        "nullable": true
+                                                    },
+                                                    "show_flags": {
+                                                        "description": "display the country flag for the both competitors using the country code",
+                                                        "example": true,
+                                                        "nullable": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "state": {
+                                                        "description": "\nEvent state can have the following values:\n<ul>\n<li>upcoming: the event is now open for betting\n<li>live: the event is now live in-play\n<li>ended: the event has ended and its markets should be settled\n<li>settled: the event has ended and its markets should be settled\n<li>cancelled: the event was cancelled and didn't take place\n<li>suspended: the event was suspended and during play time\n</ul>\n    ",
+                                                        "enum": [
+                                                            "new",
+                                                            "upcoming",
+                                                            "live",
+                                                            "ended",
+                                                            "settled",
+                                                            "cancelled",
+                                                            "suspended"
+                                                        ],
+                                                        "example": "new",
+                                                        "type": "string"
+                                                    },
+                                                    "tennis_server": {
+                                                        "description": "In case of a tennis match, this indicates who is serving, otherwise it's null",
+                                                        "enum": [
+                                                            "a",
+                                                            "b"
+                                                        ],
+                                                        "example": "a",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "visualization": {
+                                                        "description": "Is visualization enabled for this event",
+                                                        "example": true,
+                                                        "nullable": true,
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "scores",
+                                                    "state",
+                                                    "tennis_server",
+                                                    "hidden",
+                                                    "instant_match",
+                                                    "visualization",
+                                                    "provider_metadata"
+                                                ],
+                                                "title": "event_state",
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "event_states"
+                                    ],
+                                    "title": "event_states",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Events States success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "NO_RESULTS_FOUND"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "NO_RESULTS_FOUND"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve the current states for events by id.",
+                "tags": [
+                    "events"
+                ]
+            }
+        },
+        "/v3/markets/{market_ids}/contracts/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_contracts_by_market_ids",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "Choose to include in the response contracts that are not visible on the website.\nHidden contracts may not be displayed for a varied number of reasons, and are not available to bet on.",
+                        "in": "query",
+                        "name": "include_hidden",
+                        "schema": {
+                            "default": false,
+                            "description": "Choose to include in the response contracts that are not visible on the website.\nHidden contracts may not be displayed for a varied number of reasons, and are not available to bet on.",
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Jurisdiction of user",
+                        "in": "query",
+                        "name": "jurisdiction",
+                        "schema": {
+                            "description": "Jurisdiction of user",
+                            "enum": [
+                                "CDG",
+                                "DGA",
+                                "IGC",
+                                "MGA",
+                                "SGA",
+                                "UKGC"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Market IDs to filter by<br>maxItems:100",
+                        "in": "path",
+                        "name": "market_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 100,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Contracts success response",
+                                    "properties": {
+                                        "contracts": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "competitor_id": {
+                                                        "description": "The Smarkets competitor model id",
+                                                        "example": 2,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "contract_type": {
+                                                        "description": "Contract type uniquely identifies the contract within a market.<br>\nIt is the recommended way to identify contracts.",
+                                                        "example": {
+                                                            "name": "HOME",
+                                                            "param": "apostolos-dedas"
+                                                        },
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "name": {
+                                                                "example": "HOME",
+                                                                "type": "string"
+                                                            },
+                                                            "param": {
+                                                                "example": "apostolos-dedas",
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "created": {
+                                                        "description": "When was the contract created in the Smarkets exchange",
+                                                        "example": "2017-12-16T00:16:25.936519Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "display_order": {
+                                                        "description": "Smarkets will display the contracts\nsorted by these values, in descending order",
+                                                        "example": 100,
+                                                        "nullable": true,
+                                                        "type": "integer"
+                                                    },
+                                                    "hidden": {
+                                                        "description": "Hidden contracts aren't displayed in our website",
+                                                        "example": true,
+                                                        "type": "boolean"
+                                                    },
+                                                    "id": {
+                                                        "description": "This ID uniquely identifies the contract",
+                                                        "example": "123456",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "info": {
+                                                        "description": "Additional information about the contract",
+                                                        "example": {
+                                                            "color_primary": "#EF0107",
+                                                            "color_secondary": "#063672",
+                                                            "primary": true
+                                                        },
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "color_primary": {
+                                                                "maxLength": 7,
+                                                                "minLength": 7,
+                                                                "type": "string"
+                                                            },
+                                                            "color_secondary": {
+                                                                "maxLength": 7,
+                                                                "minLength": 7,
+                                                                "type": "string"
+                                                            },
+                                                            "primary": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "market_id": {
+                                                        "description": "This ID uniquely identifies the market",
+                                                        "example": "128939",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "modified": {
+                                                        "description": "The datetime of the last modification made by Smarkets to the<br>\ncontract properties",
+                                                        "example": "2017-12-21T10:58:09.279148Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "description": "Name for the contract, as displayed in our website.<br>\nExamples can be team names, horse names or other winning outcomes for each market.<br>\nIt should not be used to identify the contract.<br>\nThe contract_type field should be used instead.",
+                                                        "example": "Arsenal",
+                                                        "type": "string"
+                                                    },
+                                                    "outcome_timestamp": {
+                                                        "description": "If the contract has settled,\nthis will have the settlement datetime, null otherwise",
+                                                        "example": "2017-12-16T00:16:25.936519Z",
+                                                        "format": "date-time",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "reduction_factor": {
+                                                        "example": "0.45451",
+                                                        "pattern": "^[0-9]+(\\.[0-9]+)?$",
+                                                        "type": "string"
+                                                    },
+                                                    "slug": {
+                                                        "description": "Slug concisely represents the contract.<br>\nIt should not be used to identify the contract.<br>\nThe contract_type field should be used instead.",
+                                                        "example": "arsenal",
+                                                        "type": "string"
+                                                    },
+                                                    "state_or_outcome": {
+                                                        "description": "\nstate_or_outcome can have the following values:\n<ul>\n<li>new: The contract was just created and is still not available for betting\n<li>open: open for betting\n<li>live: open and trading live in-play\n<li>halted: Trading on this contract has halted\n<li>winner: settled as winner.\n<li>loser:  settled as loser.\n<li>deadheat: settled as a deadheat - a tie with other contract.\n<li>reduced: withdrawn and a reduction factor was applied.\n<li>voided: no longer available for betting\n<li>unavailable: not currently available for betting\n</ul>\n    ",
+                                                        "enum": [
+                                                            "live",
+                                                            "open",
+                                                            "new",
+                                                            "halted",
+                                                            "winner",
+                                                            "loser",
+                                                            "deadheat",
+                                                            "reduced",
+                                                            "voided",
+                                                            "unavailable"
+                                                        ],
+                                                        "example": "live",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "created",
+                                                    "market_id",
+                                                    "modified",
+                                                    "name",
+                                                    "outcome_timestamp",
+                                                    "slug",
+                                                    "state_or_outcome"
+                                                ],
+                                                "title": "contract",
+                                                "type": "object"
+                                            },
+                                            "title": "contracts",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "contracts"
+                                    ],
+                                    "title": "contracts_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Contracts success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "summary": "Retrieve contracts by a set of market ids.",
+                "tags": [
+                    "contracts"
+                ]
+            }
+        },
+        "/v3/markets/{market_ids}/last_executed_prices/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_last_executed_prices_by_market",
+                "parameters": [
+                    {
+                        "description": "Market IDs to filter by<br>maxItems:100",
+                        "in": "path",
+                        "name": "market_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 100,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Last executed prices by market success response",
+                                    "properties": {
+                                        "last_executed_prices": {
+                                            "additionalProperties": {
+                                                "items": {
+                                                    "additionalProperties": false,
+                                                    "properties": {
+                                                        "contract_id": {
+                                                            "description": "This ID uniquely identifies the contract",
+                                                            "example": "123456",
+                                                            "pattern": "^[0-9]+$",
+                                                            "type": "string"
+                                                        },
+                                                        "last_executed_price": {
+                                                            "description": "Last executed price for this contract",
+                                                            "example": "23.45",
+                                                            "nullable": true,
+                                                            "pattern": "^[0-9]+([.][0-9][0-9]?)?$",
+                                                            "type": "string"
+                                                        },
+                                                        "timestamp": {
+                                                            "description": "Last execution datetime for this contract",
+                                                            "example": "2012-08-14T00:56:45.291688Z",
+                                                            "format": "date-time",
+                                                            "nullable": true,
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "contract_id",
+                                                        "last_executed_price",
+                                                        "timestamp"
+                                                    ],
+                                                    "title": "latest_price",
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "last_executed_prices"
+                                    ],
+                                    "title": "last_executed_prices_by_market_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Last executed prices by market success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "BAD_REQUEST"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, BAD_REQUEST"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "MDS_SERVICE_UNAVAILABLE",
+                                                "CHARTS_UNAVAILABLE",
+                                                "CHARTS_INTERNAL_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "MDS_SERVICE_UNAVAILABLE, CHARTS_UNAVAILABLE, CHARTS_INTERNAL_ERROR"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Retrieve the last executed price and timestamp for each contract in the market ids provided.",
+                "tags": [
+                    "prices"
+                ]
+            }
+        },
+        "/v3/markets/{market_ids}/quotes/": {
+            "get": {
+                "description": "## Description\nIf session token is not sent, these prices will be delayed.<br><br>\nThe rate limits below are applicable to API users.\nThe rate limits for non-API users are lower.\n\n##  Rate limits\nMaximum 50 requests per 60 seconds",
+                "operationId": "get_quotes",
+                "parameters": [
+                    {
+                        "description": "Market IDs to filter by<br>maxItems:200",
+                        "in": "path",
+                        "name": "market_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 200,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": {
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "bids": {
+                                                "items": {
+                                                    "additionalProperties": false,
+                                                    "properties": {
+                                                        "price": {
+                                                            "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                                            "example": 5000,
+                                                            "maximum": 9999,
+                                                            "minimum": 1,
+                                                            "type": "integer"
+                                                        },
+                                                        "quantity": {
+                                                            "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/100 of a UK penny.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                            "example": 10000,
+                                                            "maximum": 18446744073709552000,
+                                                            "minimum": 0,
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "price",
+                                                        "quantity"
+                                                    ],
+                                                    "title": "tick",
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "offers": {
+                                                "items": {
+                                                    "additionalProperties": false,
+                                                    "properties": {
+                                                        "price": {
+                                                            "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                                            "example": 5000,
+                                                            "maximum": 9999,
+                                                            "minimum": 1,
+                                                            "type": "integer"
+                                                        },
+                                                        "quantity": {
+                                                            "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/100 of a UK penny.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                            "example": 10000,
+                                                            "maximum": 18446744073709552000,
+                                                            "minimum": 0,
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "price",
+                                                        "quantity"
+                                                    ],
+                                                    "title": "tick",
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            }
+                                        },
+                                        "title": "book",
+                                        "type": "object"
+                                    },
+                                    "description": "Quotes success response",
+                                    "title": "quotes",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Quotes success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "BAD_REQUEST"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, BAD_REQUEST"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RATE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "MDS_SERVICE_UNAVAILABLE",
+                                                "CHARTS_UNAVAILABLE",
+                                                "CHARTS_INTERNAL_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "MDS_SERVICE_UNAVAILABLE, CHARTS_UNAVAILABLE, CHARTS_INTERNAL_ERROR"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Get the current prices from the exchange.",
+                "tags": [
+                    "prices"
+                ]
+            }
+        },
+        "/v3/markets/{market_ids}/volumes/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_volumes_by_market_ids",
+                "parameters": [
+                    {
+                        "description": "Market IDs to filter by<br>maxItems:300",
+                        "in": "path",
+                        "name": "market_ids",
+                        "required": true,
+                        "schema": {
+                            "items": {
+                                "type": "integer"
+                            },
+                            "maxItems": 300,
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Volumes success response",
+                                    "properties": {
+                                        "volumes": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "double_stake_volume": {
+                                                        "description": "\nThis is the traded volume measured in GBP, but calculated in a different way.<br>\nIt is the twice back stake for every execution.\n    ",
+                                                        "example": 123343,
+                                                        "title": "double stake volume",
+                                                        "type": "integer"
+                                                    },
+                                                    "market_id": {
+                                                        "description": "This ID uniquely identifies the market",
+                                                        "example": "128939",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "volume": {
+                                                        "description": "\nThis is the traded volume measured in GBP.<br>\nIt is the sum of back stake (on the back side) with liability (on the lay side)<br>\nThis is the volume displayed in our website.\n    ",
+                                                        "example": 123534,
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "volume",
+                                                    "double_stake_volume",
+                                                    "market_id"
+                                                ],
+                                                "title": "volume",
+                                                "type": "object"
+                                            },
+                                            "title": "volumes",
+                                            "type": "array"
+                                        }
+                                    },
+                                    "required": [
+                                        "volumes"
+                                    ],
+                                    "title": "volumes_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Volumes success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "BAD_REQUEST"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, BAD_REQUEST"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "414": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_TOO_LARGE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_TOO_LARGE"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "EVENTS_API_RATE_LIMIT",
+                                                "EVENTS_INTERNAL_ERROR",
+                                                "MDS_SERVICE_UNAVAILABLE",
+                                                "EVENTS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "EVENTS_API_RATE_LIMIT, EVENTS_INTERNAL_ERROR, MDS_SERVICE_UNAVAILABLE, EVENTS_UNAVAILABLE"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Retrieve traded volumes by market ids.",
+                "tags": [
+                    "volumes"
+                ]
+            }
+        },
+        "/v3/orders/": {
+            "delete": {
+                "description": "\n##  Rate limits\nMaximum 1 request per 60 seconds<br>",
+                "operationId": "cancel_orders",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "This ID uniquely identifies the market",
+                        "in": "query",
+                        "name": "market_id",
+                        "schema": {
+                            "description": "This ID uniquely identifies the market",
+                            "pattern": "^[0-9]+$",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Orders cancelled successfully",
+                                    "example": {},
+                                    "title": "empty_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Orders cancelled successfully"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ACCOUNT_UNVERIFIED",
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ACCOUNT_UNVERIFIED, FORBIDDEN"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RATE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_UNAVAILABLE",
+                                                "CANCEL_ALL_TIMEOUT",
+                                                "CANCEL_ALL_UNAVAILABLE",
+                                                "ORDER_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_UNAVAILABLE, CANCEL_ALL_TIMEOUT, CANCEL_ALL_UNAVAILABLE, ORDER_UNAVAILABLE"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Cancel all orders.",
+                "tags": [
+                    "orders"
+                ]
+            },
+            "get": {
+                "description": "\n",
+                "operationId": "get_orders",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "This ID uniquely identifies the contract",
+                        "in": "query",
+                        "name": "contract_id",
+                        "schema": {
+                            "description": "This ID uniquely identifies the contract",
+                            "pattern": "^[0-9]+$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "When was the order created",
+                        "in": "query",
+                        "name": "created_datetime_max",
+                        "schema": {
+                            "description": "When was the order created",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "When was the order created",
+                        "in": "query",
+                        "name": "created_datetime_min",
+                        "schema": {
+                            "description": "When was the order created",
+                            "format": "date-time",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Order IDs to filter by",
+                        "in": "query",
+                        "name": "id",
+                        "schema": {
+                            "description": "Order IDs to filter by",
+                            "items": {
+                                "description": "This ID uniquely identifies an order",
+                                "example": "1518455672861",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Maximum number of orders to be retrieved in one API call",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 20,
+                            "description": "Maximum number of orders to be retrieved in one API call",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Market IDs to filter by",
+                        "in": "query",
+                        "name": "market_id",
+                        "schema": {
+                            "description": "Market IDs to filter by",
+                            "items": {
+                                "description": "This ID uniquely identifies the market",
+                                "example": "128939",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nThe last order id from the previous page, so we can fetch the subsequent orders.<br>\nIt should be used in conjuntion with the sort parameter",
+                        "in": "query",
+                        "name": "pagination_last_id",
+                        "schema": {
+                            "description": "\nThe last order id from the previous page, so we can fetch the subsequent orders.<br>\nIt should be used in conjuntion with the sort parameter",
+                            "pattern": "^[0-9]+$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "This refers to the sequence number in the account activity - statement endpoint",
+                        "in": "query",
+                        "name": "sequence_number_max",
+                        "schema": {
+                            "description": "This refers to the sequence number in the account activity - statement endpoint",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "This refers to the sequence number in the account activity - statement endpoint",
+                        "in": "query",
+                        "name": "sequence_number_min",
+                        "schema": {
+                            "description": "This refers to the sequence number in the account activity - statement endpoint",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Order states to filter by. By default all order states are returned",
+                        "in": "query",
+                        "name": "state",
+                        "schema": {
+                            "description": "Order states to filter by. By default all order states are returned",
+                            "items": {
+                                "description": "\nOrder state can be one of four values:\n<ul>\n<li>created: The first state of the order after creation, this order is unmatched\n<li>partial: The order is partially matched\n<li>filled: The order is fully matched\n<li>settled: The order has settled, the final state of orders.\n    ",
+                                "enum": [
+                                    "created",
+                                    "partial",
+                                    "filled",
+                                    "settled"
+                                ],
+                                "example": "created",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                        "in": "query",
+                        "name": "side",
+                        "schema": {
+                            "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                            "enum": [
+                                "buy",
+                                "sell"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "How to sort the results,\nit should be used in conjuntion with the pagination parameter",
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "default": "id",
+                            "description": "How to sort the results,\nit should be used in conjuntion with the pagination parameter",
+                            "enum": [
+                                "id",
+                                "-id"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Orders success response",
+                                    "properties": {
+                                        "orders": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "average_price_matched": {
+                                                        "description": "\nThis price can be different from the order price,\nas it may have been matched at a better price for the user,\naccording to best price execution rules",
+                                                        "example": 5000,
+                                                        "maximum": 10000,
+                                                        "minimum": 0,
+                                                        "type": "integer"
+                                                    },
+                                                    "best_price": {
+                                                        "additionalProperties": false,
+                                                        "example": "null",
+                                                        "nullable": true,
+                                                        "properties": {
+                                                            "price": {
+                                                                "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                                                "example": 5000,
+                                                                "maximum": 9999,
+                                                                "minimum": 1,
+                                                                "type": "integer"
+                                                            },
+                                                            "source": {
+                                                                "description": "Name of the best price source",
+                                                                "example": "bet365",
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "price",
+                                                            "source"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "bonus_bet": {
+                                                        "example": false,
+                                                        "type": "boolean"
+                                                    },
+                                                    "contract_id": {
+                                                        "description": "This ID uniquely identifies the contract",
+                                                        "example": "123456",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "created_datetime": {
+                                                        "description": "When was the order created",
+                                                        "example": "2012-08-14T00:56:45.291688Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "description": "This ID uniquely identifies an order",
+                                                        "example": "1518455672861",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "label": {
+                                                        "description": "Label is a user-defined string that will be stored in the order.\nIt can be used to identify different trading strategies",
+                                                        "example": "strategy_1",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "last_modified_datetime": {
+                                                        "description": "When was the order last modified, usually by the exchange matching it",
+                                                        "example": "2012-08-14T00:56:45.291688Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "market_id": {
+                                                        "description": "This ID uniquely identifies the market",
+                                                        "example": "128939",
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "original_order_id": {
+                                                        "description": "This ID uniquely identifies an order",
+                                                        "example": "1518455672861",
+                                                        "nullable": true,
+                                                        "pattern": "^[0-9]+$",
+                                                        "type": "string"
+                                                    },
+                                                    "otc_available": {
+                                                        "example": false,
+                                                        "type": "boolean"
+                                                    },
+                                                    "outcome": {
+                                                        "description": "\nThe outcome of the contract can be:<br>\n</ul>\n<li>winner: This contract is the winner or one of the winners of the market\n<li>loser: This contract is a loser\n<li>deadheat: There was a tie between this contract and another one. This is quite a rare outcome.\n<li>reduce: This contract was withdrawn from the market and a reduction factor was applied.\n<li>void: This contract is no longer allowed to be traded on.\n</ul>\n    ",
+                                                        "enum": [
+                                                            "winner",
+                                                            "loser",
+                                                            "deadheat",
+                                                            "reduce",
+                                                            "void"
+                                                        ],
+                                                        "example": "winner",
+                                                        "nullable": true,
+                                                        "type": "string"
+                                                    },
+                                                    "price": {
+                                                        "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                                        "example": 5000,
+                                                        "maximum": 9999,
+                                                        "minimum": 1,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity": {
+                                                        "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/100 of a UK penny.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                        "example": 10000,
+                                                        "maximum": 4294967295,
+                                                        "minimum": 0,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_filled": {
+                                                        "description": "The quantity in GBP of the order that was matched",
+                                                        "example": 10000,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_filled_pending": {
+                                                        "description": "\nThe quantity in GBP of the order that was matched and pending confirmation.<br>\nBets will be subject to an eight second ‘Pending’ confirmation delay after being matched.<br>\nIf no significant events occur in this period, the bet is confirmed.<br>\nIf our scouting feed tells us that a material event (a goal, red card, or penalty)\nor a set-piece event (corner or dangerous free-kick) might have occurred,\nthe Pending period is extended until we get confirmation either way.<br>\nIf subsequent messages confirm that a material event has occurred,\nwe void those bets matched in the preceding eight seconds.<br>\nThis is to protect users from courtsiding and faster feeds.",
+                                                        "example": 2500,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_filled_pending_user_currency": {
+                                                        "description": "The quantity of the order that is matched,\nbut pending confirmation, converted to the user's currency",
+                                                        "example": 2500,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_filled_user_currency": {
+                                                        "description": "The quantity of the order that is matched, converted to the user's currency",
+                                                        "example": 10000,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_traded_out_user_currency": {
+                                                        "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/10000 * one unit of the user's currency.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                        "example": 10000,
+                                                        "maximum": 4294967295,
+                                                        "minimum": 0,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_unfilled": {
+                                                        "description": "The quantity in GBP of the order that is still unmatched",
+                                                        "example": 2500,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_unfilled_user_currency": {
+                                                        "description": "The quantity of the order that is unmatched, converted to the user's currency",
+                                                        "example": 2500,
+                                                        "type": "integer"
+                                                    },
+                                                    "quantity_user_currency": {
+                                                        "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/10000 * one unit of the user's currency.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                                        "example": 10000,
+                                                        "maximum": 4294967295,
+                                                        "minimum": 0,
+                                                        "type": "integer"
+                                                    },
+                                                    "sequence_number": {
+                                                        "description": "This refers to the sequence number in the account activity - statement endpoint",
+                                                        "example": 94115,
+                                                        "type": "integer"
+                                                    },
+                                                    "side": {
+                                                        "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                                                        "enum": [
+                                                            "buy",
+                                                            "sell"
+                                                        ],
+                                                        "example": "buy",
+                                                        "type": "string"
+                                                    },
+                                                    "stake_traded_out_user_currency": {
+                                                        "description": "Stake of an order",
+                                                        "example": "24.08",
+                                                        "type": "number"
+                                                    },
+                                                    "state": {
+                                                        "description": "\nOrder state can be one of four values:\n<ul>\n<li>created: The first state of the order after creation, this order is unmatched\n<li>partial: The order is partially matched\n<li>filled: The order is fully matched\n<li>settled: The order has settled, the final state of orders.\n    ",
+                                                        "enum": [
+                                                            "created",
+                                                            "partial",
+                                                            "filled",
+                                                            "settled"
+                                                        ],
+                                                        "example": "created",
+                                                        "type": "string"
+                                                    },
+                                                    "token_used": {
+                                                        "additionalProperties": false,
+                                                        "properties": {
+                                                            "bet_token_type": {
+                                                                "enum": [
+                                                                    "free_bet",
+                                                                    "boost_bet"
+                                                                ],
+                                                                "example": "free_bet",
+                                                                "nullable": true,
+                                                                "type": "string"
+                                                            },
+                                                            "boost_percent": {
+                                                                "example": 1,
+                                                                "nullable": true,
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "bet_token_type",
+                                                            "boost_percent"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": {
+                                                        "default": "good_til_halted",
+                                                        "description": "Order types can have the following values:\n    <ul>\n    <li>good_til_cancelled: this order will be open until a reduction\n    factor is applied or a market state changes to live, which will cancel the order.\n    <li>keep_in_play: the same as good_til_cancelled,\n    except it will not be cancelled on market state changes\n    <li>good_til_halted: the same as good_til_cancelled, except a market\n    <li>immediate_or_cancel: if the minimum_accepted_quantity is not\n    matched at the time of order placement, this order will be cancelled.  <li>over_the_counter: this order was matched right after being created.\n    </ul>\n    <p>The following table explains the lifetime of orders:</p>\n    <table cellpadding=\"3\" style=\"border: 1px solid white;\">\n      <tr>\n        <th>order_type</th>\n        <th>Market Goes Live</th>\n        <th>Market Halted</th>\n        <th>Reduction Factor Applied</th>\n      </tr>\n      <tr>\n        <td>good_til_cancelled</td>\n        <td>Cancelled</td>\n        <td>Cancelled</td>\n        <td>Cancelled</td>\n      </tr>\n      <tr>\n        <td>good_til_halted</td>\n        <td>Kept</td>\n        <td>Cancelled</td>\n        <td>Cancelled</td>\n      </tr>\n      <tr>\n        <td>keep_in_play</td>\n        <td>Kept</td>\n        <td>Kept</td>\n        <td>Cancelled</td>\n      </tr>\n    </table><br>\n    <p>Orders marked as immediate_or_cancel must be executed\n    immediately and thus will not remain in the book.</p>\n    <p>Same happens to orders marked as over_the_counter which are executed immediately.</p>",
+                                                        "enum": [
+                                                            "good_til_cancelled",
+                                                            "keep_in_play",
+                                                            "good_til_halted",
+                                                            "immediate_or_cancel",
+                                                            "over_the_counter",
+                                                            "over_the_counter_free"
+                                                        ],
+                                                        "example": "good_til_halted",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "average_price_matched",
+                                                    "contract_id",
+                                                    "created_datetime",
+                                                    "id",
+                                                    "last_modified_datetime",
+                                                    "market_id",
+                                                    "original_order_id",
+                                                    "price",
+                                                    "quantity",
+                                                    "quantity_filled",
+                                                    "quantity_filled_pending",
+                                                    "quantity_unfilled",
+                                                    "quantity_user_currency",
+                                                    "quantity_filled_user_currency",
+                                                    "quantity_filled_pending_user_currency",
+                                                    "quantity_unfilled_user_currency",
+                                                    "side",
+                                                    "sequence_number",
+                                                    "state",
+                                                    "token_used",
+                                                    "quantity_traded_out_user_currency",
+                                                    "stake_traded_out_user_currency"
+                                                ],
+                                                "title": "order_response",
+                                                "type": "object"
+                                            },
+                                            "title": "orders",
+                                            "type": "array"
+                                        },
+                                        "otc_available": {
+                                            "example": false,
+                                            "type": "boolean"
+                                        },
+                                        "pagination": {
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "next_page": {
+                                                    "description": "The url query string for clients to fetch the next page of orders",
+                                                    "example": "?limit=20&pagination_last_id=810214202189041",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "next_page"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "orders",
+                                        "pagination"
+                                    ],
+                                    "title": "orders_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Orders success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ZEUS_CONNECTION_ERROR",
+                                                "PROMOTION_SERVICE_UNAVAILABLE",
+                                                "ZEUS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ZEUS_CONNECTION_ERROR, PROMOTION_SERVICE_UNAVAILABLE, ZEUS_UNAVAILABLE"
+                    },
+                    "504": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ZEUS_TIMEOUT"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ZEUS_TIMEOUT"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Retrieve current orders on Smarkets, these include open and recently settled orders.",
+                "tags": [
+                    "orders"
+                ]
+            },
+            "post": {
+                "description": "## Description\nThis route only works for Smarkets API users, other users will receive a 403 status code response.<br><br>\nFor immediate_or_cancel orders type, the route will return when the order is matched (or cancelled).<br>\nFor all other order types, the route will return when the order is accepted by the exchange.<br>\nIn the latter case, GET v3/orders should be used to check the status of the order, using the order id\nreturned by this response.\n\n##  Rate limits\nRate limits are applied on an per account basis",
+                "operationId": "create_order",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "contract_id": {
+                                        "description": "This ID uniquely identifies the contract",
+                                        "example": "123456",
+                                        "pattern": "^[0-9]+$",
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "description": "Label is a user-defined string that will be stored in the order.\nIt can be used to identify different trading strategies",
+                                        "example": "strategy_1",
+                                        "type": "string"
+                                    },
+                                    "market_id": {
+                                        "description": "This ID uniquely identifies the market",
+                                        "example": "128939",
+                                        "pattern": "^[0-9]+$",
+                                        "type": "string"
+                                    },
+                                    "minimum_accepted_quantity": {
+                                        "description": "\nIf this minimum accepted quantity is not matched on bet placement time,\nthe order will be cancelled and nothing will be matched.<br>\nOnly applicable to immediate_or_cancel order types.\n    ",
+                                        "example": 10000,
+                                        "maximum": 4294967295,
+                                        "minimum": 0,
+                                        "type": "integer"
+                                    },
+                                    "price": {
+                                        "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                        "example": 5000,
+                                        "maximum": 9999,
+                                        "minimum": 1,
+                                        "type": "integer"
+                                    },
+                                    "quantity": {
+                                        "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/10000 * one unit of the user's currency.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                        "example": 10000,
+                                        "maximum": 4294967295,
+                                        "minimum": 0,
+                                        "type": "integer"
+                                    },
+                                    "side": {
+                                        "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                                        "enum": [
+                                            "buy",
+                                            "sell"
+                                        ],
+                                        "example": "buy",
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "default": "good_til_halted",
+                                        "description": "Order types can have the following values:\n    <ul>\n    <li>good_til_cancelled: this order will be open until a reduction\n    factor is applied or a market state changes to live, which will cancel the order.\n    <li>keep_in_play: the same as good_til_cancelled,\n    except it will not be cancelled on market state changes\n    <li>good_til_halted: the same as good_til_cancelled, except a market\n    <li>immediate_or_cancel: if the minimum_accepted_quantity is not\n    matched at the time of order placement, this order will be cancelled. \n    </ul>\n    <p>The following table explains the lifetime of orders:</p>\n    <table cellpadding=\"3\" style=\"border: 1px solid white;\">\n      <tr>\n        <th>order_type</th>\n        <th>Market Goes Live</th>\n        <th>Market Halted</th>\n        <th>Reduction Factor Applied</th>\n      </tr>\n      <tr>\n        <td>good_til_cancelled</td>\n        <td>Cancelled</td>\n        <td>Cancelled</td>\n        <td>Cancelled</td>\n      </tr>\n      <tr>\n        <td>good_til_halted</td>\n        <td>Kept</td>\n        <td>Cancelled</td>\n        <td>Cancelled</td>\n      </tr>\n      <tr>\n        <td>keep_in_play</td>\n        <td>Kept</td>\n        <td>Kept</td>\n        <td>Cancelled</td>\n      </tr>\n    </table><br>\n    <p>Orders marked as immediate_or_cancel must be executed\n    immediately and thus will not remain in the book.</p>\n    ",
+                                        "enum": [
+                                            "good_til_cancelled",
+                                            "keep_in_play",
+                                            "good_til_halted",
+                                            "immediate_or_cancel"
+                                        ],
+                                        "example": "good_til_halted",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "market_id",
+                                    "contract_id",
+                                    "price",
+                                    "quantity",
+                                    "side"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "description": "JSON Request object"
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Order placement success",
+                                    "properties": {
+                                        "available_balance": {
+                                            "description": "Current available balance on the account,\nit is equal to the balance deducted by the exposure",
+                                            "example": "100.00",
+                                            "type": "string"
+                                        },
+                                        "available_quantity": {
+                                            "description": "Quantity left to be matched in the order",
+                                            "example": 15000,
+                                            "type": "integer"
+                                        },
+                                        "contract_id": {
+                                            "description": "This ID uniquely identifies the contract",
+                                            "example": "123456",
+                                            "pattern": "^[0-9]+$",
+                                            "type": "string"
+                                        },
+                                        "executed_avg_price": {
+                                            "description": "The average price for the executions on the order",
+                                            "example": 5000,
+                                            "nullable": true,
+                                            "type": "integer"
+                                        },
+                                        "exposure": {
+                                            "description": "Current exposure on the account",
+                                            "example": "-50.00",
+                                            "type": "string"
+                                        },
+                                        "market_id": {
+                                            "description": "This ID uniquely identifies the market",
+                                            "example": "128939",
+                                            "pattern": "^[0-9]+$",
+                                            "type": "string"
+                                        },
+                                        "order_id": {
+                                            "description": "This ID uniquely identifies an order",
+                                            "example": "1518455672861",
+                                            "pattern": "^[0-9]+$",
+                                            "type": "string"
+                                        },
+                                        "orig_price": {
+                                            "description": "The price at which the order was placed at, it can be different\nfrom the matched price. This value will be null if there were no executions.",
+                                            "example": 5000,
+                                            "nullable": true,
+                                            "type": "integer"
+                                        },
+                                        "price": {
+                                            "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                            "example": 5000,
+                                            "maximum": 9999,
+                                            "minimum": 1,
+                                            "type": "integer"
+                                        },
+                                        "quantity": {
+                                            "description": "\n    Quantity is the sum of the total pot (back+lay) in case the order is matched<br>\n    The units are 1/10000 * one unit of the user's currency.<br>\n    Example: Quantity 500 = 0.05 GBP<br>\n    To convert it to back stake, just multiply by the price and divide by 100000000<br>\n    Example: 100000 (quantity) * 5000 (price) / 100000000 = 5 GBP back stake<br>\n    The minimum stake is £0.05 or currency equivalent",
+                                            "example": 10000,
+                                            "maximum": 4294967295,
+                                            "minimum": 0,
+                                            "type": "integer"
+                                        },
+                                        "side": {
+                                            "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                                            "enum": [
+                                                "buy",
+                                                "sell"
+                                            ],
+                                            "example": "buy",
+                                            "type": "string"
+                                        },
+                                        "total_executed_quantity": {
+                                            "description": "Quantity matched (executed) in the order",
+                                            "example": 15000,
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "market_id",
+                                        "contract_id",
+                                        "price",
+                                        "quantity",
+                                        "side",
+                                        "available_balance",
+                                        "available_quantity",
+                                        "executed_avg_price",
+                                        "exposure",
+                                        "order_id",
+                                        "orig_price",
+                                        "total_executed_quantity"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Order placement success"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ORDER_REJECTED_INSUFFICIENT_FUNDS",
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "ORDER_REJECTED_THROTTLE_EXCEEDED",
+                                                "ORDER_REJECTED_MARKET_NOT_FOUND",
+                                                "ORDER_CANCELLED_MARKET_HALTED",
+                                                "ORDER_INVALID_INVALID_PRICE",
+                                                "ORDER_CANCELLED_TRADING_SUSPENDED",
+                                                "ORDER_REJECTED_CROSSED_SELF",
+                                                "ORDER_REJECTED_LIMIT_EXCEEDED",
+                                                "ORDER_REJECTED_TRADING_SUSPENDED",
+                                                "ORDER_REJECTED_SERVICE_TEMPORARILY_UNAVAILABLE",
+                                                "ORDER_REJECTED_ACCOUNT_SUSPENDED",
+                                                "ORDER_REJECTED_MARKET_HALTED",
+                                                "ORDER_REJECTED_MARKET_NOT_OPEN",
+                                                "ORDER_REJECTED_CAPACITY_REACHED",
+                                                "ORDER_CANCELLED_MEMBER_REQUESTED",
+                                                "ORDER_REJECTED_CONTRACT_SETTLED",
+                                                "ORDER_REJECTED_CONTRACT_NOT_FOUND",
+                                                "ORDER_INVALID_INVALID_QUANTITY",
+                                                "ORDER_CANCELLED_ADMIN_REQUESTED",
+                                                "ORDER_CANCELLED_INSUFFICIENT_LIQUIDITY",
+                                                "ORDER_REJECTED_STAKE_LIMIT_EXCEEDED",
+                                                "ORDER_INVALID_INVALID_QUANTITY, ORDER_INVALID_INVALID_PRICE",
+                                                "ORDER_INVALID_INVALID_PRICE, ORDER_INVALID_INVALID_QUANTITY",
+                                                "ORDER_REJECTED_MARKET_SETTLED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ORDER_REJECTED_INSUFFICIENT_FUNDS, REQUEST_VALIDATION_ERROR, ORDER_REJECTED_THROTTLE_EXCEEDED, ORDER_REJECTED_MARKET_NOT_FOUND, ORDER_CANCELLED_MARKET_HALTED, ORDER_INVALID_INVALID_PRICE, ORDER_CANCELLED_TRADING_SUSPENDED, ORDER_REJECTED_CROSSED_SELF, ORDER_REJECTED_LIMIT_EXCEEDED, ORDER_REJECTED_TRADING_SUSPENDED, ORDER_REJECTED_SERVICE_TEMPORARILY_UNAVAILABLE, ORDER_REJECTED_ACCOUNT_SUSPENDED, ORDER_REJECTED_MARKET_HALTED, ORDER_REJECTED_MARKET_NOT_OPEN, ORDER_REJECTED_CAPACITY_REACHED, ORDER_CANCELLED_MEMBER_REQUESTED, ORDER_REJECTED_CONTRACT_SETTLED, ORDER_REJECTED_CONTRACT_NOT_FOUND, ORDER_INVALID_INVALID_QUANTITY, ORDER_CANCELLED_ADMIN_REQUESTED, ORDER_CANCELLED_INSUFFICIENT_LIQUIDITY, ORDER_REJECTED_STAKE_LIMIT_EXCEEDED, ORDER_INVALID_INVALID_QUANTITY, ORDER_INVALID_INVALID_PRICE, ORDER_INVALID_INVALID_PRICE, ORDER_INVALID_INVALID_QUANTITY, ORDER_REJECTED_MARKET_SETTLED"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "NO_DEPOSITS",
+                                                "ACCOUNT_UNVERIFIED",
+                                                "RG_ACK_REQUIRED",
+                                                "FORBIDDEN",
+                                                "ACTION_BLOCKED",
+                                                "KYC_PERMISSION_DENIED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "NO_DEPOSITS, ACCOUNT_UNVERIFIED, RG_ACK_REQUIRED, FORBIDDEN, ACTION_BLOCKED, KYC_PERMISSION_DENIED"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RATE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "451": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "COUNTRY_BLOCKED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "COUNTRY_BLOCKED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "KYC_SERVICE_INTERNAL_ERROR",
+                                                "CREATE_ORDER_TIMEOUT",
+                                                "AUTH_UNAVAILABLE",
+                                                "ORDER_UNAVAILABLE",
+                                                "KYC_SERVICE_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "KYC_SERVICE_INTERNAL_ERROR, CREATE_ORDER_TIMEOUT, AUTH_UNAVAILABLE, ORDER_UNAVAILABLE, KYC_SERVICE_UNAVAILABLE"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Place orders on the exchange.",
+                "tags": [
+                    "orders"
+                ]
+            }
+        },
+        "/v3/orders/fullcover/": {
+            "get": {
+                "description": "\n",
+                "operationId": "get_account_fullcover_orders",
+                "parameters": [
+                    {
+                        "deprecated": false,
+                        "description": "Order states to filter by. By default all order states are returned",
+                        "in": "query",
+                        "name": "states",
+                        "schema": {
+                            "description": "Order states to filter by. By default all order states are returned",
+                            "items": {
+                                "description": "\nOrder state can be one of four values:\n<ul>\n<li>created: The first state of the order after creation, this order is unmatched\n<li>partial: The order is partially matched\n<li>filled: The order is fully matched\n<li>settled: The order has settled, the final state of orders.\n    ",
+                                "enum": [
+                                    "created",
+                                    "partial",
+                                    "filled",
+                                    "settled"
+                                ],
+                                "example": "created",
+                                "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "Maximum number of orders to be retrieved in one API call",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "default": 20,
+                            "description": "Maximum number of orders to be retrieved in one API call",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "deprecated": false,
+                        "description": "\nThe last order id from the previous page, so we can fetch the subsequent orders.<br>\nIt should be used in conjuntion with the sort parameter",
+                        "in": "query",
+                        "name": "pagination_last_id",
+                        "schema": {
+                            "description": "\nThe last order id from the previous page, so we can fetch the subsequent orders.<br>\nIt should be used in conjuntion with the sort parameter",
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Orders success response",
+                                    "properties": {
+                                        "orders": {
+                                            "items": {
+                                                "additionalProperties": false,
+                                                "properties": {
+                                                    "buy_reference_id": {
+                                                        "description": "To handle retries over flaky network. Same value sent twice will result in `DUPLICATE_TRADE` error instead of 2 duplicate bets",
+                                                        "example": "123",
+                                                        "type": "string"
+                                                    },
+                                                    "cashed_out_amount": {
+                                                        "example": 7,
+                                                        "type": "number"
+                                                    },
+                                                    "cashed_out_quantity": {
+                                                        "example": 500,
+                                                        "type": "integer"
+                                                    },
+                                                    "created_datetime": {
+                                                        "description": "When was the order created",
+                                                        "example": "2012-08-14T00:56:45.291688Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "fullcover_type": {
+                                                        "example": "doubles",
+                                                        "type": "string"
+                                                    },
+                                                    "last_modified_datetime": {
+                                                        "description": "When was the order last modified, usually by the exchange matching it",
+                                                        "example": "2012-08-14T00:56:45.291688Z",
+                                                        "format": "date-time",
+                                                        "type": "string"
+                                                    },
+                                                    "number_of_bets": {
+                                                        "example": 5,
+                                                        "type": "integer"
+                                                    },
+                                                    "original_contracts": {
+                                                        "items": {
+                                                            "additionalProperties": false,
+                                                            "properties": {
+                                                                "contract_id": {
+                                                                    "description": "This ID uniquely identifies the contract",
+                                                                    "example": "123456",
+                                                                    "pattern": "^[0-9]+$",
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "contract_id"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "title": "original_contracts",
+                                                        "type": "array"
+                                                    },
+                                                    "potential_returns": {
+                                                        "example": 7.8,
+                                                        "type": "number"
+                                                    },
+                                                    "price": {
+                                                        "description": "\nThis price is in percentage basis points.<br>\nExample: 5000 = 50% <br>\nTo convert it to decimal odds, just divide 10000 by it<br>\nExample: 10000 / 5000 = 2.0 (decimal odds).<br>\nThis price has to conform to a valid tick on the exchange;\nan invalid price error will be returned if it does not.",
+                                                        "example": 5000,
+                                                        "type": "integer"
+                                                    },
+                                                    "reference_id": {
+                                                        "description": "To handle retries over flaky network. Same value sent twice will result in `DUPLICATE_TRADE` error instead of 2 duplicate bets",
+                                                        "example": "123",
+                                                        "type": "string"
+                                                    },
+                                                    "returned_amount": {
+                                                        "example": 7.8,
+                                                        "type": "number"
+                                                    },
+                                                    "side": {
+                                                        "description": "\nside can either be:<ul>\n<li>buy: backing a contract\n<li>sell: laying a contract\n</ul>",
+                                                        "enum": [
+                                                            "buy",
+                                                            "sell"
+                                                        ],
+                                                        "example": "buy",
+                                                        "type": "string"
+                                                    },
+                                                    "stake": {
+                                                        "description": "Stake of an order",
+                                                        "example": "24.08",
+                                                        "type": "number"
+                                                    },
+                                                    "state": {
+                                                        "description": "\nOrder state can be one of four values:\n<ul>\n<li>created: The first state of the order after creation, this order is unmatched\n<li>partial: The order is partially matched\n<li>filled: The order is fully matched\n<li>settled: The order has settled, the final state of orders.\n    ",
+                                                        "enum": [
+                                                            "created",
+                                                            "partial",
+                                                            "filled",
+                                                            "settled"
+                                                        ],
+                                                        "example": "created",
+                                                        "type": "string"
+                                                    },
+                                                    "to_return": {
+                                                        "description": "Stake of an order",
+                                                        "example": "24.08",
+                                                        "type": "number"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "reference_id",
+                                                    "fullcover_type",
+                                                    "original_contracts",
+                                                    "to_return",
+                                                    "returned_amount",
+                                                    "state",
+                                                    "stake",
+                                                    "price",
+                                                    "side",
+                                                    "cashed_out_quantity",
+                                                    "cashed_out_amount",
+                                                    "number_of_bets",
+                                                    "created_datetime",
+                                                    "last_modified_datetime"
+                                                ],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "pagination": {
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "next_page": {
+                                                    "description": "The url query string for clients to fetch the next page of orders",
+                                                    "example": "?limit=20&pagination_last_id=810214202189041",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "next_page"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "orders",
+                                        "pagination"
+                                    ],
+                                    "title": "fullcover_orders",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Orders success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "FORBIDDEN"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ZEUS_CONNECTION_ERROR",
+                                                "ZEUS_UNAVAILABLE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ZEUS_CONNECTION_ERROR, ZEUS_UNAVAILABLE"
+                    },
+                    "504": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ZEUS_TIMEOUT"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ZEUS_TIMEOUT"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Get all fullcover orders for an account.",
+                "tags": [
+                    "orders"
+                ]
+            }
+        },
+        "/v3/orders/{order_id}/": {
+            "delete": {
+                "description": "\n##  Rate limits\nMaximum 10 requests per second<br>",
+                "operationId": "cancel_order",
+                "parameters": [
+                    {
+                        "description": "Order ID to cancel",
+                        "in": "path",
+                        "name": "order_id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Order cancelled successfully",
+                                    "example": {},
+                                    "title": "empty_response",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Order cancelled successfully"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "ORDER_CANCEL_REJECTED_LIMIT_EXCEEDED",
+                                                "ORDER_CANCEL_REJECTED_INSUFFICIENT_FUNDS",
+                                                "ORDER_CANCEL_REJECTED_NOT_LIVE",
+                                                "ORDER_CANCEL_REJECTED_TRADING_SUSPENDED",
+                                                "ORDER_CANCEL_REJECTED_THROTTLE_EXCEEDED",
+                                                "ORDER_CANCEL_REJECTED_SERVICE_TEMPORARILY_UNAVAILABLE",
+                                                "ORDER_CANCEL_REJECTED_TOO_LATE",
+                                                "ORDER_CANCEL_REJECTED_CAPACITY_REACHED",
+                                                "ORDER_CANCEL_REJECTED_INVALID_QUANTITY",
+                                                "ORDER_CANCEL_REJECTED_MARKET_NOT_FOUND",
+                                                "ORDER_CANCEL_REJECTED_ACCOUNT_SUSPENDED",
+                                                "ORDER_CANCEL_REJECTED_STAKE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, ORDER_CANCEL_REJECTED_LIMIT_EXCEEDED, ORDER_CANCEL_REJECTED_INSUFFICIENT_FUNDS, ORDER_CANCEL_REJECTED_NOT_LIVE, ORDER_CANCEL_REJECTED_TRADING_SUSPENDED, ORDER_CANCEL_REJECTED_THROTTLE_EXCEEDED, ORDER_CANCEL_REJECTED_SERVICE_TEMPORARILY_UNAVAILABLE, ORDER_CANCEL_REJECTED_TOO_LATE, ORDER_CANCEL_REJECTED_CAPACITY_REACHED, ORDER_CANCEL_REJECTED_INVALID_QUANTITY, ORDER_CANCEL_REJECTED_MARKET_NOT_FOUND, ORDER_CANCEL_REJECTED_ACCOUNT_SUSPENDED, ORDER_CANCEL_REJECTED_STAKE_LIMIT_EXCEEDED"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_REQUIRED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_REQUIRED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ACCOUNT_UNVERIFIED",
+                                                "FORBIDDEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ACCOUNT_UNVERIFIED, FORBIDDEN"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "ORDER_CANCEL_REJECTED_NOT_FOUND"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "ORDER_CANCEL_REJECTED_NOT_FOUND"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RATE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_UNAVAILABLE",
+                                                "ORDER_UNAVAILABLE",
+                                                "CANCEL_ORDER_TIMEOUT"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_UNAVAILABLE, ORDER_UNAVAILABLE, CANCEL_ORDER_TIMEOUT"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ],
+                "summary": "Cancel specific order.",
+                "tags": [
+                    "orders"
+                ]
+            }
+        },
+        "/v3/sessions/": {
+            "delete": {
+                "description": "\n##  Rate limits\nMaximum 30 requests per 60 seconds<br>",
+                "operationId": "delete_current_session",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "description": "Delete session success response",
+                                    "properties": {
+                                        "success": {
+                                            "description": "This value should be True if the logout succeeded",
+                                            "example": true,
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required": [
+                                        "success"
+                                    ],
+                                    "title": "session_delete_status",
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Delete session success response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "INVALID_CREDENTIALS",
+                                                "PASSWORD_RESET_NEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "INVALID_CREDENTIALS, PASSWORD_RESET_NEEDED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "CLIENT_JURISDICTION_MISMATCH",
+                                                "USER_EXCLUDED",
+                                                "SESSION_LIMIT_REACHED",
+                                                "SOURCE_BLOCKED",
+                                                "USER_ON_TIMEOUT",
+                                                "USER_SELF_SUSPENDED",
+                                                "IP_NOT_TRUSTED",
+                                                "USER_SUSPENDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "CLIENT_JURISDICTION_MISMATCH, USER_EXCLUDED, SESSION_LIMIT_REACHED, SOURCE_BLOCKED, USER_ON_TIMEOUT, USER_SELF_SUSPENDED, IP_NOT_TRUSTED, USER_SUSPENDED"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RATE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "451": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "COUNTRY_BLOCKED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "COUNTRY_BLOCKED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_UNAVAILABLE",
+                                                "TIMEOUT"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_UNAVAILABLE, TIMEOUT"
+                    }
+                },
+                "summary": "Logout from the current session.",
+                "tags": [
+                    "sessions"
+                ]
+            },
+            "post": {
+                "description": "## Description\nThis will return a token that can be used in the Authentication header in the\nform \"Session-Token <your_token>\" on authenticated requests.<br>\nThe token is valid for 30min, but if you make an authenticated request\nwith it, it will be renewed for the next 30min.\n\n##  Rate limits\nMaximum 10 requests per 60 seconds<br>",
+                "operationId": "create_session",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "additionalProperties": false,
+                                "properties": {
+                                    "create_social_member": {
+                                        "description": "If true, and the user logging in does not have an associated social member,this call will also take care of creating the social member for this user",
+                                        "example": true,
+                                        "type": "boolean"
+                                    },
+                                    "password": {
+                                        "description": "Your account password",
+                                        "example": "verysecurepassword",
+                                        "minLength": 1,
+                                        "type": "string"
+                                    },
+                                    "remember": {
+                                        "description": "True if the client wants Smarkets to allow\nthis device to renew the token even after its expiration",
+                                        "example": true,
+                                        "type": "boolean"
+                                    },
+                                    "reopen_account": {
+                                        "description": "If true, and the user has closed their own account,then their account will be reopened and they will log in as normal.",
+                                        "example": false,
+                                        "type": "boolean"
+                                    },
+                                    "use_auth_v2": {
+                                        "description": "If true, and the user logging will be forced to use auth v2,and should expect refresh_token and access_token in the cookies and response",
+                                        "example": false,
+                                        "type": "boolean"
+                                    },
+                                    "username": {
+                                        "description": "Your username",
+                                        "example": "john.doe@company.com",
+                                        "format": "email",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "password",
+                                    "username"
+                                ],
+                                "title": "session_create",
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "description": "JSON Request object"
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "description": "Token response for old and new auth v2.",
+                                    "oneOf": [
+                                        {
+                                            "additionalProperties": false,
+                                            "description": "Token response",
+                                            "properties": {
+                                                "created_social_member": {
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                },
+                                                "factor": {
+                                                    "description": "\nNext factor for authentication to complete, used in multi factor authentication:\n<ul>\n<li>complete: Login is complete and there is no further factor required.\n<li>totp: Login is incomplete and needs the totp code.\n<li>nemid: Login is incomplete and needs nemid confirmation.<li>\n</ul>\n    ",
+                                                    "enum": [
+                                                        "complete",
+                                                        "totp",
+                                                        "nemid"
+                                                    ],
+                                                    "example": "complete",
+                                                    "type": "string"
+                                                },
+                                                "nemid_session_id": {
+                                                    "description": "Session id for Denmark nemid authorization",
+                                                    "example": "776071e7-6b96-41af-8fa2-7fed98e227fd",
+                                                    "type": "string"
+                                                },
+                                                "redirect_url": {
+                                                    "description": "Redirect url to complete nemid authorization flow",
+                                                    "example": "https://test.zignsec.com/v2/Hosted/776071e7-6b96-41af-8fa2-7fed98e227fd/nemid/",
+                                                    "type": "string"
+                                                },
+                                                "stop": {
+                                                    "description": "\nThis datetime specifies when the token will expire if not renewed.<br>\nAny authenticated API call will automatically renew the token for another 30min<br>\n    ",
+                                                    "example": "2018-01-24T19:49:43.964757",
+                                                    "format": "date-time",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                },
+                                                "token": {
+                                                    "description": "\nThis session token can be used to make authenticated requests to Smarkets.<br>\nWe will resolve the who the user is based on this.<br>\nAccount information, orders, up-to-date prices are examples that will require it to be sent.\n    ",
+                                                    "example": "WzM2NjI1MDIsMjIyMDIxMzJd.jKWaw5j3XtYX6huY7HZVEvISu6k",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                },
+                                                "verify": {
+                                                    "description": "True if further verification is required",
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "token",
+                                                "stop"
+                                            ],
+                                            "title": "token_response"
+                                        },
+                                        {
+                                            "additionalProperties": false,
+                                            "description": "Token response for auth v2",
+                                            "properties": {
+                                                "created_social_member": {
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                },
+                                                "factor": {
+                                                    "description": "\nNext factor for authentication to complete, used in multi factor authentication:\n<ul>\n<li>complete: Login is complete and there is no further factor required.\n<li>totp: Login is incomplete and needs the totp code.\n<li>nemid: Login is incomplete and needs nemid confirmation.<li>\n</ul>\n    ",
+                                                    "enum": [
+                                                        "complete",
+                                                        "totp",
+                                                        "nemid"
+                                                    ],
+                                                    "example": "complete",
+                                                    "type": "string"
+                                                },
+                                                "refresh_token": {
+                                                    "description": "This refresh token can be used to generate an access token.",
+                                                    "example": "BgEBAAAAAAAAAAsAJEnKUVfYa6tkkDlTY22Q-wx2ZxGTOjHf1YeCY3lK_8DG7dRIzbkDOpkjYwhf8gzF0ZXwcyHOHfK0Ety5VDus",
+                                                    "type": "string"
+                                                },
+                                                "stop": {
+                                                    "description": "\nThis datetime specifies when the token will expire if not renewed.<br>\nAny authenticated API call will automatically renew the token for another 30min<br>\n    ",
+                                                    "example": "2018-01-24T19:49:43.964757",
+                                                    "format": "date-time",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                },
+                                                "token": {
+                                                    "description": "\nThis Access token can be used to make authenticated requests to Smarkets.<br>\nWe will resolve the who the user is based on this.<br>\nAccount information, orders, up-to-date prices are examples that will require it to be sent.\n    ",
+                                                    "example": "BQEBAAAAAAAAAAsAAAAAAAAACwAAAABjvp6AAAAAAAAAC6Q.AAAAAQkIITxB5iemEcETqkNprkAGpiI3SHGHpx-pP2SG3NEPDFaT2IIu6OvWqbS2RxINKEJD-e3c95FvfbiVh8ZpEgA",
+                                                    "type": "string"
+                                                },
+                                                "verify": {
+                                                    "description": "True if further verification is required",
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "refresh_token",
+                                                "token",
+                                                "stop"
+                                            ],
+                                            "title": "token_v2_response"
+                                        }
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Token response for old and new auth v2."
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "INVALID_DEVICE_COOKIE"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, INVALID_DEVICE_COOKIE"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "INVALID_CREDENTIALS",
+                                                "PASSWORD_RESET_NEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "INVALID_CREDENTIALS, PASSWORD_RESET_NEEDED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "CLIENT_JURISDICTION_MISMATCH",
+                                                "USER_EXCLUDED",
+                                                "SESSION_LIMIT_REACHED",
+                                                "SOURCE_BLOCKED",
+                                                "USER_ON_TIMEOUT",
+                                                "DEVICE_NOT_TRUSTED",
+                                                "USER_SELF_SUSPENDED",
+                                                "IP_NOT_TRUSTED",
+                                                "USER_SUSPENDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "CLIENT_JURISDICTION_MISMATCH, USER_EXCLUDED, SESSION_LIMIT_REACHED, SOURCE_BLOCKED, USER_ON_TIMEOUT, DEVICE_NOT_TRUSTED, USER_SELF_SUSPENDED, IP_NOT_TRUSTED, USER_SUSPENDED"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "RATE_LIMIT_EXCEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "RATE_LIMIT_EXCEEDED"
+                    },
+                    "451": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "COUNTRY_BLOCKED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "COUNTRY_BLOCKED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_UNAVAILABLE",
+                                                "TIMEOUT"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_UNAVAILABLE, TIMEOUT"
+                    }
+                },
+                "summary": "Login using this route.",
+                "tags": [
+                    "sessions"
+                ]
+            }
+        },
+        "/v3/sessions/verify/": {
+            "post": {
+                "description": "## Description\nTo enable MFA on a Smarkets account:<br>\n - Go to <a href=\"https://smarkets.com/account/settings/login\">login settings</a>\nand click \"Enable Two-Factor Authentication\"<br>\n - Copy the secret into your TOTP library<br>\n - Generate one code using it and paste it in the dialog<br>\n - Click \"Enable Two-Factor Authentication\"<br>\n\nEvery time you login: <br>\n - Make a POST request to /v3/sessions/ to get a token<br>\n - Make a POST request to this route with the token and the code\ngenerated by you to complete the login<br>\n\n\n",
+                "operationId": "verify",
+                "parameters": [],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "additionalProperties": false,
+                                "properties": {
+                                    "code": {
+                                        "description": "This code is generated as a time based one-time password (TOTP)",
+                                        "example": "375912",
+                                        "type": "string"
+                                    },
+                                    "token": {
+                                        "description": "\nThis session token can be used to make authenticated requests to Smarkets.<br>\nWe will resolve the who the user is based on this.<br>\nAccount information, orders, up-to-date prices are examples that will require it to be sent.\n    ",
+                                        "example": "WzM2NjI1MDIsMjIyMDIxMzJd.jKWaw5j3XtYX6huY7HZVEvISu6k",
+                                        "nullable": true,
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "code",
+                                    "token"
+                                ],
+                                "title": "totp_login",
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "description": "JSON Request object"
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "description": "Token response for old and new auth v2.",
+                                    "oneOf": [
+                                        {
+                                            "additionalProperties": false,
+                                            "description": "Token response",
+                                            "properties": {
+                                                "created_social_member": {
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                },
+                                                "factor": {
+                                                    "description": "\nNext factor for authentication to complete, used in multi factor authentication:\n<ul>\n<li>complete: Login is complete and there is no further factor required.\n<li>totp: Login is incomplete and needs the totp code.\n<li>nemid: Login is incomplete and needs nemid confirmation.<li>\n</ul>\n    ",
+                                                    "enum": [
+                                                        "complete",
+                                                        "totp",
+                                                        "nemid"
+                                                    ],
+                                                    "example": "complete",
+                                                    "type": "string"
+                                                },
+                                                "nemid_session_id": {
+                                                    "description": "Session id for Denmark nemid authorization",
+                                                    "example": "776071e7-6b96-41af-8fa2-7fed98e227fd",
+                                                    "type": "string"
+                                                },
+                                                "redirect_url": {
+                                                    "description": "Redirect url to complete nemid authorization flow",
+                                                    "example": "https://test.zignsec.com/v2/Hosted/776071e7-6b96-41af-8fa2-7fed98e227fd/nemid/",
+                                                    "type": "string"
+                                                },
+                                                "stop": {
+                                                    "description": "\nThis datetime specifies when the token will expire if not renewed.<br>\nAny authenticated API call will automatically renew the token for another 30min<br>\n    ",
+                                                    "example": "2018-01-24T19:49:43.964757",
+                                                    "format": "date-time",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                },
+                                                "token": {
+                                                    "description": "\nThis session token can be used to make authenticated requests to Smarkets.<br>\nWe will resolve the who the user is based on this.<br>\nAccount information, orders, up-to-date prices are examples that will require it to be sent.\n    ",
+                                                    "example": "WzM2NjI1MDIsMjIyMDIxMzJd.jKWaw5j3XtYX6huY7HZVEvISu6k",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                },
+                                                "verify": {
+                                                    "description": "True if further verification is required",
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "token",
+                                                "stop"
+                                            ],
+                                            "title": "token_response"
+                                        },
+                                        {
+                                            "additionalProperties": false,
+                                            "description": "Token response for auth v2",
+                                            "properties": {
+                                                "created_social_member": {
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                },
+                                                "factor": {
+                                                    "description": "\nNext factor for authentication to complete, used in multi factor authentication:\n<ul>\n<li>complete: Login is complete and there is no further factor required.\n<li>totp: Login is incomplete and needs the totp code.\n<li>nemid: Login is incomplete and needs nemid confirmation.<li>\n</ul>\n    ",
+                                                    "enum": [
+                                                        "complete",
+                                                        "totp",
+                                                        "nemid"
+                                                    ],
+                                                    "example": "complete",
+                                                    "type": "string"
+                                                },
+                                                "refresh_token": {
+                                                    "description": "This refresh token can be used to generate an access token.",
+                                                    "example": "BgEBAAAAAAAAAAsAJEnKUVfYa6tkkDlTY22Q-wx2ZxGTOjHf1YeCY3lK_8DG7dRIzbkDOpkjYwhf8gzF0ZXwcyHOHfK0Ety5VDus",
+                                                    "type": "string"
+                                                },
+                                                "stop": {
+                                                    "description": "\nThis datetime specifies when the token will expire if not renewed.<br>\nAny authenticated API call will automatically renew the token for another 30min<br>\n    ",
+                                                    "example": "2018-01-24T19:49:43.964757",
+                                                    "format": "date-time",
+                                                    "nullable": true,
+                                                    "type": "string"
+                                                },
+                                                "token": {
+                                                    "description": "\nThis Access token can be used to make authenticated requests to Smarkets.<br>\nWe will resolve the who the user is based on this.<br>\nAccount information, orders, up-to-date prices are examples that will require it to be sent.\n    ",
+                                                    "example": "BQEBAAAAAAAAAAsAAAAAAAAACwAAAABjvp6AAAAAAAAAC6Q.AAAAAQkIITxB5iemEcETqkNprkAGpiI3SHGHpx-pP2SG3NEPDFaT2IIu6OvWqbS2RxINKEJD-e3c95FvfbiVh8ZpEgA",
+                                                    "type": "string"
+                                                },
+                                                "verify": {
+                                                    "description": "True if further verification is required",
+                                                    "example": true,
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "refresh_token",
+                                                "token",
+                                                "stop"
+                                            ],
+                                            "title": "token_v2_response"
+                                        }
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Token response for old and new auth v2."
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "REQUEST_VALIDATION_ERROR",
+                                                "INVALID_TOKEN"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "REQUEST_VALIDATION_ERROR, INVALID_TOKEN"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "INVALID_CREDENTIALS",
+                                                "PASSWORD_RESET_NEEDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "INVALID_CREDENTIALS, PASSWORD_RESET_NEEDED"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "CLIENT_JURISDICTION_MISMATCH",
+                                                "USER_EXCLUDED",
+                                                "SESSION_LIMIT_REACHED",
+                                                "SOURCE_BLOCKED",
+                                                "USER_ON_TIMEOUT",
+                                                "USER_SELF_SUSPENDED",
+                                                "IP_NOT_TRUSTED",
+                                                "USER_SUSPENDED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "CLIENT_JURISDICTION_MISMATCH, USER_EXCLUDED, SESSION_LIMIT_REACHED, SOURCE_BLOCKED, USER_ON_TIMEOUT, USER_SELF_SUSPENDED, IP_NOT_TRUSTED, USER_SUSPENDED"
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitError"
+                                }
+                            }
+                        },
+                        "description": "Rate limit exceeded"
+                    },
+                    "451": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "COUNTRY_BLOCKED"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "COUNTRY_BLOCKED"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerError"
+                                }
+                            }
+                        },
+                        "description": "Internal server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "string",
+                                                "object"
+                                            ]
+                                        },
+                                        "error_type": {
+                                            "enum": [
+                                                "AUTH_UNAVAILABLE",
+                                                "TIMEOUT"
+                                            ],
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "error_type"
+                                    ]
+                                }
+                            }
+                        },
+                        "description": "AUTH_UNAVAILABLE, TIMEOUT"
+                    }
+                },
+                "summary": "Verify login step for multi factor authentication (MFA).",
+                "tags": [
+                    "sessions"
+                ]
+            }
+        }
+    },
+    "servers": [
+        {
+            "description": "Production",
+            "url": "https://api.smarkets.com"
+        }
+    ],
+    "tags": [
+        {
+            "description": "Session management operations - Logging in and out",
+            "name": "sessions"
+        },
+        {
+            "description": "Account information",
+            "name": "accounts"
+        },
+        {
+            "description": "Events listed in the exchange",
+            "name": "events"
+        },
+        {
+            "description": "Competitors for each event",
+            "name": "competitors"
+        },
+        {
+            "description": "Markets for each event",
+            "name": "markets"
+        },
+        {
+            "description": "Contracts for each market",
+            "name": "contracts"
+        },
+        {
+            "description": "Traded volumes in the exchange",
+            "name": "volumes"
+        },
+        {
+            "description": "Quotes and execution information",
+            "name": "prices"
+        },
+        {
+            "description": "Currency rates",
+            "name": "currencies"
+        },
+        {
+            "description": "Placing and fetching exchange orders",
+            "name": "orders"
+        },
+        {
+            "description": "Statement for an account",
+            "name": "account_activity"
+        }
+    ]
+} as const;

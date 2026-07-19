@@ -1,0 +1,566 @@
+{
+  "getAuthNonce": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "walletAddress",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "loginWithSignature": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "walletAddress",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "signature",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "nonce",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "logout": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "walletAddress",
+        "kind": "string",
+        "optional": true
+      }
+    ]
+  },
+  "isSessionActive": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "walletAddress",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "loadMarkets": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "reload",
+        "kind": "boolean",
+        "optional": true
+      }
+    ]
+  },
+  "fetchMarkets": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchMarketsPaginated": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchEventsPaginated": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchEvents": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchSeries": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchMarket": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchEvent": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchEventMetadata": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "eventTicker",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "fetchOHLCV": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "outcomeId",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "fetchOrderBook": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "outcomeId",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "limit",
+        "kind": "number",
+        "optional": true
+      },
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchOrderBooks": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "outcomeIds",
+        "kind": "unknown",
+        "optional": false
+      }
+    ]
+  },
+  "fetchTrades": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "outcomeId",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "createOrder": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "buildOrder": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "submitOrder": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "built",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "cancelOrder": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "orderId",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "fetchOrder": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "orderId",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "fetchOpenOrders": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "marketId",
+        "kind": "string",
+        "optional": true
+      }
+    ]
+  },
+  "fetchMyTrades": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchClosedOrders": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchAllOrders": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchPositions": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "address",
+        "kind": "string",
+        "optional": true
+      }
+    ]
+  },
+  "fetchBalance": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "address",
+        "kind": "string",
+        "optional": true
+      }
+    ]
+  },
+  "getExecutionPrice": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "orderBook",
+        "kind": "object",
+        "optional": false
+      },
+      {
+        "name": "side",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "amount",
+        "kind": "number",
+        "optional": false
+      }
+    ]
+  },
+  "getExecutionPriceDetailed": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "orderBook",
+        "kind": "object",
+        "optional": false
+      },
+      {
+        "name": "side",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "amount",
+        "kind": "number",
+        "optional": false
+      }
+    ]
+  },
+  "filterMarkets": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "markets",
+        "kind": "unknown",
+        "optional": false
+      },
+      {
+        "name": "criteria",
+        "kind": "unknown",
+        "optional": false
+      }
+    ]
+  },
+  "filterEvents": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "events",
+        "kind": "unknown",
+        "optional": false
+      },
+      {
+        "name": "criteria",
+        "kind": "unknown",
+        "optional": false
+      }
+    ]
+  },
+  "watchOrderBook": {
+    "verb": "ws",
+    "args": [
+      {
+        "name": "outcomeId",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "limit",
+        "kind": "number",
+        "optional": true
+      },
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "watchOrderBooks": {
+    "verb": "ws",
+    "args": [
+      {
+        "name": "outcomeIds",
+        "kind": "unknown",
+        "optional": false
+      },
+      {
+        "name": "limit",
+        "kind": "number",
+        "optional": true
+      },
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "unwatchOrderBook": {
+    "verb": "ws",
+    "args": [
+      {
+        "name": "outcomeId",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "watchTrades": {
+    "verb": "ws",
+    "args": [
+      {
+        "name": "outcomeId",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "address",
+        "kind": "string",
+        "optional": true
+      },
+      {
+        "name": "since",
+        "kind": "number",
+        "optional": true
+      },
+      {
+        "name": "limit",
+        "kind": "number",
+        "optional": true
+      }
+    ]
+  },
+  "watchAddress": {
+    "verb": "ws",
+    "args": [
+      {
+        "name": "address",
+        "kind": "string",
+        "optional": false
+      },
+      {
+        "name": "types",
+        "kind": "unknown",
+        "optional": true
+      }
+    ]
+  },
+  "unwatchAddress": {
+    "verb": "ws",
+    "args": [
+      {
+        "name": "address",
+        "kind": "string",
+        "optional": false
+      }
+    ]
+  },
+  "close": {
+    "verb": "post",
+    "args": []
+  },
+  "fetchMarketMatches": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchEventMatches": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "compareMarketPrices": {
+    "verb": "post",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "fetchRelatedMarkets": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "fetchMatchedMarkets": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchMatchedPrices": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  },
+  "fetchHedges": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": false
+      }
+    ]
+  },
+  "fetchArbitrage": {
+    "verb": "get",
+    "args": [
+      {
+        "name": "params",
+        "kind": "object",
+        "optional": true
+      }
+    ]
+  }
+}

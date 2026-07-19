@@ -1,0 +1,47 @@
+name: Docs Sync Check
+
+on:
+  pull_request:
+    paths:
+      - 'core/src/BaseExchange.ts'
+      - 'core/src/types.ts'
+      - 'core/src/server/app.ts'
+      - 'core/scripts/generate-openapi.js'
+      - 'scripts/generate-mintlify-docs.js'
+      - 'scripts/generate-llms.js'
+      - 'docs/**'
+
+jobs:
+  check-docs-sync:
+    name: Verify docs are in sync with core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build core (capability map needs dist/)
+        run: npm run build --workspace=pmxt-core
+
+      - name: Generate OpenAPI (includes hosted docs spec)
+        run: npm run generate:openapi --workspace=pmxt-core
+
+      - name: Generate Mintlify docs (venues + navigation)
+        run: npm run generate:mintlify --workspace=pmxt-core
+
+      - name: Generate llms.txt
+        run: npm run docs:llms
+
+      - name: Check for uncommitted docs changes
+        run: |
+          # Exclude hosted-owned files — those are managed by hosted-pmxt's sync workflow.
+          if ! git diff --exit-code -- docs/ ':!docs/api-reference/openapi-hosted.json'; then
+            echo "::error::Docs are out of sync with core. Run 'npm run generate:openapi --workspace=pmxt-core && npm run generate:mintlify --workspace=pmxt-core && npm run docs:llms' and commit the result."
+            exit 1
+          fi
+          echo "Docs are in sync."

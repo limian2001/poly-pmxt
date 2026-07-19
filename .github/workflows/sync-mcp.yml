@@ -1,0 +1,72 @@
+name: Sync MCP Server
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  sync-mcp:
+    name: Update pmxt-mcp
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          if [[ "$VERSION" == *f ]]; then
+            VERSION=${VERSION%f}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Clone pmxt-mcp
+        run: |
+          git clone https://x-access-token:${{ secrets.MCP_REPO_TOKEN }}@github.com/pmxt-dev/pmxt-mcp.git /tmp/pmxt-mcp
+
+      - name: Copy spec files
+        run: |
+          cp core/src/server/openapi.yaml /tmp/pmxt-mcp/spec/
+          cp core/src/server/method-verbs.json /tmp/pmxt-mcp/spec/
+
+      - name: Regenerate tools
+        run: |
+          cd /tmp/pmxt-mcp
+          npm install
+          node scripts/generate-tools.cjs
+
+      - name: Update version
+        run: |
+          cd /tmp/pmxt-mcp
+          npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Commit and push
+        run: |
+          cd /tmp/pmxt-mcp
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "sync: update to pmxt v${{ steps.get_version.outputs.version }}"
+            git tag "v${{ steps.get_version.outputs.version }}"
+            git push origin main --tags
+          else
+            echo "No changes to sync"
+          fi
+
+      - name: Publish to npm
+        run: |
+          cd /tmp/pmxt-mcp
+          cp ~/.npmrc . 2>/dev/null || echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

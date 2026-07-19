@@ -1,0 +1,1360 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PMXT Hosted Router API",
+    "description": "Hosted-only endpoints for cross-venue search, matching, arbitrage, and SQL.",
+    "version": "49fbcd4"
+  },
+  "servers": [
+    {
+      "url": "https://api.pmxt.dev",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Trading (Hosted)",
+      "description": "Hosted trading endpoints. Build / submit / cancel orders via `trade.pmxt.dev/v0/*`. Hosted-mode is the default when `pmxt_api_key` is set."
+    },
+    {
+      "name": "Orders & Positions (Hosted)",
+      "description": "Hosted account reads. Open orders, fills, balances, and positions via `trade.pmxt.dev/v0/*`. Requires `pmxt_api_key` + `wallet_address`."
+    },
+    {
+      "name": "MatchedMarkets",
+      "description": "Cross-venue matched market and event clusters."
+    },
+    {
+      "name": "SQL",
+      "description": "Direct read-only SQL access to the catalog (Enterprise)."
+    }
+  ],
+  "paths": {
+    "/v0/matched-event-clusters": {
+      "get": {
+        "summary": "Fetch matched event clusters",
+        "description": "Returns connected clusters of semantically matched events across venues. Use this endpoint to browse or anchor event-level matches while preserving each venue's child markets.\n",
+        "tags": [
+          "MatchedMarkets"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "eventId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anchor the response to a specific event ID."
+          },
+          {
+            "in": "query",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anchor the response to a specific event slug."
+          },
+          {
+            "in": "query",
+            "name": "url",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anchor the response to a specific event URL."
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Text search across cluster titles.",
+            "example": "Satoshi"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter both sides of matched edges by event category.",
+            "example": "Crypto"
+          },
+          {
+            "in": "query",
+            "name": "relations",
+            "schema": {
+              "type": "string",
+              "default": "identity"
+            },
+            "description": "Comma-separated relation filter. Valid values: identity (same resolution), subset (A yes implies B yes), superset (B yes implies A yes), overlap (some shared scenarios), and disjoint (mutually exclusive). Defaults to identity. For subset and superset, direction follows the pairwise edge direction returned in rawMatches when includeRawMatches=true.\n",
+            "example": "identity"
+          },
+          {
+            "in": "query",
+            "name": "relation",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "identity",
+                "subset",
+                "superset",
+                "overlap",
+                "disjoint"
+              ],
+              "default": "identity"
+            },
+            "description": "Single relation filter. Alias for relations.",
+            "example": "identity"
+          },
+          {
+            "in": "query",
+            "name": "minConfidence",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "venues",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated venue allow-list.",
+            "example": "polymarket,kalshi"
+          },
+          {
+            "in": "query",
+            "name": "excludeVenues",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated venue deny-list."
+          },
+          {
+            "in": "query",
+            "name": "minVenues",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Minimum number of venues required in a cluster."
+          },
+          {
+            "in": "query",
+            "name": "withOrderbook",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Require at least one live orderbook on each matched edge."
+          },
+          {
+            "in": "query",
+            "name": "updatedSince",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Only include matches updated after this timestamp."
+          },
+          {
+            "in": "query",
+            "name": "includeRawMatches",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include the pairwise match edges used to build each cluster."
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "volume",
+                "confidence"
+              ],
+              "default": "volume"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "edgeLimit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Maximum number of pairwise edges to scan before clustering."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matched event clusters."
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import pmxt\n\nrouter = pmxt.Router(pmxt_api_key=\"YOUR_PMXT_API_KEY\")\nclusters = router.fetch_matched_event_clusters(\n    query=\"Satoshi\",\n    relation=\"identity\",\n    min_venues=2,\n    include_raw_matches=True,\n    limit=5,\n)\n\nfor cluster in clusters:\n    venues = [event.source_exchange for event in cluster.events]\n    print(cluster.canonical_title, venues)\n"
+          },
+          {
+            "lang": "javascript",
+            "label": "TypeScript",
+            "source": "import { Router } from \"pmxtjs\";\n\nconst router = new Router({ pmxtApiKey: \"YOUR_PMXT_API_KEY\" });\n\nasync function main() {\n  const clusters = await router.fetchMatchedEventClusters({\n    query: \"Satoshi\",\n    relation: \"identity\",\n    minVenues: 2,\n    includeRawMatches: true,\n    limit: 5,\n  });\n\n  for (const cluster of clusters) {\n    console.log(\n      cluster.canonicalTitle,\n      cluster.events.map((event) => event.sourceExchange),\n    );\n  }\n}\n\nmain();\n"
+          },
+          {
+            "lang": "bash",
+            "label": "curl",
+            "source": "curl -G \"https://api.pmxt.dev/v0/matched-event-clusters\" \\\n  -H \"Authorization: Bearer $PMXT_API_KEY\" \\\n  --data-urlencode \"query=Satoshi\" \\\n  --data-urlencode \"relation=identity\" \\\n  --data-urlencode \"minVenues=2\" \\\n  --data-urlencode \"includeRawMatches=true\" \\\n  --data-urlencode \"limit=5\"\n"
+          }
+        ],
+        "operationId": "getV0Matched-event-clusters"
+      }
+    },
+    "/v0/matched-market-clusters": {
+      "get": {
+        "summary": "Fetch matched market clusters",
+        "description": "Returns connected clusters of semantically matched markets across venues. Use this endpoint to browse or anchor market-level matches without flattening the response into pairwise rows.\n",
+        "tags": [
+          "MatchedMarkets"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "marketId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anchor the response to a specific market ID."
+          },
+          {
+            "in": "query",
+            "name": "slug",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anchor the response to a specific market slug."
+          },
+          {
+            "in": "query",
+            "name": "url",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Anchor the response to a specific market URL."
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Text search across cluster titles.",
+            "example": "Satoshi"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter both sides of matched edges by market category.",
+            "example": "Crypto"
+          },
+          {
+            "in": "query",
+            "name": "relations",
+            "schema": {
+              "type": "string",
+              "default": "identity"
+            },
+            "description": "Comma-separated relation filter. Valid values: identity (same resolution), subset (A yes implies B yes), superset (B yes implies A yes), overlap (some shared scenarios), and disjoint (mutually exclusive). Defaults to identity. For subset and superset, direction follows the pairwise edge direction returned in rawMatches when includeRawMatches=true.\n",
+            "example": "identity"
+          },
+          {
+            "in": "query",
+            "name": "relation",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "identity",
+                "subset",
+                "superset",
+                "overlap",
+                "disjoint"
+              ],
+              "default": "identity"
+            },
+            "description": "Single relation filter. Alias for relations.",
+            "example": "identity"
+          },
+          {
+            "in": "query",
+            "name": "minConfidence",
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "venues",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated venue allow-list.",
+            "example": "polymarket,kalshi"
+          },
+          {
+            "in": "query",
+            "name": "excludeVenues",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated venue deny-list."
+          },
+          {
+            "in": "query",
+            "name": "minVenues",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Minimum number of venues required in a cluster."
+          },
+          {
+            "in": "query",
+            "name": "withOrderbook",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Require at least one live orderbook on each matched edge."
+          },
+          {
+            "in": "query",
+            "name": "updatedSince",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Only include matches updated after this timestamp."
+          },
+          {
+            "in": "query",
+            "name": "includeRawMatches",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include the pairwise match edges used to build each cluster."
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "volume",
+                "confidence"
+              ],
+              "default": "volume"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "edgeLimit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Maximum number of pairwise edges to scan before clustering."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matched market clusters."
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import pmxt\n\nrouter = pmxt.Router(pmxt_api_key=\"YOUR_PMXT_API_KEY\")\nclusters = router.fetch_matched_market_clusters(\n    query=\"Satoshi\",\n    relation=\"identity\",\n    min_venues=2,\n    include_raw_matches=True,\n    limit=5,\n)\n\nfor cluster in clusters:\n    venues = [market.source_exchange for market in cluster.markets]\n    print(cluster.canonical_title, venues)\n"
+          },
+          {
+            "lang": "javascript",
+            "label": "TypeScript",
+            "source": "import { Router } from \"pmxtjs\";\n\nconst router = new Router({ pmxtApiKey: \"YOUR_PMXT_API_KEY\" });\n\nasync function main() {\n  const clusters = await router.fetchMatchedMarketClusters({\n    query: \"Satoshi\",\n    relation: \"identity\",\n    minVenues: 2,\n    includeRawMatches: true,\n    limit: 5,\n  });\n\n  for (const cluster of clusters) {\n    console.log(\n      cluster.canonicalTitle,\n      cluster.markets.map((market) => market.sourceExchange),\n    );\n  }\n}\n\nmain();\n"
+          },
+          {
+            "lang": "bash",
+            "label": "curl",
+            "source": "curl -G \"https://api.pmxt.dev/v0/matched-market-clusters\" \\\n  -H \"Authorization: Bearer $PMXT_API_KEY\" \\\n  --data-urlencode \"query=Satoshi\" \\\n  --data-urlencode \"relation=identity\" \\\n  --data-urlencode \"minVenues=2\" \\\n  --data-urlencode \"includeRawMatches=true\" \\\n  --data-urlencode \"limit=5\"\n"
+          }
+        ],
+        "operationId": "getV0Matched-market-clusters"
+      }
+    },
+    "/v0/sql": {
+      "post": {
+        "summary": "Execute a read-only SQL query against ClickHouse",
+        "tags": [
+          "SQL"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "example": "SELECT * FROM markets LIMIT 10"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "example": [
+                        {
+                          "column1": "value1"
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "columns": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "example": [
+                            {
+                              "name": "column1",
+                              "type": "String"
+                            }
+                          ]
+                        },
+                        "rows": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "statistics": {
+                          "type": "object",
+                          "properties": {
+                            "elapsed": {
+                              "type": "number",
+                              "example": 0.005
+                            },
+                            "rows_read": {
+                              "type": "integer",
+                              "example": 100
+                            },
+                            "bytes_read": {
+                              "type": "integer",
+                              "example": 5000
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or disallowed query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "query_error"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Enterprise plan required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "sql_access_denied"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "SQL query access requires an Enterprise plan"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Query timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "query_timeout"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Query exceeded the maximum execution time (5s)"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ClickHouse not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "service_unavailable"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "SQL query service is not available"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV0Sql"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Required when calling the hosted API directly (curl, requests, fetch). SDK users pass credentials via constructor params instead."
+      }
+    },
+    "schemas": {
+      "UnifiedOutcome": {
+        "type": "object",
+        "required": [
+          "outcomeId",
+          "marketId",
+          "label"
+        ],
+        "properties": {
+          "outcomeId": {
+            "type": "string"
+          },
+          "marketId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "nullable": true
+          },
+          "priceChange24h": {
+            "type": "number",
+            "nullable": true
+          },
+          "bestBid": {
+            "type": "number",
+            "nullable": true
+          },
+          "bestAsk": {
+            "type": "number",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "UnifiedMarket": {
+        "type": "object",
+        "required": [
+          "marketId",
+          "title",
+          "slug",
+          "outcomes"
+        ],
+        "properties": {
+          "marketId": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "volume24h": {
+            "type": "number"
+          },
+          "liquidity": {
+            "type": "number"
+          },
+          "openInterest": {
+            "type": "number",
+            "nullable": true
+          },
+          "resolutionDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "tickSize": {
+            "type": "number",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "contractAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnifiedOutcome"
+            }
+          }
+        }
+      },
+      "UnifiedEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "slug",
+          "markets"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string"
+          },
+          "markets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnifiedMarket"
+            }
+          },
+          "volume24h": {
+            "type": "number",
+            "nullable": true
+          },
+          "volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "ListMeta": {
+        "type": "object",
+        "required": [
+          "count",
+          "limit",
+          "offset"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "RateLimitError": {
+        "type": "object",
+        "required": [
+          "error",
+          "plan",
+          "limit",
+          "used"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "used": {
+            "type": "integer"
+          },
+          "window": {
+            "type": "string"
+          }
+        }
+      },
+      "HostedErrorResponse": {
+        "type": "object",
+        "description": "Error envelope returned by `trade.pmxt.dev/v0/*` endpoints. Mirrors the `ErrorDetail` shape used inside `BaseResponse.error` from the sidecar spec.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string",
+                "description": "Stable hosted-mode error code.",
+                "enum": [
+                  "HOSTED_TRADING_ERROR",
+                  "INSUFFICIENT_ESCROW_BALANCE",
+                  "ORDER_SIZE_TOO_SMALL",
+                  "INVALID_API_KEY",
+                  "OUTCOME_NOT_FOUND",
+                  "CATALOG_UNAVAILABLE",
+                  "BUILT_ORDER_EXPIRED",
+                  "INVALID_SIGNATURE",
+                  "NO_LIQUIDITY",
+                  "MISSING_WALLET_ADDRESS",
+                  "ORDER_NOT_FOUND",
+                  "INVALID_ORDER"
+                ]
+              },
+              "retryable": {
+                "type": "boolean"
+              },
+              "exchange": {
+                "type": "string",
+                "nullable": true
+              },
+              "detail": {
+                "type": "object",
+                "additionalProperties": {},
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "BuildOrderHostedRequest": {
+        "type": "object",
+        "description": "Hosted build-order request. Keys mirror the SDK constructor of an `Order`: pass catalog UUIDs (`market_id`, `outcome_id`), not venue-native ids.",
+        "required": [
+          "market_id",
+          "outcome_id",
+          "side",
+          "amount",
+          "user_address"
+        ],
+        "properties": {
+          "market_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Catalog market UUID."
+          },
+          "outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Catalog outcome UUID."
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "order_type": {
+            "type": "string",
+            "enum": [
+              "market",
+              "limit"
+            ],
+            "default": "market"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Order size. For `market` buys, in USDC; for `market` sells / `limit`, in shares."
+          },
+          "denom": {
+            "type": "string",
+            "enum": [
+              "shares",
+              "usdc"
+            ],
+            "default": "shares"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "nullable": true,
+            "description": "Required for `limit` orders. Probability in [0, 1]."
+          },
+          "slippage_pct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "nullable": true
+          },
+          "user_address": {
+            "type": "string",
+            "description": "EVM wallet address that will sign the resulting typed data."
+          }
+        }
+      },
+      "BuildOrderHostedResponse": {
+        "type": "object",
+        "description": "Hosted build-order response. The caller must sign `typed_data` locally (and `pull_typed_data` if present) and POST the signatures back via `submitOrderHosted` before the order expires.",
+        "required": [
+          "built_order_id",
+          "side",
+          "typed_data",
+          "quote"
+        ],
+        "properties": {
+          "built_order_id": {
+            "type": "string",
+            "description": "Opaque server-side key used by `submitOrderHosted` to look up the build context."
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "typed_data": {
+            "type": "object",
+            "description": "EIP-712 typed data for the order. Sign locally with the wallet that matches `user_address`."
+          },
+          "pull_typed_data": {
+            "type": "object",
+            "nullable": true,
+            "description": "Optional secondary EIP-712 payload for venues that require a pull-authorization (e.g. Polymarket neg-risk markets)."
+          },
+          "quote": {
+            "type": "object",
+            "description": "Pre-trade quote: expected average fill price, slippage, and fees.",
+            "properties": {
+              "best_price": {
+                "type": "number"
+              },
+              "expected_avg_price": {
+                "type": "number"
+              },
+              "expected_slippage_pct": {
+                "type": "number"
+              },
+              "estimated_cost_or_proceeds": {
+                "type": "number"
+              },
+              "fillable": {
+                "type": "boolean"
+              },
+              "liquidity": {
+                "type": "number"
+              },
+              "fee_amount": {
+                "type": "number"
+              },
+              "tick_size": {
+                "type": "string"
+              }
+            }
+          },
+          "resolved": {
+            "type": "object",
+            "nullable": true,
+            "description": "Venue-native fields resolved from the catalog UUIDs (`venue`, `token_id`, `neg_risk`, `tick_size`).",
+            "properties": {
+              "venue": {
+                "type": "string",
+                "enum": [
+                  "polymarket",
+                  "opinion"
+                ]
+              },
+              "token_id": {
+                "type": "string"
+              },
+              "neg_risk": {
+                "type": "boolean"
+              },
+              "tick_size": {
+                "type": "number"
+              },
+              "opinion_market_id": {
+                "type": "integer",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "SubmitOrderHostedRequest": {
+        "type": "object",
+        "description": "Hosted submit-order request. `signature` is the local EIP-712 signature over `BuildOrderHostedResponse.typed_data`.",
+        "required": [
+          "built_order_id",
+          "signature"
+        ],
+        "properties": {
+          "built_order_id": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Hex-encoded EIP-712 signature."
+          },
+          "pull_signature": {
+            "type": "string",
+            "nullable": true,
+            "description": "Signature for the secondary pull-authorization, required when `pull_typed_data` was returned."
+          },
+          "wait": {
+            "type": "boolean",
+            "default": false,
+            "description": "When `true`, the server waits for on-chain settlement before responding."
+          }
+        }
+      },
+      "CancelBuildHostedRequest": {
+        "type": "object",
+        "required": [
+          "order_id",
+          "user_address"
+        ],
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Unified order id, as returned by `fetchOpenOrdersHosted`."
+          },
+          "user_address": {
+            "type": "string"
+          }
+        }
+      },
+      "CancelBuildHostedResponse": {
+        "type": "object",
+        "required": [
+          "cancel_id",
+          "typed_data",
+          "deadline"
+        ],
+        "properties": {
+          "cancel_id": {
+            "type": "string"
+          },
+          "typed_data": {
+            "type": "object"
+          },
+          "pull_typed_data": {
+            "type": "object",
+            "nullable": true
+          },
+          "deadline": {
+            "type": "integer",
+            "description": "Unix epoch (s) after which the cancel build expires."
+          }
+        }
+      },
+      "OrderV0": {
+        "type": "object",
+        "description": "Hosted-mode `Order` shape. Mirrors `pmxt.Order` so the SDK can return it directly. `tx_hash`, `chain`, and `block_number` populate once execution settles on-chain.",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "market_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "market",
+              "limit"
+            ],
+            "nullable": true
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "nullable": true
+          },
+          "filled": {
+            "type": "number"
+          },
+          "remaining": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "fee": {
+            "type": "number",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "nullable": true
+          },
+          "tx_hash": {
+            "type": "string",
+            "nullable": true,
+            "description": "On-chain transaction hash. Null until settled."
+          },
+          "chain": {
+            "type": "string",
+            "nullable": true
+          },
+          "block_number": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "UserTradeV0": {
+        "type": "object",
+        "description": "Hosted-mode `UserTrade` shape. Mirrors `pmxt.UserTrade`.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "market_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "nullable": true
+          },
+          "amount": {
+            "type": "number",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "nullable": true
+          },
+          "fee": {
+            "type": "number",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "nullable": true
+          },
+          "tx_hash": {
+            "type": "string",
+            "nullable": true
+          },
+          "chain": {
+            "type": "string",
+            "nullable": true
+          },
+          "venue": {
+            "type": "string",
+            "enum": [
+              "polymarket",
+              "opinion"
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "PositionV0": {
+        "type": "object",
+        "description": "Hosted-mode `Position` shape. `current_price`, `current_value`, `entry_price`, `realized_pnl`, and `outcome_label` may be null when the server doesn't yet have the data.",
+        "required": [
+          "venue",
+          "shares"
+        ],
+        "properties": {
+          "market_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "venue": {
+            "type": "string",
+            "enum": [
+              "polymarket",
+              "opinion"
+            ]
+          },
+          "shares": {
+            "type": "number"
+          },
+          "current_price": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_value": {
+            "type": "number",
+            "nullable": true
+          },
+          "outcome_label": {
+            "type": "string",
+            "nullable": true
+          },
+          "entry_price": {
+            "type": "number",
+            "nullable": true
+          },
+          "realized_pnl": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "BalanceV0": {
+        "type": "object",
+        "description": "Hosted-mode `Balance` shape. Returns USDC held inside the PMXT `PreFundedEscrow` contract.",
+        "required": [
+          "currency",
+          "amount"
+        ],
+        "properties": {
+          "currency": {
+            "type": "string",
+            "default": "USDC"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "venue": {
+            "type": "string",
+            "enum": [
+              "polymarket",
+              "opinion"
+            ],
+            "nullable": true,
+            "description": "Set when the hosted backend returns a per-venue breakdown; null when balance is venue-agnostic."
+          }
+        }
+      }
+    }
+  }
+}

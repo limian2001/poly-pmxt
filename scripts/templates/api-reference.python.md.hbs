@@ -1,0 +1,236 @@
+# PMXT Python SDK - API Reference
+
+A unified Python SDK for supported prediction markets, with local sidecar access to PMXT exchange implementations and hosted services where configured.
+
+## Installation
+
+```bash
+pip install pmxt
+```
+
+## Quick Start
+
+```python
+import pmxt
+
+# Initialize exchanges (server starts automatically!)
+poly = pmxt.Polymarket()
+kalshi = pmxt.Kalshi()
+limitless = pmxt.Limitless()  # Requires API key for authenticated operations
+
+# Search for markets
+markets = poly.fetch_markets(query="Trump")
+print(markets[0].title)
+```
+
+> **Note**: This SDK automatically manages the PMXT sidecar server. Just import and use!
+
+---
+
+## Server Management
+
+The SDK exposes a `pmxt.server` namespace for managing the background sidecar server. Use these commands for clearing state, resolving "port busy" errors, inspecting server health, or tailing logs from interactive environments like Jupyter.
+
+```python
+import pmxt
+
+pmxt.server.status()    # snapshot dict: running, pid, port, version, uptime_seconds, lock_file
+pmxt.server.health()    # bool - True if /health responds ok
+pmxt.server.start()     # idempotent - no-op if already running
+pmxt.server.stop()      # stop the sidecar and clean up the lock file
+pmxt.server.restart()   # stop and start the sidecar
+pmxt.server.logs(50)    # last N log lines from ~/.pmxt/server.log (default 50)
+```
+
+### `pmxt.server.status`
+
+Returns a fresh dict describing the sidecar state. Useful for diagnosing "is it running?" before issuing API calls.
+
+```python
+import pmxt
+info = pmxt.server.status()
+print(info["running"], info["pid"], info["port"], info["uptime_seconds"])
+```
+
+### `pmxt.server.health`
+
+Returns `True` if the sidecar's `/health` endpoint responds with status `ok`, otherwise `False`. Lighter than `status()` when you only need a boolean liveness check.
+
+```python
+import pmxt
+if not pmxt.server.health():
+    pmxt.server.restart()
+```
+
+### `pmxt.server.start`
+
+Idempotently start the sidecar. Returns immediately if a healthy server is already running. Use this when you want to fail fast on startup rather than letting the first API call lazily boot the server.
+
+```python
+import pmxt
+pmxt.server.start()
+```
+
+### `pmxt.server.stop`
+
+Stop the running sidecar and clean up its lock file.
+
+```python
+import pmxt
+pmxt.server.stop()
+```
+
+### `pmxt.server.restart`
+
+Stop the sidecar (if running) and start a fresh one. Equivalent to `stop()` followed by `start()`.
+
+```python
+import pmxt
+pmxt.server.restart()
+```
+
+### `pmxt.server.logs`
+
+Return the last `n` lines (default `50`) from the sidecar log file at `~/.pmxt/server.log`. Returns an empty list if no log file exists yet. Invaluable when the server is misbehaving and you need to see what it actually printed.
+
+```python
+import pmxt
+for line in pmxt.server.logs(100):
+    print(line)
+```
+
+---
+
+## Methods
+
+{{#each methods}}
+### `{{pythonName this.name}}`
+
+{{this.summary}}
+
+{{#if this.exchangeNote}}
+{{{this.exchangeNote}}}
+{{/if}}
+
+**Signature:**
+
+```python
+{{#if this.signature}}
+{{this.signature}}
+{{else}}
+def {{pythonName this.name}}({{pythonParams this.params}}) -> {{pythonTypeClean this.returns.type}}:
+{{/if}}
+```
+
+**Parameters:**
+
+{{#if this.params}}
+{{#each this.params}}
+- `{{pythonName this.name}}` ({{pythonType this.type}}){{#if this.optional}} - **Optional**{{/if}}: {{this.description}}
+{{/each}}
+{{#if this.subParams}}
+{{#each this.subParams}}
+  - `{{pythonName this.name}}` - {{this.description}}
+{{/each}}
+{{/if}}
+{{else}}
+- None
+{{/if}}
+
+**Returns:** {{pythonType this.returns.type}} - {{this.returns.description}}
+
+**Example:**
+
+```python
+{{this.example}}
+```
+
+{{#if this.notes}}
+**Notes:**
+{{#each this.notes}}
+{{this}}
+{{/each}}
+{{/if}}
+
+---
+{{/each}}
+
+## Complete Trading Workflow
+
+```python
+{{workflowExample}}
+```
+
+## Data Models
+
+{{#each dataModels}}
+### `{{this.name}}`
+
+{{this.description}}
+
+```python
+@dataclass
+class {{this.name}}:
+{{#each this.fields}}
+{{pythonName this.name}}: {{pythonTypeClean this.type}} # {{this.description}}
+{{/each}}
+```
+
+---
+{{/each}}
+
+## Filter Parameters
+
+{{#each filterModels}}
+### `{{this.name}}`
+
+{{this.description}}
+
+```python
+@dataclass
+class {{this.name}}:
+{{#each this.fields}}
+{{pythonName this.name}}: {{pythonTypeClean this.type}} # {{this.description}}
+{{/each}}
+```
+
+---
+{{/each}}
+
+## Low-Level API Reference
+
+Advanced: call exchange-specific REST endpoints directly via `exchange.call_api(name, params)`.
+
+```python
+# Example
+result = exchange.call_api('operationName', {'param': 'value'})
+```
+
+{{#each exchangeGroups}}
+### {{this.displayName}}
+
+| `call_api()` name | Method | Path | Summary | Auth |
+|-----------------|--------|------|---------|------|
+{{#each this.endpoints}}
+| `{{this.name}}` | `{{this.method}}` | `{{this.path}}` | {{this.summary}} | {{#if this.isPrivate}}Required{{else}}Public{{/if}} |
+{{/each}}
+
+#### Endpoint Details
+
+{{#each this.endpoints}}
+##### `{{this.name}}`
+
+**{{this.method}}** `{{this.path}}`
+
+{{this.summary}}{{#if this.isPrivate}} *(Auth required)*{{/if}}
+
+{{#if this.params}}
+**Parameters:**
+{{#each this.params}}
+- `{{this.name}}` ({{this.in}}, {{this.type}}){{#if this.required}} **required**{{/if}}{{#if this.description}} — {{this.description}}{{/if}}{{#if this.enum}} — enum: `{{this.enum}}`{{/if}}
+{{/each}}
+{{/if}}
+
+---
+{{/each}}
+{{/each}}

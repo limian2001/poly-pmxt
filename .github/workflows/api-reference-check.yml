@@ -1,0 +1,36 @@
+name: Verify API Reference Docs
+
+on:
+  pull_request:
+
+jobs:
+  verify:
+    name: Verify API_REFERENCE.md files are up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --workspace=pmxt-core
+
+      - name: Regenerate API reference docs
+        run: npm run generate:docs --workspace=pmxt-core
+
+      - name: Check if API_REFERENCE.md files changed
+        run: |
+          changed=0
+          for f in core/API_REFERENCE.md sdks/python/API_REFERENCE.md sdks/typescript/API_REFERENCE.md; do
+            if ! git diff --exit-code "$f"; then
+              changed=1
+            fi
+          done
+          if [ "$changed" -eq 1 ]; then
+            echo "API_REFERENCE.md files are out of sync with source"
+            echo "Run: npm run generate:docs --workspace=pmxt-core"
+            exit 1
+          fi
+          echo "All API_REFERENCE.md files are up-to-date"

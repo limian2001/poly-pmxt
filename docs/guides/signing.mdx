@@ -1,0 +1,136 @@
+---
+title: Signing Orders
+description: "What the SDK does for you, and how to plug in a custom signer if you need one."
+---
+
+Hosted trading writes are authenticated by an **EIP-712 typed-data signature** computed locally on your machine. PMXT never sees your private key. The `pmxt_api_key` authenticates you to PMXT; the signature authenticates the order to the venue's on-chain settlement contract.
+
+## What the SDK does for you
+
+Pass `private_key` to the exchange constructor and you're done. The SDK auto-wraps it into a local signer (`EthAccountSigner` in Python, `EthersSigner` in TypeScript), builds the typed-data payload for the right venue, signs locally, and submits the signature. You never see the typed-data shape.
+
+<CodeGroup>
+```python Python
+import pmxt
+
+client = pmxt.Polymarket(
+    pmxt_api_key="pmxt_live_...",
+    wallet_address="0xYourWallet...",
+    private_key="0xYourPrivateKey...",
+)
+
+order = client.create_order(
+    market_id="2eeb03dc-404b-41d5-bc57-6aeb37927ae6",
+    outcome_id="a114f052-1fd1-4bcd-b9cf-de019db81b67",
+    side="buy",
+    order_type="market",
+    amount=5.0,
+    denom="usdc",
+    slippage_pct=30.0,
+)
+```
+
+```typescript TypeScript
+import { Polymarket } from "pmxtjs";
+
+const client = new Polymarket({
+  pmxtApiKey: "pmxt_live_...",
+  walletAddress: "0xYourWallet...",
+  privateKey: "0xYourPrivateKey...",
+});
+
+const order = await client.createOrder({
+  marketId: "2eeb03dc-404b-41d5-bc57-6aeb37927ae6",
+  outcomeId: "a114f052-1fd1-4bcd-b9cf-de019db81b67",
+  side: "buy",
+  type: "market",
+  amount: 5,
+  denom: "usdc",
+  slippage_pct: 30,
+});
+```
+</CodeGroup>
+
+### Single-signature vs dual-signature flows
+
+Most hosted writes are **single-signature** — one EIP-712 payload, surfaced as `built.raw["typed_data"]`. This covers:
+
+- Polymarket buys and sells — `OrderParams` on the Polygon `PreFundedEscrow` domain.
+- Opinion BUY — `CrossChainOrderParams` on the Polygon `PreFundedEscrow` domain (the BSC delivery leg needs no user signature; the user is the recipient).
+- Limitless buys and sells — ERC-7683 order on the Polygon escrow domain.
+
+**Opinion SELL is the one dual-signature case.** The user gives up tokens custodied on BSC, so the SDK builds two payloads at once:
+
+- `built.raw["typed_data"]` — `CrossChainSellPayParams` on the Polygon `PreFundedEscrow` domain (the operator's pay leg into the user's Polygon balance).
+- `built.raw["pull_typed_data"]` — `CrossChainSellPullParams` on the BSC `VenueEscrow` domain (the operator's pull leg against the user's BSC outcome tokens).
+
+The SDK signs both with the same EVM private key automatically — no extra wiring. The two domains are distinct (`PreFundedEscrow` on chainId 137, `VenueEscrow` on chainId 56) and each signature only authorizes its own chain's leg.
+
+## Why reads only need a wallet address
+
+For reads (`fetch_balance`, `fetch_positions`, `fetch_my_trades`), no signature is required — the `pmxt_api_key` is enough. You can construct a hosted client with only `pmxt_api_key` and `wallet_address` and read hosted state for that wallet:
+
+```python
+import pmxt
+
+read_only = pmxt.Polymarket(
+    pmxt_api_key="pmxt_live_...",
+    wallet_address="0xSomeOtherWallet...",
+    # no private_key
+)
+balance = read_only.fetch_balance()  # works
+```
+
+<Warning>
+Because reads don't require a signature, anyone with the `pmxt_api_key` can read any wallet's hosted state. Keep the key on the server. See the [trust model](/concepts/hosted-trading#trust-model).
+</Warning>
+
+## Advanced: bring your own signer
+
+If your key lives in a hardware wallet, HSM, MPC service, or anything that isn't a raw hex private key, skip `private_key` and inject a custom signer at construction. The SDK uses it transparently for every hosted write — you keep calling `create_order` as usual.
+
+The signer protocol is one method: `sign_typed_data(typed_data: dict) -> hex` (Python) or `signTypedData(typedData): Promise<string>` plus a readonly `address` (TypeScript).
+
+<CodeGroup>
+```python Python
+import pmxt
+
+client = pmxt.Polymarket(
+    pmxt_api_key="pmxt_live_...",
+    wallet_address="0xYourWallet...",
+    signer=my_custom_signer,  # exposes sign_typed_data(typed_data) -> hex
+)
+
+order = client.create_order(
+    market_id="2eeb03dc-...",
+    outcome_id="a114f052-...",
+    side="buy",
+    order_type="market",
+    amount=5.0,
+    denom="usdc",
+    slippage_pct=30.0,
+)
+```
+
+```typescript TypeScript
+import { Polymarket } from "pmxtjs";
+
+const client = new Polymarket({
+  pmxtApiKey: "pmxt_live_...",
+  walletAddress: "0xYourWallet...",
+  signer: myCustomSigner,  // { address, signTypedData(typedData) -> Promise<hex> }
+});
+
+const order = await client.createOrder({
+  marketId: "2eeb03dc-...",
+  outcomeId: "a114f052-...",
+  side: "buy",
+  type: "market",
+  amount: 5,
+  denom: "usdc",
+  slippage_pct: 30,
+});
+```
+</CodeGroup>
+
+For Opinion SELL's dual-signature flow, the same injected signer is invoked twice (once for the Polygon pay leg, once for the BSC pull leg) — no extra wiring. The SDK's `EthAccountSigner` (Python) / `EthersSigner` (TypeScript) are reference implementations; ethers v6 supports Ledger out of the box, and for MPC see Fireblocks / Privy / Turnkey docs.

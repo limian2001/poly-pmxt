@@ -1,0 +1,119 @@
+---
+title: watchTrades
+description: Stream real-time trade updates for a single outcome via WebSocket
+---
+
+<Info>
+**WebSocket endpoint** — This method uses WebSocket streaming, not HTTP. Connect to `wss://api.pmxt.dev/ws?apiKey=YOUR_KEY` (hosted) or `ws://localhost:3847/ws` (local server).
+</Info>
+
+Supported venues: `polymarket`, `kalshi`, `limitless`, `opinion`, `polymarket_us`, `myriad`, `gemini-titan`, `rain`, `hunch`.
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `outcomeId` | string | Yes | The outcome token ID to watch |
+
+## Response
+
+Returns a `Trade[]` array each time new trades occur:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Trade ID |
+| `timestamp` | number | Unix timestamp in milliseconds |
+| `price` | number | Trade price (0–1 probability) |
+| `amount` | number | Number of contracts |
+| `side` | string | `"buy"`, `"sell"`, or `"unknown"` |
+
+## Usage
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+exchange = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+
+while True:
+    trades = exchange.watch_trades("OUTCOME_ID")
+    for trade in trades:
+        print(f"{trade.side.upper()} {trade.amount} contracts @ {trade.price:.1%}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+const exchange = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+
+while (true) {
+  const trades = await exchange.watchTrades("OUTCOME_ID");
+  for (const trade of trades) {
+    console.log(`${trade.side.toUpperCase()} ${trade.amount} contracts @ ${(trade.price * 100).toFixed(1)}%`);
+  }
+}
+```
+
+```json WebSocket
+// → Subscribe
+{ "id": "req-1", "action": "subscribe", "exchange": "polymarket", "method": "watchTrades", "args": ["OUTCOME_ID"] }
+
+// ← Data event
+{
+  "event": "data",
+  "id": "req-1",
+  "method": "watchTrades",
+  "symbol": "OUTCOME_ID",
+  "source": "polymarket",
+  "data": [
+    {
+      "id": "trade-abc123",
+      "timestamp": 1778450010713,
+      "price": 0.42,
+      "amount": 100,
+      "side": "buy"
+    }
+  ]
+}
+```
+
+</CodeGroup>
+
+## Use cases
+
+### Trade volume tracker
+
+Monitor real-time trading volume on a market:
+
+<CodeGroup>
+
+```python Python
+import pmxt
+
+exchange = pmxt.Polymarket(pmxt_api_key="YOUR_PMXT_API_KEY")
+total_volume = 0
+
+while True:
+    trades = exchange.watch_trades("OUTCOME_ID")
+    for trade in trades:
+        total_volume += trade.amount
+        print(f"Trade: {trade.side} {trade.amount} @ {trade.price:.1%} | Total volume: {total_volume}")
+```
+
+```javascript JavaScript
+import { Polymarket } from "pmxtjs";
+
+const exchange = new Polymarket({ pmxtApiKey: "YOUR_PMXT_API_KEY" });
+let totalVolume = 0;
+
+while (true) {
+  const trades = await exchange.watchTrades("OUTCOME_ID");
+  for (const trade of trades) {
+    totalVolume += trade.amount;
+    console.log(`Trade: ${trade.side} ${trade.amount} @ ${(trade.price * 100).toFixed(1)}% | Total: ${totalVolume}`);
+  }
+}
+```
+
+</CodeGroup>

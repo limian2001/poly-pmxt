@@ -1,0 +1,147 @@
+---
+title: What is the Router?
+description: "One API key. Hosted catalog search, matching, and price comparison."
+---
+
+The Router is PMXT's cross-venue intelligence layer. One API key gives
+you a unified view of the hosted catalog venues through a single
+interface.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import pmxt
+
+    router = pmxt.Router(pmxt_api_key="pmxt_live_...")
+
+    # Search catalog venues at once
+    markets = router.fetch_markets(query="fed rate cut", limit=5)
+
+    # Find the same market on other venues
+    clusters = router.fetch_matched_market_clusters(markets[0])
+
+    # Compare prices across venues
+    prices = router.compare_market_prices(market_id=markets[0].market_id)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    import pmxt from "pmxtjs";
+
+    const router = new pmxt.Router({ pmxtApiKey: "pmxt_live_..." });
+
+    // Search catalog venues at once
+    const markets = await router.fetchMarkets({ query: "fed rate cut", limit: 5 });
+
+    // Find the same market on other venues
+    const clusters = await router.fetchMatchedMarketClusters(markets[0]);
+
+    // Compare prices across venues
+    const prices = await router.compareMarketPrices({ marketId: markets[0].marketId });
+    ```
+  </Tab>
+</Tabs>
+
+The Router only needs a PMXT API key — venue credentials are not
+required for search, matching, or price analysis.
+
+## What you can do
+
+<CardGroup cols={2}>
+  <Card title="Cross-venue search" icon="magnifying-glass" href="/router/search">
+    Search markets and events across the hosted catalog in a single query.
+    Results come from a shared catalog — ~10ms, not one call per venue.
+  </Card>
+  <Card title="Market matching" icon="link" href="/router/matching">
+    Given a market on any venue, find the cluster of matching markets
+    across other venues. Each cluster has relation types and confidence
+    scores.
+  </Card>
+  <Card title="Price comparison" icon="scale-balanced" href="/router/prices#comparemarketprices">
+    Side-by-side bid/ask for identity matches in the hosted catalog. See
+    where it's cheapest to buy and where it pays the most to sell.
+  </Card>
+  <Card title="Related markets" icon="shield-halved" href="/router/prices#fetchrelatedmarkets">
+    Find markets whose resolution conditions are subsets or supersets of
+    a target market — narrower or broader markets on other venues.
+  </Card>
+  <Card title="Matched markets" icon="arrow-right-arrow-left" href="/router/prices#fetchmatchedmarketclusters">
+    Browse matched market clusters across venues, then inspect venue
+    prices and order books.
+  </Card>
+  <Card title="Compose with venues" icon="puzzle-piece" href="/router/prices#composing-with-venue-exchanges">
+    Use the Router for data, venue exchanges for trading. Same SDK and
+    schema; catalog IDs for Router and hosted flows, venue-native IDs for
+    direct self-hosted writes.
+  </Card>
+</CardGroup>
+
+## How it works
+
+The Router is backed by a continuously-updated Postgres catalog that
+ingests markets, events, and outcomes from the hosted catalog venues.
+When you search or match, you're querying this catalog — not fanning
+out to venue APIs.
+
+Matching uses embedding-based similarity and LLM-verified relation
+classification to find semantically equivalent markets across venues,
+even when venues use different titles, different bracket ranges, or
+different framing.
+
+| Venue A (Polymarket)              | Venue B (Kalshi)                    | Relation   |
+| --------------------------------- | ----------------------------------- | ---------- |
+| "Will BTC exceed $100k by Dec?"   | "Bitcoin above $100,000 on Dec 31"  | identity   |
+| "Democrats win presidency"        | "Democratic nominee wins popular vote" | subset  |
+| "Fed cuts rates in 2025"          | "Fed cuts rates in June"            | superset   |
+
+## Get started
+
+1. **Get an API key** at [pmxt.dev/dashboard](https://pmxt.dev/dashboard).
+   It starts with `pmxt_live_` and works immediately.
+
+2. **Install the SDK:**
+
+<Tabs>
+  <Tab title="Python">
+    ```bash
+    pip install pmxt
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```bash
+    npm install pmxtjs
+    ```
+  </Tab>
+</Tabs>
+
+3. **Create a Router and start querying:**
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import pmxt
+
+    router = pmxt.Router(pmxt_api_key="pmxt_live_...")
+    markets = router.fetch_markets(query="election")
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    import pmxt from "pmxtjs";
+
+    const router = new pmxt.Router({ pmxtApiKey: "pmxt_live_..." });
+    const markets = await router.fetchMarkets({ query: "election" });
+    ```
+  </Tab>
+</Tabs>
+
+That's it. Everything the Router returns uses the same
+[unified schema](/concepts/unified-schema) as every other PMXT
+exchange, but identifiers keep their address space: Router/catalog IDs
+work for Router and hosted flows, while direct self-hosted venue calls
+need IDs returned by that venue client.
+
+<Info>
+  **Order routing is coming.** Today the Router is read-only. Smart order
+  routing (best-execution across venues) is on the roadmap.
+</Info>

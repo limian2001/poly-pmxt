@@ -1,0 +1,27 @@
+name: Verify Exchange Coverage
+
+on:
+  pull_request:
+    paths:
+      - 'core/src/exchanges/**'
+      - 'core/scripts/generate-openapi.js'
+      - 'core/scripts/check-exchange-drift.js'
+      - 'sdks/typescript/pmxt/client.ts'
+      - 'sdks/python/pmxt/_exchanges.py'
+      - '.github/workflows/exchange-drift-check.yml'
+  push:
+    branches: [main]
+
+jobs:
+  check-drift:
+    name: Verify exchanges reach all consumer SDKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check exchange drift
+        run: node core/scripts/check-exchange-drift.js

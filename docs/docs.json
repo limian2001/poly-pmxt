@@ -1,0 +1,244 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "PMXT",
+  "logo": {
+    "light": "/logo-light.png",
+    "dark": "/logo-dark.png"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#0B0B0B",
+    "light": "#FAFAFA",
+    "dark": "#0B0B0B"
+  },
+  "api": {
+    "examples": {
+      "languages": [
+        "python",
+        "javascript",
+        "curl",
+        "go",
+        "java"
+      ]
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      "chatgpt",
+      "cursor"
+    ],
+    "display": "header"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://pmxt.dev/dashboard"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get API Key",
+      "href": "https://pmxt.dev/dashboard"
+    }
+  },
+  "redirects": [],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "trading-quickstart",
+              "authentication",
+              "mcp",
+              "security",
+              "rate-limits"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/prediction-markets-101",
+              "concepts/unified-schema",
+              "concepts/venues",
+              "concepts/hosted-trading",
+              "concepts/catalog-uuid-vs-venue-id"
+            ]
+          },
+          {
+            "group": "Hosted Trading",
+            "pages": [
+              "guides/escrow-lifecycle",
+              "guides/signing",
+              "guides/hosted-errors",
+              "guides/migrate-to-hosted-trading"
+            ]
+          },
+          {
+            "group": "Self-host",
+            "pages": [
+              "guides/self-hosted",
+              "sdk/server"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Router",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "router/overview"
+            ]
+          },
+          {
+            "group": "Search",
+            "pages": [
+              "router/search"
+            ]
+          },
+          {
+            "group": "Analyze",
+            "pages": [
+              "router/event-matching",
+              "router/matching",
+              "router/prices"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview"
+            ]
+          },
+          {
+            "group": "System",
+            "pages": [
+              "GET /health",
+              "POST /api/{exchange}/loadMarkets",
+              "POST /api/{exchange}/close"
+            ],
+            "openapi": "api-reference/openapi.json"
+          },
+          {
+            "group": "Events & Markets",
+            "pages": [
+              "api-reference/fetch-events",
+              "GET /api/{exchange}/fetchEventsPaginated",
+              "api-reference/fetch-event",
+              "api-reference/fetch-markets",
+              "GET /api/{exchange}/fetchMarketsPaginated",
+              "api-reference/fetch-market"
+            ],
+            "openapi": "api-reference/openapi.json"
+          },
+          {
+            "group": "Trading",
+            "openapi": "api-reference/openapi-hosted-trading.json",
+            "pages": [
+              "POST /v0/trade/create-order",
+              "POST /v0/trade/build-order",
+              "POST /v0/trade/submit-order",
+              "POST /v0/orders/cancel/build"
+            ]
+          },
+          {
+            "group": "Orders & Positions",
+            "openapi": "api-reference/openapi-hosted-trading.json",
+            "pages": [
+              "GET /v0/orders/{order_id}",
+              "GET /v0/orders/open",
+              "GET /v0/user/{address}/trades",
+              "GET /v0/user/{address}/positions",
+              "GET /v0/user/{address}/balances"
+            ]
+          },
+          {
+            "group": "Cross Exchange",
+            "openapi": "api-reference/openapi-hosted.json",
+            "pages": [
+              "GET /v0/matched-event-clusters",
+              "GET /v0/matched-market-clusters"
+            ]
+          },
+          {
+            "group": "Order Book & Trades",
+            "pages": [
+              "api-reference/fetch-ohlcv",
+              "api-reference/fetch-order-book",
+              "POST /api/{exchange}/fetchOrderBooks",
+              "GET /api/{exchange}/fetchTrades",
+              "POST /api/{exchange}/getExecutionPrice",
+              "POST /api/{exchange}/getExecutionPriceDetailed"
+            ],
+            "openapi": "api-reference/openapi.json"
+          },
+          {
+            "group": "Realtime",
+            "pages": [
+              "api-reference/websocket",
+              "api-reference/watch-all-order-books",
+              "api-reference/watch-order-book",
+              "api-reference/watch-order-books",
+              "api-reference/watch-trades"
+            ]
+          },
+          {
+            "group": "Data Feeds",
+            "pages": [
+              "GET /api/feeds",
+              "GET /api/feeds/{feed}/loadMarkets",
+              "GET /api/feeds/{feed}/fetchTicker",
+              "GET /api/feeds/{feed}/fetchTickers",
+              "GET /api/feeds/{feed}/fetchOHLCV",
+              "GET /api/feeds/{feed}/fetchOrderBook",
+              "GET /api/feeds/{feed}/watchTicker",
+              "GET /api/feeds/{feed}/fetchOracleRound",
+              "GET /api/feeds/{feed}/fetchOracleHistory",
+              "GET /api/feeds/{feed}/fetchHistoricalPrices"
+            ],
+            "openapi": "api-reference/openapi.json"
+          },
+          {
+            "group": "Other",
+            "pages": [
+              "POST /api/{exchange}/getAuthNonce",
+              "POST /api/{exchange}/loginWithSignature",
+              "POST /api/{exchange}/logout",
+              "POST /api/{exchange}/isSessionActive",
+              "GET /api/{exchange}/fetchSeries",
+              "GET /api/{exchange}/fetchEventMetadata"
+            ],
+            "openapi": "api-reference/openapi.json"
+          },
+          {
+            "group": "Enterprise",
+            "openapi": "api-reference/openapi-hosted.json",
+            "pages": [
+              "POST /v0/sql"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/pmxt-dev/pmxt"
+    }
+  }
+}
