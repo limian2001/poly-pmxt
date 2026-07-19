@@ -36,6 +36,7 @@
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
   .muted{color:var(--mut)}
   .pill{font-size:11px;border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--mut);text-transform:capitalize}
+  .pill.id{color:var(--grn);border-color:#2b6b4f}
   .title{font-weight:600;margin:0 0 8px;font-size:14px;line-height:1.35}
   .outcome{display:flex;align-items:center;gap:8px;margin:5px 0}
   .obar{flex:1;height:8px;background:var(--panel2);border-radius:6px;overflow:hidden}
@@ -55,14 +56,20 @@
   .book td.bid{color:var(--grn)} .book td.ask{color:var(--red)}
   .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
   .colhead{font-weight:600;text-transform:capitalize;margin-bottom:8px;display:flex;justify-content:space-between}
-  .spread{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:6px 0;
-    display:flex;justify-content:space-between;gap:10px;align-items:center}
-  .big{font-size:20px;font-weight:700}
+  /* 跨平台匹配对 */
+  .pair{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+  .side{display:flex;align-items:center;gap:8px;margin:3px 0}
+  .venue{width:88px;flex:none}
+  .mkt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .big{font-size:22px;font-weight:700;text-align:right}
+  .reason{font-size:12px;color:var(--mut);margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
+  .books{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .notice{background:var(--panel);border:1px solid var(--amb);border-radius:12px;padding:16px;color:var(--fg)}
   .err{color:var(--red);font-size:12px;margin:6px 0}
-  .flash{animation:fl .6s ease}
-  @keyframes fl{0%{background:#233047}100%{background:transparent}}
   .empty{color:var(--mut);padding:30px;text-align:center}
   code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+  .flash{animation:fl .6s ease}
+  @keyframes fl{0%{background:#233047}100%{background:transparent}}
   .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
 </style>
 </head>
@@ -70,7 +77,7 @@
 <div id="app"></div>
 <script type="module">
 import { h, render } from 'https://esm.sh/preact@10.24.3';
-import { useState, useEffect, useRef, useCallback } from 'https://esm.sh/preact@10.24.3/hooks';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.24.3/hooks';
 import htm from 'https://esm.sh/htm@3.1.1';
 const html = htm.bind(h);
 
@@ -92,21 +99,18 @@ async function getConfig(){ const r=await fetch('/config'); return r.json(); }
 
 /* ---------------- utils ---------------- */
 const cents = p => (p==null||isNaN(p))?'—':`${(p*100).toFixed(1)}¢`;
-const pct   = p => (p==null||isNaN(p))?'—':`${(p*100).toFixed(1)}%`;
 const usd   = n => (n==null||isNaN(n))?'—':'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
-const STOP = new Set(['will','the','to','be','of','in','on','a','an','for','by','at','is','are','who','what','and','or','vs','2024','2025','2026','market','markets','win','next']);
-const tok = t => String(t||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>2&&!STOP.has(w));
-const mkTitle = m => m.title || m.question || m.slug || m.id || '(未命名市场)';
-const yesPrice = m => (m.outcomes && m.outcomes.length) ? m.outcomes[0].price : null;
+const mkTitle = m => (m&&(m.title||m.question||m.slug||m.id))||'(未命名市场)';
+const firstOutcomeId = m => m&&m.outcomes&&m.outcomes[0]&&m.outcomes[0].outcomeId;
 
-/* ---------------- watchlist store (localStorage) ---------------- */
+/* ---------------- watchlist store ---------------- */
 const WKEY='pmxt.watch.v1';
 const loadWatch = ()=>{ try{return JSON.parse(localStorage.getItem(WKEY))||[]}catch{return[]} };
 const saveWatch = w => { try{localStorage.setItem(WKEY,JSON.stringify(w))}catch{} };
 
-/* ---------------- small components ---------------- */
+/* ---------------- shared bits ---------------- */
 function PriceBar({o}){
-  const chg = o.price24hChange;
+  const chg=o.price24hChange;
   return html`<div class="outcome">
     <span class="olabel" title=${o.label}>${o.label}</span>
     <span class="obar"><i style=${{width:`${Math.max(2,Math.min(100,(o.price||0)*100))}%`}}></i></span>
@@ -120,44 +124,125 @@ function Sparkline({data}){
   const min=Math.min(...ys),max=Math.max(...ys),rng=(max-min)||1,W=220,H=44;
   const pts=ys.map((y,i)=>`${(i/(ys.length-1))*W},${H-((y-min)/rng)*H}`).join(' ');
   const up=ys[ys.length-1]>=ys[0];
-  return html`<svg width=${W} height=${H} style="display:block">
-    <polyline fill="none" stroke=${up?'var(--grn)':'var(--red)'} stroke-width="1.6" points=${pts}/>
-  </svg>`;
+  return html`<svg width=${W} height=${H} style="display:block"><polyline fill="none" stroke=${up?'var(--grn)':'var(--red)'} stroke-width="1.6" points=${pts}/></svg>`;
 }
-function OrderBookView({book}){
-  if(!book) return null;
-  const bids=(book.bids||[]).slice(0,6), asks=(book.asks||[]).slice(0,6).reverse();
-  const bb=bids[0]?.price, ba=(book.asks||[])[0]?.price;
+function OrderBook({venue, title, book, err}){
+  const bids=(book&&book.bids||[]).slice(0,6), asks=(book&&book.asks||[]).slice(0,6).reverse();
+  const bb=bids[0]&&bids[0].price, ba=(book&&book.asks||[])[0]&&(book.asks[0].price);
   const mid=(bb!=null&&ba!=null)?((bb+ba)/2):null;
-  return html`<div style="margin-top:10px">
-    <table class="book"><thead><tr><th>档</th><th>价</th><th>量</th></tr></thead><tbody>
-      ${asks.map(l=>html`<tr><td class="ask">卖</td><td class="ask">${cents(l.price)}</td><td>${l.size?.toFixed?.(0)??l.size??''}</td></tr>`)}
+  return html`<div>
+    <div class="colhead"><span class="pill">${venue}</span></div>
+    <div class="muted" style="font-size:12px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
+    ${err&&html`<div class="err">${err}</div>`}
+    ${book&&html`<table class="book"><thead><tr><th>档</th><th>价</th><th>量</th></tr></thead><tbody>
+      ${asks.map(l=>html`<tr><td class="ask">卖</td><td class="ask">${cents(l.price)}</td><td>${(l.size&&l.size.toFixed)?l.size.toFixed(0):(l.size||'')}</td></tr>`)}
       <tr><td colspan="3" style="text-align:center;color:var(--amb)">中间价 ${cents(mid)}</td></tr>
-      ${bids.map(l=>html`<tr><td class="bid">买</td><td class="bid">${cents(l.price)}</td><td>${l.size?.toFixed?.(0)??l.size??''}</td></tr>`)}
-    </tbody></table>
+      ${bids.map(l=>html`<tr><td class="bid">买</td><td class="bid">${cents(l.price)}</td><td>${(l.size&&l.size.toFixed)?l.size.toFixed(0):(l.size||'')}</td></tr>`)}
+    </tbody></table>`}
   </div>`;
 }
 
-/* ---------------- Market card ---------------- */
+/* ---------------- View: 跨平台匹配（pmxt 匹配引擎）---------------- */
+function PairCard({pair}){
+  const [open,setOpen]=useState(false);
+  const [books,setBooks]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const A={venue:pair.venueA, market:pair.marketA, price:pair.priceA};
+  const B={venue:pair.venueB, market:pair.marketB, price:pair.priceB};
+  const diff=pair.priceDifference;
+  const loadBooks=async()=>{
+    setOpen(true); setLoading(true);
+    const one=async(side)=>{
+      const oid=firstOutcomeId(side.market);
+      if(!oid) return {err:'无 outcomeId'};
+      try{ return {book: await pget(side.venue,'fetchOrderBook',{outcomeId:oid,limit:6})}; }
+      catch(e){ return {err:e.message}; }
+    };
+    const [ra,rb]=await Promise.all([one(A),one(B)]);
+    setBooks({a:ra,b:rb}); setLoading(false);
+  };
+  return html`<div class="card">
+    <div class="pair">
+      <div>
+        <div class="side"><span class="pill venue">${A.venue}</span><span class="mkt" title=${mkTitle(A.market)}>${mkTitle(A.market)}</span><span class="price">${cents(A.price)}</span></div>
+        <div class="side"><span class="pill venue">${B.venue}</span><span class="mkt" title=${mkTitle(B.market)}>${mkTitle(B.market)}</span><span class="price">${cents(B.price)}</span></div>
+      </div>
+      <div>
+        <div class="big ${diff>=0.05?'up':''}">${diff==null?'—':(diff*100).toFixed(1)+'¢'}</div>
+        <div class="muted" style="font-size:11px;text-align:right">价差 · ${pair.relation||'identity'}${pair.confidence!=null?` · 置信 ${(pair.confidence*100).toFixed(0)}%`:''}</div>
+      </div>
+    </div>
+    ${pair.reasoning&&html`<div class="reason">匹配理由：${pair.reasoning}</div>`}
+    <div class="actions">
+      <button onClick=${open?()=>setOpen(false):loadBooks}>${open?'收起盘口':'看双边盘口'}</button>
+    </div>
+    ${open&&html`<div class="books">
+      ${loading?html`<div class="muted">加载盘口…</div>`:html`
+        <${OrderBook} venue=${A.venue} title=${mkTitle(A.market)} book=${books&&books.a.book} err=${books&&books.a.err}/>
+        <${OrderBook} venue=${B.venue} title=${mkTitle(B.market)} book=${books&&books.b.book} err=${books&&books.b.err}/>
+      `}
+    </div>`}
+  </div>`;
+}
+
+function MatchView({matching}){
+  const [q,setQ]=useState('');
+  const [cat,setCat]=useState('');
+  const [minDiff,setMinDiff]=useState(0);
+  const [limit,setLimit]=useState(50);
+  const [pairs,setPairs]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState('');
+  const run=async()=>{
+    setLoading(true); setErr('');
+    try{
+      const d=await pget('router','fetchMatchedMarkets',{limit, minDifference:minDiff||undefined, category:cat});
+      let arr=Array.isArray(d)?d:(d&&d.matches||[]);
+      if(q.trim()){ const kw=q.trim().toLowerCase();
+        arr=arr.filter(p=>(mkTitle(p.marketA)+' '+mkTitle(p.marketB)).toLowerCase().includes(kw)); }
+      arr.sort((x,y)=>(y.priceDifference||0)-(x.priceDifference||0));
+      setPairs(arr);
+    }catch(e){ setErr(e.message); setPairs([]); }
+    finally{ setLoading(false); }
+  };
+  useEffect(()=>{ if(matching) run(); },[]);
+  if(!matching) return html`<div class="notice">
+    <b>跨平台精准匹配未启用</b><br/>
+    这个视图用 pmxt 官方匹配引擎对齐「同一市场在各平台」，需要在服务器 <code>deploy/.env</code> 里配置
+    <code>PMXT_API_KEY</code>（pmxt.dev/dashboard 免费申请），然后 <code>docker compose up -d --build</code> 重建即可。
+  </div>`;
+  return html`<div>
+    <div class="row" style="margin-bottom:6px">
+      <input placeholder="关键词过滤（可空，如 bitcoin / fed）" value=${q} onInput=${e=>setQ(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&run()} style="min-width:220px"/>
+      <input placeholder="分类(可选)" value=${cat} onInput=${e=>setCat(e.target.value)} style="width:120px"/>
+      <label class="muted" style="font-size:12px">最小价差
+        <select value=${minDiff} onChange=${e=>setMinDiff(+e.target.value)}>
+          ${[0,0.02,0.05,0.1].map(v=>html`<option value=${v}>${v?`${v*100}¢`:'不限'}</option>`)}
+        </select>
+      </label>
+      <select value=${limit} onChange=${e=>setLimit(+e.target.value)}>${[20,50,100].map(n=>html`<option value=${n}>${n} 对</option>`)}</select>
+      <button class="btn" onClick=${run} disabled=${loading}>${loading?'扫描中…':'扫描跨平台同一市场'}</button>
+    </div>
+    <div class="muted" style="font-size:12px;margin-bottom:12px">由 pmxt 匹配引擎对齐（relation=identity），价差从大到小。点某一对可展开双边盘口。</div>
+    ${err&&html`<div class="err">出错：${err}${/401|unauth|key|token/i.test(err)?'（多半是 PMXT_API_KEY 没配好或额度问题）':''}</div>`}
+    ${!loading&&!err&&!pairs.length&&html`<div class="empty">没有匹配结果，放宽最小价差或换关键词</div>`}
+    ${pairs.map((p,i)=>html`<${PairCard} key=${i} pair=${p}/>`)}
+  </div>`;
+}
+
+/* ---------------- View: 市场浏览 ---------------- */
 function MarketCard({venue, m, onWatch}){
   const [book,setBook]=useState(null);
   const [ohlcv,setOhlcv]=useState(null);
   const [err,setErr]=useState('');
-  const first = m.outcomes?.[0];
+  const first=m.outcomes&&m.outcomes[0];
   const loadBook=async()=>{ setErr('');try{ setBook(await pget(venue,'fetchOrderBook',{outcomeId:first.outcomeId,limit:6})); }catch(e){setErr('盘口: '+e.message)} };
   const loadK=async()=>{ setErr('');try{ setOhlcv(await pget(venue,'fetchOHLCV',{outcomeId:first.outcomeId,resolution:'1h',limit:48})); }catch(e){setErr('K线: '+e.message)} };
   return html`<div class="card">
-    <div class="row" style="justify-content:space-between">
-      <span class="pill">${venue}</span>
-      ${m.category&&html`<span class="pill">${m.category}</span>`}
-    </div>
+    <div class="row" style="justify-content:space-between"><span class="pill">${venue}</span>${m.category&&html`<span class="pill">${m.category}</span>`}</div>
     <p class="title" style="margin-top:8px">${mkTitle(m)}</p>
     ${(m.outcomes||[]).slice(0,4).map(o=>html`<${PriceBar} o=${o}/>`)}
-    <div class="mini">
-      <span>24h量 ${usd(m.volume24h)}</span>
-      ${m.volume!=null&&html`<span>总量 ${usd(m.volume)}</span>`}
-      ${m.slug&&html`<span class="muted">${m.slug}</span>`}
-    </div>
+    <div class="mini"><span>24h量 ${usd(m.volume24h)}</span>${m.slug&&html`<span class="muted">${m.slug}</span>`}</div>
     ${first&&html`<div class="actions">
       <button onClick=${()=>onWatch({venue,outcomeId:first.outcomeId,label:first.label,marketTitle:mkTitle(m)})}>+ 盯盘</button>
       <button onClick=${loadBook}>盘口</button>
@@ -165,192 +250,93 @@ function MarketCard({venue, m, onWatch}){
     </div>`}
     ${err&&html`<div class="err">${err}</div>`}
     ${ohlcv&&html`<div style="margin-top:8px"><${Sparkline} data=${ohlcv}/></div>`}
-    <${OrderBookView} book=${book}/>
+    ${book&&html`<div style="margin-top:8px"><${OrderBook} venue=${venue} title=${mkTitle(m)} book=${book}/></div>`}
   </div>`;
 }
-
-/* ---------------- View: Browse ---------------- */
 function BrowseView({venues, onWatch}){
   const [venue,setVenue]=useState(venues[0]||'polymarket');
-  const [q,setQ]=useState('');
-  const [cat,setCat]=useState('');
-  const [limit,setLimit]=useState(24);
-  const [rows,setRows]=useState([]);
-  const [loading,setLoading]=useState(false);
-  const [err,setErr]=useState('');
+  const [q,setQ]=useState(''); const [cat,setCat]=useState(''); const [limit,setLimit]=useState(24);
+  const [rows,setRows]=useState([]); const [loading,setLoading]=useState(false); const [err,setErr]=useState('');
   const run=async()=>{ setLoading(true);setErr('');
-    try{ const d=await pget(venue,'fetchMarkets',{query:q,category:cat,limit,active:true});
-      setRows(Array.isArray(d)?d:(d?.markets||[])); }
+    try{ const d=await pget(venue,'fetchMarkets',{query:q,category:cat,limit,active:true}); setRows(Array.isArray(d)?d:(d&&d.markets||[])); }
     catch(e){ setErr(e.message);setRows([]);} finally{ setLoading(false);} };
   useEffect(()=>{ run(); },[]);
   return html`<div>
     <div class="row" style="margin-bottom:14px">
-      <select value=${venue} onChange=${e=>setVenue(e.target.value)}>
-        ${venues.map(v=>html`<option value=${v}>${v}</option>`)}
-      </select>
-      <input placeholder="关键词，如 fed chair / bitcoin" value=${q}
-        onInput=${e=>setQ(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&run()} style="min-width:240px"/>
+      <select value=${venue} onChange=${e=>setVenue(e.target.value)}>${venues.map(v=>html`<option value=${v}>${v}</option>`)}</select>
+      <input placeholder="关键词，如 fed chair / bitcoin" value=${q} onInput=${e=>setQ(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&run()} style="min-width:240px"/>
       <input placeholder="分类(可选)" value=${cat} onInput=${e=>setCat(e.target.value)} style="width:130px"/>
-      <select value=${limit} onChange=${e=>setLimit(+e.target.value)}>
-        ${[12,24,48,96].map(n=>html`<option value=${n}>${n} 条</option>`)}
-      </select>
+      <select value=${limit} onChange=${e=>setLimit(+e.target.value)}>${[12,24,48,96].map(n=>html`<option value=${n}>${n} 条</option>`)}</select>
       <button class="btn" onClick=${run} disabled=${loading}>${loading?'加载中…':'搜索'}</button>
     </div>
     ${err&&html`<div class="err">出错：${err}</div>`}
     ${!loading&&!rows.length&&!err&&html`<div class="empty">没有结果，换个关键词试试</div>`}
-    <div class="cards">
-      ${rows.map(m=>html`<${MarketCard} key=${m.id||m.slug||mkTitle(m)} venue=${venue} m=${m} onWatch=${onWatch}/>`)}
-    </div>
+    <div class="cards">${rows.map(m=>html`<${MarketCard} key=${m.id||m.slug||mkTitle(m)} venue=${venue} m=${m} onWatch=${onWatch}/>`)}</div>
   </div>`;
 }
 
-/* ---------------- View: Compare / Arb ---------------- */
-function CompareView({venues}){
-  const [q,setQ]=useState('bitcoin');
-  const [perVenue,setPerVenue]=useState({});
-  const [pairs,setPairs]=useState([]);
-  const [loading,setLoading]=useState(false);
-  const [err,setErr]=useState('');
-  const run=async()=>{ setLoading(true);setErr('');setPairs([]);
-    const res={};
-    await Promise.all(venues.map(async v=>{
-      try{ const d=await pget(v,'fetchMarkets',{query:q,limit:6,active:true});
-        res[v]=Array.isArray(d)?d:(d?.markets||[]); }
-      catch(e){ res[v]={error:e.message}; }
-    }));
-    setPerVenue(res);
-    // 简易跨平台配对：标题 token 重叠≥2 且分属不同平台 → 报出价差(以第一个结果的首个 outcome 计)
-    const flat=[];
-    for(const v of venues){ const arr=res[v]; if(Array.isArray(arr)) arr.forEach(m=>flat.push({v,m,t:new Set(tok(mkTitle(m))),p:yesPrice(m)})); }
-    const found=[];
-    for(let i=0;i<flat.length;i++) for(let j=i+1;j<flat.length;j++){
-      const a=flat[i],b=flat[j]; if(a.v===b.v) continue;
-      let ov=0; a.t.forEach(w=>{ if(b.t.has(w)) ov++; });
-      if(ov>=2 && a.p!=null && b.p!=null){
-        found.push({a,b,ov,gap:Math.abs(a.p-b.p)});
-      }
-    }
-    found.sort((x,y)=>y.gap-x.gap);
-    setPairs(found.slice(0,12));
-    setLoading(false);
-  };
-  useEffect(()=>{ run(); },[]);
-  return html`<div>
-    <div class="row" style="margin-bottom:14px">
-      <input placeholder="要在各平台横向对比的主题，如 bitcoin / trump / fed" value=${q}
-        onInput=${e=>setQ(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&run()} style="min-width:320px"/>
-      <button class="btn" onClick=${run} disabled=${loading}>${loading?'比对中…':'跨平台比价'}</button>
-      <span class="muted">价差 = 各平台同主题「首个结果·首选项」隐含概率之差(启发式，人工复核)</span>
-    </div>
-    ${err&&html`<div class="err">${err}</div>`}
-    ${pairs.length>0&&html`<div class="card">
-      <div class="title">⚡ 可能的价差机会（按价差从大到小）</div>
-      ${pairs.map(p=>html`<div class="spread">
-        <div style="flex:1">
-          <div><span class="pill">${p.a.v}</span> ${mkTitle(p.a.m)} · <b>${cents(p.a.p)}</b></div>
-          <div style="margin-top:3px"><span class="pill">${p.b.v}</span> ${mkTitle(p.b.m)} · <b>${cents(p.b.p)}</b></div>
-        </div>
-        <div style="text-align:right">
-          <div class="big ${p.gap>=0.05?'up':''}">${(p.gap*100).toFixed(1)}¢</div>
-          <div class="muted" style="font-size:11px">重叠词 ${p.ov}</div>
-        </div>
-      </div>`)}
-    </div>`}
-    <div class="cols">
-      ${venues.map(v=>{ const arr=perVenue[v];
-        return html`<div>
-          <div class="colhead"><span>${v}</span>${Array.isArray(arr)&&html`<span class="muted">${arr.length}</span>`}</div>
-          ${!arr&&html`<div class="muted">—</div>`}
-          ${arr&&arr.error&&html`<div class="err">${arr.error}</div>`}
-          ${Array.isArray(arr)&&arr.map(m=>html`<div class="card">
-            <p class="title">${mkTitle(m)}</p>
-            ${(m.outcomes||[]).slice(0,3).map(o=>html`<${PriceBar} o=${o}/>`)}
-            <div class="mini"><span>24h ${usd(m.volume24h)}</span></div>
-          </div>`)}
-        </div>`; })}
-    </div>
-  </div>`;
-}
-
-/* ---------------- View: Watchlist (realtime poll) ---------------- */
+/* ---------------- View: 盯盘 ---------------- */
 function WatchRow({item, tick, onDel}){
-  const [q,setQ]=useState(null);
-  const [err,setErr]=useState('');
-  const prev=useRef(null);
-  const [flash,setFlash]=useState(false);
+  const [q,setQ]=useState(null); const [err,setErr]=useState(''); const prev=useRef(null); const [flash,setFlash]=useState(false);
   useEffect(()=>{ let dead=false;
     (async()=>{ try{
       const b=await pget(item.venue,'fetchOrderBook',{outcomeId:item.outcomeId,limit:1});
-      const bb=b.bids?.[0]?.price, ba=b.asks?.[0]?.price;
-      const mid=(bb!=null&&ba!=null)?(bb+ba)/2:(b.lastPrice??bb??ba);
+      const bb=b.bids&&b.bids[0]&&b.bids[0].price, ba=b.asks&&b.asks[0]&&b.asks[0].price;
+      const mid=(bb!=null&&ba!=null)?(bb+ba)/2:(b.lastPrice!=null?b.lastPrice:(bb!=null?bb:ba));
       if(dead)return;
-      if(prev.current!=null && mid!=null && Math.abs(mid-prev.current)>1e-9){ setFlash(true); setTimeout(()=>setFlash(false),600); }
-      prev.current=mid; setQ({bb,ba,mid,last:b.lastPrice}); setErr('');
+      if(prev.current!=null&&mid!=null&&Math.abs(mid-prev.current)>1e-9){ setFlash(true); setTimeout(()=>setFlash(false),600); }
+      prev.current=mid; setQ({bb,ba,mid}); setErr('');
     }catch(e){ if(!dead) setErr(e.message); } })();
     return ()=>{dead=true};
   },[tick]);
-  const dir = (q&&prev.current!=null)?0:0;
   return html`<tr class=${flash?'flash':''}>
-    <td>${item.marketTitle}</td>
-    <td><span class="pill">${item.venue}</span></td>
-    <td>${item.label}</td>
-    <td class="bid">${cents(q?.bb)}</td>
-    <td class="ask">${cents(q?.ba)}</td>
-    <td style="color:var(--amb);font-weight:700">${cents(q?.mid)}</td>
-    <td>${err?html`<span class="err">${err.slice(0,24)}</span>`:''}</td>
-    <td><button class="actions" style="border:none;background:none;color:var(--red);cursor:pointer" onClick=${onDel}>✕</button></td>
+    <td>${item.marketTitle}</td><td><span class="pill">${item.venue}</span></td><td>${item.label}</td>
+    <td class="bid">${cents(q&&q.bb)}</td><td class="ask">${cents(q&&q.ba)}</td>
+    <td style="color:var(--amb);font-weight:700">${cents(q&&q.mid)}</td>
+    <td>${err?html`<span class="err">${err.slice(0,20)}</span>`:''}</td>
+    <td><button style="border:none;background:none;color:var(--red);cursor:pointer" onClick=${onDel}>✕</button></td>
   </tr>`;
 }
 function WatchView({watch, setWatch}){
-  const [auto,setAuto]=useState(true);
-  const [sec,setSec]=useState(5);
-  const [tick,setTick]=useState(0);
+  const [auto,setAuto]=useState(true); const [sec,setSec]=useState(5); const [tick,setTick]=useState(0);
   useEffect(()=>{ if(!auto) return; const id=setInterval(()=>setTick(t=>t+1),sec*1000); return ()=>clearInterval(id); },[auto,sec]);
-  const del=(i)=>{ const w=watch.filter((_,k)=>k!==i); setWatch(w); };
+  const del=(i)=>setWatch(watch.filter((_,k)=>k!==i));
   return html`<div>
     <div class="row" style="margin-bottom:14px">
-      <button class="btn ${auto?'':'ghost'}" onClick=${()=>setAuto(a=>!a)}>
-        <span class="dot" style=${{background:auto?'var(--grn)':'var(--mut)'}}></span>${auto?'实时刷新中':'已暂停'}
-      </button>
-      <select value=${sec} onChange=${e=>setSec(+e.target.value)}>
-        ${[2,3,5,10,30].map(n=>html`<option value=${n}>每 ${n}s</option>`)}
-      </select>
+      <button class=${'btn '+(auto?'':'ghost')} onClick=${()=>setAuto(a=>!a)}><span class="dot" style=${{background:auto?'var(--grn)':'var(--mut)'}}></span>${auto?'实时刷新中':'已暂停'}</button>
+      <select value=${sec} onChange=${e=>setSec(+e.target.value)}>${[2,3,5,10,30].map(n=>html`<option value=${n}>每 ${n}s</option>`)}</select>
       <button class="btn ghost" onClick=${()=>setTick(t=>t+1)}>手动刷新</button>
       <span class="grow"></span>
       <button class="btn ghost" onClick=${()=>{ if(confirm('清空盯盘列表？')) setWatch([]); }}>清空</button>
     </div>
-    ${!watch.length&&html`<div class="empty">盯盘列表为空。到「市场浏览」里点某个市场的 <code>+ 盯盘</code> 加入。</div>`}
+    ${!watch.length&&html`<div class="empty">盯盘列表为空。到「市场浏览」点某个市场的 <code>+ 盯盘</code> 加入。</div>`}
     ${watch.length>0&&html`<div class="card"><table><thead>
       <tr><th>市场</th><th>平台</th><th>选项</th><th>买一</th><th>卖一</th><th>中间价</th><th></th><th></th></tr>
-    </thead><tbody>
-      ${watch.map((it,i)=>html`<${WatchRow} key=${it.venue+it.outcomeId} item=${it} tick=${tick} onDel=${()=>del(i)}/>`)}
-    </tbody></table></div>`}
+    </thead><tbody>${watch.map((it,i)=>html`<${WatchRow} key=${it.venue+it.outcomeId} item=${it} tick=${tick} onDel=${()=>del(i)}/>`)}</tbody></table></div>`}
   </div>`;
 }
 
 /* ---------------- App ---------------- */
 function App(){
   const [venues,setVenues]=useState(['polymarket','kalshi','limitless','opinion']);
+  const [matching,setMatching]=useState(false);
   const [ready,setReady]=useState(false);
-  const [tab,setTab]=useState('compare');
-  const [watch,setWatchState]=useState(loadWatch());
-  const setWatch=(w)=>{ setWatchState(w); saveWatch(w); };
-  const addWatch=(item)=>{ setWatch([...watch.filter(x=>!(x.venue===item.venue&&x.outcomeId===item.outcomeId)), item]); };
-  useEffect(()=>{ getConfig().then(c=>{ if(c?.venues?.length) setVenues(c.venues); setReady(true); }).catch(()=>setReady(true)); },[]);
-  const T=[['compare','比价 · 套利'],['browse','市场浏览'],['watch',`盯盘 (${watch.length})`]];
+  const [tab,setTab]=useState('match');
+  const [watch,setW]=useState(loadWatch());
+  const setWatch=(w)=>{ setW(w); saveWatch(w); };
+  const addWatch=(item)=>setWatch([...watch.filter(x=>!(x.venue===item.venue&&x.outcomeId===item.outcomeId)), item]);
+  useEffect(()=>{ getConfig().then(c=>{ if(c&&c.venues&&c.venues.length) setVenues(c.venues); setMatching(Boolean(c&&c.matching)); setReady(true); }).catch(()=>setReady(true)); },[]);
+  const T=[['match','跨平台匹配'],['browse','市场浏览'],['watch',`盯盘 (${watch.length})`]];
   return html`<div>
     <header>
-      <h1>pmxt 行情台</h1>
-      <span class="tag">统一预测市场行情</span>
-      <div class="tabs">
-        ${T.map(([k,l])=>html`<button class=${tab===k?'on':''} onClick=${()=>setTab(k)}>${l}</button>`)}
-      </div>
+      <h1>pmxt 行情台</h1><span class="tag">统一预测市场行情</span>
+      <div class="tabs">${T.map(([k,l])=>html`<button class=${tab===k?'on':''} onClick=${()=>setTab(k)}>${l}</button>`)}</div>
       <span class="grow"></span>
-      <span class="status">平台：${venues.join(' · ')}</span>
+      <span class="status">${matching?'匹配引擎 ✓':'匹配引擎 ✗（未配 key）'} · ${venues.join(' · ')}</span>
     </header>
     <main>
       ${!ready&&html`<div class="empty">正在连接网关…</div>`}
-      ${ready&&tab==='compare'&&html`<${CompareView} venues=${venues}/>`}
+      ${ready&&tab==='match'&&html`<${MatchView} matching=${matching}/>`}
       ${ready&&tab==='browse'&&html`<${BrowseView} venues=${venues} onWatch=${addWatch}/>`}
       ${ready&&tab==='watch'&&html`<${WatchView} watch=${watch} setWatch=${setWatch}/>`}
     </main>

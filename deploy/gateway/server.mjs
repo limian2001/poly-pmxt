@@ -24,13 +24,24 @@ const VENUES = String(process.env.PMXT_VENUES || 'polymarket,kalshi,limitless,op
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 const DASHBOARD_DIR = process.env.PMXT_DASHBOARD_DIR || join(__dirname, '..', 'dashboard');
+// pmxt 托管匹配引擎的 API key（跨平台同一市场匹配/套利要用）。仅在服务端持有。
+const PMXT_API_KEY = process.env.PMXT_API_KEY || '';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
-// 前端启动时读取：当前启用了哪些平台
+// 前端启动时读取：当前启用了哪些平台，以及跨平台匹配是否可用（有没有配 key）
 app.get('/config', (_req, res) => {
-  res.json({ venues: VENUES, ts: Date.now() });
+  res.json({ venues: VENUES, matching: Boolean(PMXT_API_KEY), ts: Date.now() });
+});
+
+// —— 为 pmxt 的 router（跨平台匹配/套利）调用注入托管 API key ——
+// 前端只管调 /pmxt/api/router/...，key 由服务端注入为 Bearer，不暴露到浏览器。
+app.use((req, _res, next) => {
+  if (PMXT_API_KEY && req.path.startsWith('/pmxt/api/router')) {
+    req.headers['authorization'] = `Bearer ${PMXT_API_KEY}`;
+  }
+  next();
 });
 
 // 网关自身健康检查（与 /pmxt/health 区分）
