@@ -195,7 +195,9 @@ function BoardView({venues, onWatch}){
     const vs=[...sel];
     const out=[];
     await Promise.all(vs.map(async v=>{
-      try{ const d=await pget(v,'fetchMarkets',{query:srvQ,limit,active:true}); asArr(d).forEach(m=>out.push({venue:v,m})); }
+      // 只传 limit（或 query）——多传 active 会让 pmxt 丢掉 limit、翻上百页导致 422
+      const p = srvQ ? {query:srvQ, limit} : {limit};
+      try{ const d=await pget(v,'fetchMarkets',p); asArr(d).forEach(m=>out.push({venue:v,m})); }
       catch(e){ out.push({venue:v,err:e.message}); }
     }));
     setRows(out); setUpdated(Date.now()); setLoading(false);
