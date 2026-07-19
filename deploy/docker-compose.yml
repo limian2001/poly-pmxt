@@ -21,6 +21,9 @@ services:
     ports:
       # 只映射到宿主机回环，不暴露公网；改 PMXT_PORT 可换宿主机端口
       - "127.0.0.1:${PMXT_PORT:-3200}:3200"
+    volumes:
+      # 前端热更新：改了 dashboard/ 后 git pull + 刷新浏览器即可，无需 --build
+      - ./dashboard:/app/deploy/dashboard:ro
     healthcheck:
       test:
         - CMD
