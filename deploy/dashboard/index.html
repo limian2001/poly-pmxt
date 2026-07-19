@@ -92,6 +92,24 @@ const o0=m=>m&&m.outcomes&&m.outcomes[0];
 const chgCls=c=>c>0?'up':c<0?'dn':'';
 const chgTxt=c=>c==null?'':(c>0?'+':'')+(c*100).toFixed(1);
 const asArr=d=>Array.isArray(d)?d:(d&&(d.markets||d.matches||d.data))||[];
+/* 跨平台统一类别：pmxt 的 category/tags 各平台口径不一，这里按关键词归到固定大桶 */
+const BUCKETS=[
+  ['体育','sport|soccer|football|nfl|nba|wnba|mlb|nhl|tennis|golf|ufc|\\bmma\\b|boxing|cricket|rugby|olympic|world cup|fifa|premier league|champions league|formula|\\bf1\\b|esports|league of legends|\\blol\\b|dota|valorant|\\bcs2\\b|super bowl'],
+  ['政治','politic|election|president|senate|congress|governor|parliament|\\bvote|\\bpoll\\b|primary|nominee|geopolit|\\bwar\\b|ukraine|israel|gaza|trump|biden|government|shutdown|cabinet|impeach|tariff war'],
+  ['加密','crypto|bitcoin|\\bbtc\\b|ethereum|\\beth\\b|solana|\\bsol\\b|\\bxrp\\b|dogecoin|\\bdoge\\b|memecoin|\\btoken|defi|stablecoin|\\bnft'],
+  ['经济金融','\\bfed\\b|interest rate|\\bcpi\\b|inflation|\\bgdp\\b|recession|jobs report|unemployment|\\btariff|stock|s&p|nasdaq|earnings|\\bipo\\b|economy|economic|treasury|\\bbond'],
+  ['科技AI','\\bai\\b|artificial intelligence|openai|\\bgpt|\\bllm\\b|apple|google|tesla|spacex|nvidia|semiconductor|\\bchip\\b|iphone|android'],
+  ['文娱','movie|film|oscar|grammy|emmy|box office|\\bmusic|celebrity|\\btv\\b|award|entertainment|rotten tomatoes|spotify|netflix|billboard'],
+  ['科学天气','\\bscience|space|nasa|climate|weather|hurricane|temperature|\\bcovid|vaccine|health|nobel|earthquake'],
+];
+const BUCKET_RE=BUCKETS.map(([n,p])=>[n,new RegExp(p)]);
+const catOf=m=>{ const t=((m.category||'')+' '+((m.tags||[]).join(' '))+' '+(m.title||'')).toLowerCase(); for(const [n,re] of BUCKET_RE){ if(re.test(t)) return n; } return '其他'; };
+const volOf=m=>(m&&(m.volume24h||m.volume||m.liquidity))||0;
+// 是否已结束（结算/归档/到期）—— status 或 resolutionDate 有值时判定
+const isEnded=m=>{ if(!m) return false; if(m.status&&/(closed|resolved|archived|settled|inactive|expired|finalized)/i.test(m.status)) return true; if(m.resolutionDate){ const d=new Date(m.resolutionDate); if(!isNaN(d)&&d.getTime()<nowMs()) return true; } return false; };
+// 是否已定盘（价格贴近 0 或 1，机会页视为无意义）
+const isDecided=m=>{ const p=(o0(m)||{}).price; return p!=null&&(p<=0.02||p>=0.98); };
+function nowMs(){ try{ return Date.parse(new Date().toISOString()); }catch{ return 0; } }
 
 /* ---------- watchlist ---------- */
 const WKEY='pmxt.watch.v1';
@@ -148,7 +166,7 @@ function MktRow({venue,m,onWatch}){
     <tr class=${'mkt '+(flash?'flash':'')}>
       <td class="l"><span class="pill">${venue}</span></td>
       <td class="l title lnk" title=${mkTitle(m)} onClick=${()=>{ if(!exp){loadBook();loadK();} setExp(!exp); }}>${mkTitle(m)}</td>
-      <td class="l">${m.category?html`<span class="pill">${m.category}</span>`:'—'}</td>
+      <td class="l"><span class="pill" title=${m.category||''}>${catOf(m)}</span></td>
       <td>${first?first.label:''}</td>
       <td style="font-weight:600">${cents(px)}</td>
       <td class=${chgCls(chg)}>${chgTxt(chg)}</td>
@@ -185,6 +203,8 @@ function BoardView({venues, onWatch}){
   const [kw,setKw]=useState('');               // 客户端过滤
   const [cat,setCat]=useState('');
   const [sort,setSort]=useState('volume24h');
+  const [hideEnded,setHideEnded]=useState(true);
+  const [interleave,setInterleave]=useState(false);
   const [rows,setRows]=useState([]);
   const [loading,setLoading]=useState(false);
   const [err,setErr]=useState('');
@@ -206,11 +226,20 @@ function BoardView({venues, onWatch}){
   useEffect(()=>{ load(); },[]);
   useEffect(()=>{ if(!auto) return; const id=setInterval(load, sec*1000); return ()=>clearInterval(id); },[auto,sec,sel,limit,srvQ]);
   const toggleV=v=>{ const s=new Set(sel); s.has(v)?s.delete(v):s.add(v); setSel(s); };
-  const cats=[...new Set(rows.filter(r=>r.m&&r.m.category).map(r=>r.m.category))].sort();
+  const cats=[...new Set(rows.filter(r=>r.m).map(r=>catOf(r.m)))].sort();
   let view=rows.filter(r=>r.m);
-  if(cat) view=view.filter(r=>r.m.category===cat);
+  if(hideEnded) view=view.filter(r=>!isEnded(r.m));
+  if(cat) view=view.filter(r=>catOf(r.m)===cat);
   if(kw){ const k=kw.toLowerCase(); view=view.filter(r=>mkTitle(r.m).toLowerCase().includes(k)); }
-  view.sort((a,b)=>{ if(sort==='chg'){ const x=(o0(a.m)&&o0(a.m).price24hChange)||0,y=(o0(b.m)&&o0(b.m).price24hChange)||0; return Math.abs(y)-Math.abs(x);} if(sort==='price'){ return ((o0(b.m)&&o0(b.m).price)||0)-((o0(a.m)&&o0(a.m).price)||0);} return (b.m.volume24h||0)-(a.m.volume24h||0); });
+  if(interleave){
+    const byV={}; view.forEach(r=>{ (byV[r.venue]=byV[r.venue]||[]).push(r); });
+    Object.values(byV).forEach(a=>a.sort((x,y)=>volOf(y.m)-volOf(x.m)));
+    const ks=Object.keys(byV), out2=[]; let i=0,go=true;
+    while(go){ go=false; for(const v of ks){ if(byV[v][i]){ out2.push(byV[v][i]); go=true; } } i++; }
+    view=out2;
+  } else {
+    view.sort((a,b)=>{ if(sort==='chg'){ const x=(o0(a.m)&&o0(a.m).price24hChange)||0,y=(o0(b.m)&&o0(b.m).price24hChange)||0; return Math.abs(y)-Math.abs(x);} if(sort==='price'){ return ((o0(b.m)&&o0(b.m).price)||0)-((o0(a.m)&&o0(a.m).price)||0);} return volOf(b.m)-volOf(a.m); });
+  }
   const shown=view.slice(0,600);
   const H=(k,l)=>html`<th onClick=${()=>setSort(k)} class=${sort===k?'up':''}>${l}${sort===k?' ▾':''}</th>`;
   return html`<div>
@@ -224,6 +253,8 @@ function BoardView({venues, onWatch}){
     <div class="row" style="margin-bottom:10px">
       <input placeholder="本地过滤标题" value=${kw} onInput=${e=>setKw(e.target.value)} style="min-width:160px"/>
       <select value=${cat} onChange=${e=>setCat(e.target.value)}><option value="">全部类别</option>${cats.map(c=>html`<option value=${c}>${c}</option>`)}</select>
+      <span class=${'chip '+(hideEnded?'on':'')} onClick=${()=>setHideEnded(v=>!v)} title="隐藏已结算/到期的市场">隐藏已结束</span>
+      <span class=${'chip '+(interleave?'on':'')} onClick=${()=>setInterleave(v=>!v)} title="各平台轮流排列，避免被单一平台刷屏">交错平台</span>
       <button class=${'btn '+(auto?'':'ghost')} onClick=${()=>setAuto(a=>!a)}><span class="dot" style=${{background:auto?'var(--grn)':'var(--mut)'}}></span>${auto?'自动刷新':'已暂停'}</button>
       <select value=${sec} onChange=${e=>setSec(+e.target.value)}>${[30,60,120,300].map(n=>html`<option value=${n}>每 ${n}s</option>`)}</select>
       <span class="grow"></span>
@@ -268,6 +299,7 @@ function PairCard({pair}){
 function MatchView({matching}){
   const [q,setQ]=useState(''); const [cat,setCat]=useState(''); const [minConf,setMinConf]=useState(0);
   const [limit,setLimit]=useState(100); const [pairs,setPairs]=useState([]); const [loading,setLoading]=useState(false); const [err,setErr]=useState('');
+  const [hideEnded,setHideEnded]=useState(true);
   const run=async()=>{ setLoading(true); setErr('');
     try{ const d=await pget('router','fetchMarketMatches',{query:q,category:cat,minConfidence:minConf||undefined,relation:'identity',limit});
       let arr=Array.isArray(d)?d:asArr(d);
@@ -283,12 +315,16 @@ function MatchView({matching}){
       <label class="muted">最小置信 <select value=${minConf} onChange=${e=>setMinConf(+e.target.value)}>${[0,0.5,0.7,0.9].map(v=>html`<option value=${v}>${v?v*100+'%':'不限'}</option>`)}</select></label>
       <select value=${limit} onChange=${e=>setLimit(+e.target.value)}>${[50,100,200].map(n=>html`<option value=${n}>${n} 对</option>`)}</select>
       <button class="btn" onClick=${run} disabled=${loading}>${loading?'扫描中…':'扫描全部匹配'}</button>
+      <span class=${'chip '+(hideEnded?'on':'')} onClick=${()=>setHideEnded(v=>!v)} title="过滤已结算/已出局/价格贴近0或1的市场">隐藏已结束</span>
     </div>
     <div class="muted" style="font-size:12px;margin-bottom:12px">pmxt 匹配引擎全量对齐（relation=identity），按价差从大到小。点某一对展开双边盘口。</div>
     ${err&&html`<div class="err">出错：${err}${/401|unauth|key|token/i.test(err)?'（多半是 PMXT_API_KEY 问题）':''}</div>`}
-    ${!loading&&!err&&!pairs.length&&html`<div class="empty">没有匹配结果</div>`}
-    <div class="muted" style="font-size:12px;margin-bottom:8px">${pairs.length?`共 ${pairs.length} 对匹配`:''}</div>
-    ${pairs.map((p,i)=>html`<${PairCard} key=${i} pair=${p}/>`)}
+    ${(()=>{ const vpairs=hideEnded?pairs.filter(p=>!isDecided(p.sourceMarket)&&!isDecided(p.market)&&!isEnded(p.sourceMarket)&&!isEnded(p.market)):pairs;
+      return html`<${Fragment}>
+        ${!loading&&!err&&!vpairs.length&&html`<div class="empty">没有匹配结果${hideEnded&&pairs.length?'（已隐藏 '+(pairs.length-vpairs.length)+' 个已结束）':''}</div>`}
+        <div class="muted" style="font-size:12px;margin-bottom:8px">${vpairs.length?`共 ${vpairs.length} 对进行中的匹配`:''}${hideEnded&&pairs.length>vpairs.length?`（已隐藏 ${pairs.length-vpairs.length} 个已结束）`:''}</div>
+        ${vpairs.map((p,i)=>html`<${PairCard} key=${i} pair=${p}/>`)}
+      <//>`; })()}
   </div>`;
 }
 
