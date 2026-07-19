@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+.git
+.github
+*.log
+sdks/*/generated
+core/test
+docs
+changelog.md
+feature-status.csv

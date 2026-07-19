@@ -1,0 +1,14 @@
+{
+  "name": "pmxt-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "行情网关：挂载 pmxt-core 统一 API + 托管行情前端",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "pmxt-core": "file:../../core"
+  }
+}

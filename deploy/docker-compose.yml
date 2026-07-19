@@ -1,0 +1,33 @@
+# pmxt 行情栈 —— 与 homerun 完全隔离、端口不冲突
+# homerun 占用：3000(前端) / 8000(后端) / 5432(pg) / 6379(redis)
+# 本栈只用：3200(行情前端+API 网关)，且只绑 127.0.0.1（配合 SSH 隧道访问）
+name: pmxt
+
+services:
+  gateway:
+    build:
+      context: ..                     # 构建上下文 = pmxt 仓库根（需要 core/ 源码）
+      dockerfile: deploy/Dockerfile
+    image: pmxt-gateway:local
+    container_name: pmxt-gateway
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PMXT_GATEWAY_PORT: "3200"
+      PMXT_GATEWAY_HOST: "0.0.0.0"
+      PMXT_VENUES: "${PMXT_VENUES:-polymarket,kalshi,limitless,opinion}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    ports:
+      # 只映射到宿主机回环，不暴露公网；改 PMXT_PORT 可换宿主机端口
+      - "127.0.0.1:${PMXT_PORT:-3200}:3200"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3200/pmxt/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
