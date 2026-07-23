@@ -89,6 +89,8 @@ const usd=n=>(n==null||isNaN(n))?'—':'$'+Number(n).toLocaleString('en-US',{max
 const mkTitle=m=>(m&&(m.title||m.question||m.slug||m.marketId||m.id))||'(未命名)';
 const venueOf=m=>(m&&m.sourceExchange)||'?';
 const o0=m=>m&&m.outcomes&&m.outcomes[0];
+// 取「Yes」那一项做跨平台对齐（各平台 outcomes[0] 极性不一定一致，直接比会把方向搞反）
+const yesOutcome=m=>{ const os=(m&&m.outcomes)||[]; return os.find(o=>/^\s*yes\s*$/i.test(o.label||''))||os[0]; };
 const chgCls=c=>c>0?'up':c<0?'dn':'';
 const chgTxt=c=>c==null?'':(c>0?'+':'')+(c*100).toFixed(1);
 const asArr=d=>Array.isArray(d)?d:(d&&(d.markets||d.matches||d.data))||[];
@@ -108,7 +110,7 @@ const volOf=m=>(m&&(m.volume24h||m.volume||m.liquidity))||0;
 // 是否已结束（结算/归档/到期）—— status 或 resolutionDate 有值时判定
 const isEnded=m=>{ if(!m) return false; if(m.status&&/(closed|resolved|archived|settled|inactive|expired|finalized)/i.test(m.status)) return true; if(m.resolutionDate){ const d=new Date(m.resolutionDate); if(!isNaN(d)&&d.getTime()<nowMs()) return true; } return false; };
 // 是否已定盘（价格贴近 0 或 1，机会页视为无意义）
-const isDecided=m=>{ const p=(o0(m)||{}).price; return p!=null&&(p<=0.02||p>=0.98); };
+const isDecided=m=>{ const y=yesOutcome(m); const p=y&&y.price; return p!=null&&(p<=0.02||p>=0.98); };
 function nowMs(){ try{ return Date.parse(new Date().toISOString()); }catch{ return 0; } }
 
 /* ---------- watchlist ---------- */
@@ -273,27 +275,46 @@ function BoardView({venues, onWatch}){
 
 /* ================= 跨平台匹配 ================= */
 function PairCard({pair}){
-  const [open,setOpen]=useState(false); const [books,setBooks]=useState(null); const [loading,setLoading]=useState(false);
-  const A={venue:venueOf(pair.sourceMarket), market:pair.sourceMarket, price:(o0(pair.sourceMarket)||{}).price};
-  const B={venue:venueOf(pair.market), market:pair.market, price:(o0(pair.market)||{}).price};
-  const diff=(A.price!=null&&B.price!=null)?Math.abs(A.price-B.price):null;
-  const load=async()=>{ setOpen(true); setLoading(true);
-    const one=async s=>{ const oid=o0(s.market)&&o0(s.market).outcomeId; if(!oid) return {err:'无 outcomeId'}; try{ return {book:await pget(s.venue,'fetchOrderBook',{outcomeId:oid,limit:6})}; }catch(e){ return {err:e.message}; } };
-    const [a,b]=await Promise.all([one(A),one(B)]); setBooks({a,b}); setLoading(false); };
+  const [open,setOpen]=useState(false); const [books,setBooks]=useState(null); const [bl,setBl]=useState(false);
+  const [live,setLive]=useState(null); const [ll,setLl]=useState(false); const [lts,setLts]=useState(null);
+  // 两边都取「Yes」选项对齐，避免方向搞反
+  const mk=s=>{ const y=yesOutcome(s)||{}; return {venue:venueOf(s), market:s, oid:y.outcomeId, price:y.price, label:y.label||'Yes'}; };
+  const A=mk(pair.sourceMarket), B=mk(pair.market);
+  const cDiff=(A.price!=null&&B.price!=null)?Math.abs(A.price-B.price):null;   // 目录参考价差
+  const lDiff=(live&&live.a!=null&&live.b!=null)?Math.abs(live.a-live.b):null;  // 实时价差
+  const showDiff=lDiff!=null?lDiff:cDiff;
+  const midOf=async(v,oid)=>{ if(!oid) return null; const b=await pget(v,'fetchOrderBook',{outcomeId:oid,limit:1}); const bb=b.bids&&b.bids[0]&&b.bids[0].price, ba=b.asks&&b.asks[0]&&b.asks[0].price; return (bb!=null&&ba!=null)?(bb+ba)/2:(b.lastPrice!=null?b.lastPrice:(bb!=null?bb:ba)); };
+  const refreshLive=async()=>{ setLl(true); try{ const [a,b]=await Promise.all([midOf(A.venue,A.oid).catch(()=>null), midOf(B.venue,B.oid).catch(()=>null)]); setLive({a,b}); setLts(Date.now()); }finally{ setLl(false); } };
+  const loadBooks=async()=>{ setOpen(true); setBl(true);
+    const one=async s=>{ if(!s.oid) return {err:'无 outcomeId'}; try{ return {book:await pget(s.venue,'fetchOrderBook',{outcomeId:s.oid,limit:6})}; }catch(e){ return {err:e.message}; } };
+    const [a,b]=await Promise.all([one(A),one(B)]); setBooks({a,b}); setBl(false); };
+  const disp=(S,i)=>live?(i===0?live.a:live.b):S.price;
   return html`<div class="card">
     <div class="pair">
       <div>
-        <div class="side"><span class="pill venue">${A.venue}</span><span class="mkt2" title=${mkTitle(A.market)}>${mkTitle(A.market)}</span><span class="price">${cents(A.price)}</span></div>
-        <div class="side"><span class="pill venue">${B.venue}</span><span class="mkt2" title=${mkTitle(B.market)}>${mkTitle(B.market)}</span><span class="price">${cents(B.price)}</span></div>
+        ${[A,B].map((S,i)=>html`<div class="side">
+          <span class="pill venue">${S.venue}</span>
+          <span class="mkt2" title=${mkTitle(S.market)}>${mkTitle(S.market)}</span>
+          <span class="muted" style="font-size:11px;width:30px">${S.label}</span>
+          <span class="price">${cents(disp(S,i))}</span>
+        </div>`)}
       </div>
-      <div><div class="big ${diff>=0.05?'up':''}">${diff==null?'—':(diff*100).toFixed(1)+'¢'}</div>
-        <div class="muted" style="font-size:11px;text-align:right">价差 · ${pair.relation||'identity'}${pair.confidence!=null?` · 置信 ${(pair.confidence*100).toFixed(0)}%`:''}</div></div>
+      <div><div class="big ${showDiff>=0.03?'up':''}">${showDiff==null?'—':(showDiff*100).toFixed(1)+'¢'}</div>
+        <div class="muted" style="font-size:11px;text-align:right">${live?'实时价差':'参考价差'}${pair.confidence!=null?` · 置信 ${(pair.confidence*100).toFixed(0)}%`:''}</div></div>
     </div>
     ${pair.reasoning&&html`<div class="reason">匹配理由：${pair.reasoning}</div>`}
-    <div class="actions" style="margin-top:10px"><button onClick=${open?()=>setOpen(false):load}>${open?'收起盘口':'看双边盘口'}</button></div>
-    ${open&&html`<div class="cols2" style="margin-top:10px">${loading?html`<div class="muted">加载盘口…</div>`:html`
+    <div class="actions" style="margin-top:10px">
+      <button onClick=${refreshLive} disabled=${ll}>${ll?'取实时价…':'刷新实时价'}</button>
+      <button onClick=${open?()=>setOpen(false):loadBooks}>${open?'收起盘口':'双边盘口'}</button>
+      ${A.market.url&&html`<button onClick=${()=>window.open(A.market.url,'_blank','noopener')}>${A.venue}↗</button>`}
+      ${B.market.url&&html`<button onClick=${()=>window.open(B.market.url,'_blank','noopener')}>${B.venue}↗</button>`}
+      ${lts&&html`<span class="muted" style="font-size:11px">实时价 ${new Date(lts).toLocaleTimeString()}</span>`}
+    </div>
+    ${!live&&html`<div class="muted" style="font-size:11px;margin-top:6px">↑ 卡片价来自 pmxt 匹配目录，可能有延迟；点「刷新实时价」取两边当前中间价算真实价差。</div>`}
+    ${open&&html`<div class="cols2" style="margin-top:10px">${bl?html`<div class="muted">加载盘口…</div>`:html`
       <${OrderBook} venue=${A.venue} title=${mkTitle(A.market)} book=${books&&books.a.book} err=${books&&books.a.err} quote=${A.price}/>
-      <${OrderBook} venue=${B.venue} title=${mkTitle(B.market)} book=${books&&books.b.book} err=${books&&books.b.err} quote=${B.price}/>`}</div>`}
+      <${OrderBook} venue=${B.venue} title=${mkTitle(B.market)} book=${books&&books.b.book} err=${books&&books.b.err} quote=${B.price}/>
+      <div class="muted" style="font-size:11px;grid-column:1/3">盘口为点击瞬间的实时快照，不自动刷新；收起再展开可重新拉取。</div>`}</div>`}
   </div>`;
 }
 function MatchView({matching}){
@@ -303,7 +324,8 @@ function MatchView({matching}){
   const run=async()=>{ setLoading(true); setErr('');
     try{ const d=await pget('router','fetchMarketMatches',{query:q,category:cat,minConfidence:minConf||undefined,relation:'identity',limit});
       let arr=Array.isArray(d)?d:asArr(d);
-      arr.sort((x,y)=>{ const dx=(o0(x.sourceMarket)&&o0(x.market))?Math.abs(((o0(x.sourceMarket)||{}).price||0)-((o0(x.market)||{}).price||0)):0; const dy=(o0(y.sourceMarket)&&o0(y.market))?Math.abs(((o0(y.sourceMarket)||{}).price||0)-((o0(y.market)||{}).price||0)):0; return dy-dx; });
+      const adiff=p=>{ const a=(yesOutcome(p.sourceMarket)||{}).price, b=(yesOutcome(p.market)||{}).price; return (a!=null&&b!=null)?Math.abs(a-b):-1; };
+      arr.sort((x,y)=>adiff(y)-adiff(x));
       setPairs(arr);
     }catch(e){ setErr(e.message); setPairs([]); } finally{ setLoading(false); } };
   useEffect(()=>{ if(matching) run(); },[]);
