@@ -10,6 +10,7 @@
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 // pmxt-core 是 CommonJS，用默认导入再解构，避免 ESM 命名导入的互操作问题
 import pmxtCore from 'pmxt-core';
@@ -26,6 +27,8 @@ const VENUES = String(process.env.PMXT_VENUES || 'polymarket,kalshi,limitless,op
 const DASHBOARD_DIR = process.env.PMXT_DASHBOARD_DIR || join(__dirname, '..', 'dashboard');
 // pmxt 托管匹配引擎的 API key（跨平台同一市场匹配/套利要用）。仅在服务端持有。
 const PMXT_API_KEY = process.env.PMXT_API_KEY || '';
+// 运维状态文件：由宿主机 cron 写入（df + docker ps），网关只读透传，避免暴露 docker.sock
+const OPS_FILE = process.env.PMXT_OPS_FILE || '/app/ops/status.json';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
@@ -33,6 +36,15 @@ app.use(express.json({ limit: '2mb' }));
 // 前端启动时读取：当前启用了哪些平台，以及跨平台匹配是否可用（有没有配 key）
 app.get('/config', (_req, res) => {
   res.json({ venues: VENUES, matching: Boolean(PMXT_API_KEY), ts: Date.now() });
+});
+
+// 运维状态条数据源：宿主机 cron 写好的 JSON（磁盘 + 容器健康），网关只读转发
+app.get('/ops', (_req, res) => {
+  try {
+    res.json(JSON.parse(readFileSync(OPS_FILE, 'utf8')));
+  } catch {
+    res.json({ error: '暂无运维数据（宿主机 cron 未接入或尚未生成）' });
+  }
 });
 
 // —— 为 pmxt 的 router（跨平台匹配/套利）调用注入托管 API key ——
@@ -60,7 +72,7 @@ app.use(express.static(DASHBOARD_DIR));
 // 用 middleware 而非 app.get('*')，规避 Express 5 的通配路径解析限制
 app.use((req, res, next) => {
   if (req.method !== 'GET') return next();
-  if (req.path.startsWith('/pmxt') || req.path.startsWith('/config') || req.path.startsWith('/gw')) {
+  if (req.path.startsWith('/pmxt') || req.path.startsWith('/config') || req.path.startsWith('/gw') || req.path.startsWith('/ops')) {
     return next();
   }
   res.sendFile(join(DASHBOARD_DIR, 'index.html'));

@@ -24,6 +24,8 @@ services:
     volumes:
       # 前端热更新：改了 dashboard/ 后 git pull + 刷新浏览器即可，无需 --build
       - ./dashboard:/app/deploy/dashboard:ro
+      # 运维状态条：宿主机 cron 写入的 status.json，网关只读（避免暴露 docker.sock）
+      - ${PMXT_OPS_DIR:-/home/ubuntu/ops}:/app/ops:ro
     healthcheck:
       test:
         - CMD

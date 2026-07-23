@@ -383,6 +383,23 @@ function WatchView({watch,setWatch}){
   </div>`;
 }
 
+/* ================= 运维状态条 ================= */
+function OpsBar(){
+  const [ops,setOps]=useState(null);
+  useEffect(()=>{ let dead=false; const load=()=>fetch('/ops').then(r=>r.json()).then(d=>{ if(!dead) setOps(d); }).catch(()=>{}); load(); const id=setInterval(load,30000); return ()=>{dead=true;clearInterval(id);}; },[]);
+  if(!ops||ops.error) return html`<span class="status" title=${(ops&&ops.error)||''}>运维 —</span>`;
+  const d=ops.disk||{}, p=d.usePct;
+  const dcol=p>=85?'var(--red)':p>=70?'var(--amb)':'var(--grn)';
+  const cs=ops.containers||[];
+  const isBad=c=>{ const s=c.status||''; if(/unhealthy|restarting|dead|paused/i.test(s)) return true; if(/^Exited/i.test(s)&&!/Exited \(0\)/.test(s)) return true; return false; };
+  const bad=cs.filter(isBad); const up=cs.length-bad.length; const ccol=bad.length?'var(--red)':'var(--grn)';
+  const gB=k=>Math.round((k||0)/1048576);
+  return html`<span class="status" style="display:flex;gap:14px;align-items:center">
+    <span title=${`已用 ${p}% · 可用 ${gB(d.availKB)}G / 共 ${gB(d.totalKB)}G`}><span class="dot" style=${{background:dcol}}></span>磁盘 ${p==null?'—':p+'%'}</span>
+    <span title=${bad.length?('异常: '+bad.map(c=>`${c.name}(${c.status})`).join(', ')):'全部正常'}><span class="dot" style=${{background:ccol}}></span>容器 ${up}/${cs.length}</span>
+  </span>`;
+}
+
 /* ================= App ================= */
 function App(){
   const [venues,setVenues]=useState(['polymarket','kalshi','limitless','opinion']);
@@ -395,7 +412,9 @@ function App(){
   return html`<div>
     <header><h1>pmxt 行情台</h1><span class="tag">统一预测市场行情</span>
       <div class="tabs">${T.map(([k,l])=>html`<button class=${tab===k?'on':''} onClick=${()=>setTab(k)}>${l}</button>`)}</div>
-      <span class="grow"></span><span class="status">${matching?'匹配 ✓':'匹配 ✗'} · ${venues.join(' · ')}</span>
+      <span class="grow"></span>
+      <${OpsBar}/>
+      <span class="status">${matching?'匹配 ✓':'匹配 ✗'}</span>
     </header>
     <main>
       ${!ready&&html`<div class="empty">正在连接网关…</div>`}
