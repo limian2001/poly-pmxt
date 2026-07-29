@@ -3,428 +3,322 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>pmxt 行情台</title>
+<meta name="color-scheme" content="dark" />
+<title>全球预测市场行情台</title>
+<!--
+  这个文件只负责「外壳 + 样式」，一行业务逻辑都没有。
+  真正的界面在 ./js/app.js（再往下拆成 board.js / detail.js / lib.js / preact.js）。
+
+  配色沿用国内行情软件的习惯：**红涨绿跌**（同花顺口径，和欧美股票软件相反）。
+  这一条贯穿全站 —— 涨跌幅、盘口买卖档、成交方向、价格跳动闪烁，都按这个来。
+  想改回绿涨红跌只需要动下面 .up / .dn 两条，别去 JS 里改。
+-->
 <style>
   :root{
-    --bg:#0b0e13; --panel:#141922; --panel2:#1b2230; --border:#252d3b;
-    --fg:#e6ebf2; --mut:#8b96a7; --acc:#4f8cff; --grn:#31c48d; --red:#f0616d; --amb:#e6b53f;
+    --bg:#0b0e13; --panel:#141922; --panel2:#1b2230; --panel3:#212a3a;
+    --border:#252d3b; --border2:#33405a;
+    --fg:#e6ebf2; --mut:#8b96a7; --dim:#6b7688;
+    --acc:#4f8cff; --grn:#31c48d; --red:#f0616d; --amb:#e6b53f;
+    --hdr:52px;          /* 顶栏高度，表头 sticky 要减掉它 */
+    --row1:26px;         /* 表头第一层高度，第二层 sticky 要偏移这么多 */
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--fg);
+    font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
   a{color:var(--acc);text-decoration:none}
-  header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#131824,#0d1119);position:sticky;top:0;z-index:10}
-  header h1{font-size:16px;margin:0;letter-spacing:.5px;font-weight:600}
-  header .tag{font-size:11px;color:var(--mut);border:1px solid var(--border);border-radius:6px;padding:2px 7px}
-  .tabs{display:flex;gap:4px;margin-left:8px}
-  .tabs button{background:transparent;border:1px solid transparent;color:var(--mut);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px}
-  .tabs button.on{background:var(--panel2);color:var(--fg);border-color:var(--border)}
-  .grow{flex:1}.status{font-size:12px;color:var(--mut)}
-  main{padding:16px 20px;max-width:1600px;margin:0 auto}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  input,select{background:var(--panel);border:1px solid var(--border);color:var(--fg);padding:7px 10px;border-radius:8px;font-size:13px;outline:none}
+  a:hover{text-decoration:underline}
+  button{font-family:inherit}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:#2b3444;border-radius:6px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:#3a465c}
+
+  /* ── 通用原子 ─────────────────────────────────────────────────────── */
+  .grow{flex:1}
+  .mut{color:var(--mut)}
+  .dim{color:var(--dim)}
+  .small{font-size:11.5px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .l{text-align:left}
+  /* 红涨绿跌 —— 整个站点唯一的涨跌配色来源 */
+  .up{color:var(--red)}
+  .dn{color:var(--grn)}
+  .flat{color:var(--mut)}
+  .warn{color:var(--amb)}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:1px}
+  .vdot{width:7px;height:7px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:1px}
+  .empty,.none{color:var(--mut);text-align:center;padding:34px 12px}
+  .err{color:var(--red);background:rgba(240,97,109,.08);border:1px solid rgba(240,97,109,.3);
+       border-radius:8px;padding:8px 12px;margin:8px 0;font-size:12.5px}
+
+  .btn{background:var(--acc);border:1px solid var(--acc);color:#fff;padding:6px 12px;
+       border-radius:7px;cursor:pointer;font-size:12.5px;white-space:nowrap}
+  .btn.ghost{background:var(--panel2);border-color:var(--border);color:var(--fg)}
+  .btn.ghost:hover:not(:disabled){border-color:var(--border2);background:var(--panel3)}
+  .btn.xs{padding:3px 9px;font-size:11.5px}
+  .btn:disabled{opacity:.45;cursor:default}
+
+  .chip{font-size:11.5px;border:1px solid var(--border);border-radius:7px;padding:4px 9px;
+        cursor:pointer;color:var(--mut);background:var(--panel);user-select:none;white-space:nowrap}
+  .chip:hover{border-color:var(--border2);color:var(--fg)}
+  .chip.on{border-color:var(--acc);color:var(--fg);background:rgba(79,140,255,.14)}
+
+  .badge{font-size:10.5px;line-height:16px;border:1px solid var(--border);border-radius:4px;
+         padding:0 5px;color:var(--mut);background:var(--panel2);white-space:nowrap}
+  .badge.cat{border-color:#33405a;color:#a9b6cb}
+  .badge.end{border-color:rgba(240,97,109,.45);color:var(--red);background:rgba(240,97,109,.1);margin-left:6px}
+
+  input,select{background:var(--panel);border:1px solid var(--border);color:var(--fg);
+               padding:6px 9px;border-radius:7px;font-size:12.5px;outline:none}
   input:focus,select:focus{border-color:var(--acc)}
-  button.btn{background:var(--acc);border:none;color:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font-size:13px}
-  button.btn.ghost{background:var(--panel2);color:var(--fg);border:1px solid var(--border)}
-  button.btn:disabled{opacity:.5;cursor:default}
-  .chip{font-size:12px;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;color:var(--mut);background:var(--panel);user-select:none}
-  .chip.on{border-color:var(--acc);color:var(--fg);background:var(--panel2)}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
-  .muted{color:var(--mut)}
-  .pill{font-size:11px;border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--mut);text-transform:capitalize;white-space:nowrap}
-  .up{color:var(--grn)} .dn{color:var(--red)}
-  /* board table */
-  .wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
-  table{width:100%;border-collapse:collapse;font-size:12.5px}
-  th,td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  th{position:sticky;top:0;background:#10151e;color:var(--mut);font-weight:600;cursor:pointer;z-index:1}
-  th.l,td.l{text-align:left}
-  td.title{max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  tr.mkt:hover{background:#121826}
-  tr.exp>td{background:#0e131c}
-  .flash{animation:fl .7s ease}@keyframes fl{0%{background:#22314a}100%{background:transparent}}
-  .lnk{cursor:pointer}
-  .obar{display:inline-block;width:60px;height:7px;background:var(--panel2);border-radius:5px;overflow:hidden;vertical-align:middle;margin-right:6px}
-  .obar>i{display:block;height:100%;background:linear-gradient(90deg,#2b6fe0,#4f8cff)}
-  .book{width:auto;font-size:12px}.book td,.book th{border-bottom:1px solid var(--border);padding:2px 8px}
-  .book td.bid{color:var(--grn)}.book td.ask{color:var(--red)}
-  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .colhead{display:flex;justify-content:space-between;font-weight:600;margin-bottom:6px}
-  /* match */
-  .pair{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
-  .side{display:flex;align-items:center;gap:8px;margin:3px 0}
-  .venue{width:88px;flex:none}.mkt2{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .price{font-variant-numeric:tabular-nums;font-weight:600}
-  .big{font-size:20px;font-weight:700;text-align:right}
-  .reason{font-size:12px;color:var(--mut);margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
-  .err{color:var(--red);font-size:12px;margin:6px 0}.empty{color:var(--mut);padding:30px;text-align:center}
-  .notice{background:var(--panel);border:1px solid var(--amb);border-radius:12px;padding:16px}
-  code{background:var(--panel2);padding:1px 5px;border-radius:4px}
-  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
-  .actions button{font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--fg);cursor:pointer;margin-right:4px}
+  input::placeholder{color:var(--dim)}
+
+  /* 分段按钮组（主榜/其他平台独有、K 线周期）*/
+  .segs{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:2px;gap:2px}
+  .segs button{background:transparent;border:none;color:var(--mut);padding:4px 11px;
+               border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap}
+  .segs button:hover{color:var(--fg)}
+  .segs button.on{background:var(--panel3);color:var(--fg)}
+  .segs.big button{padding:6px 16px;font-size:13px}
+
+  /* ── 顶栏 ─────────────────────────────────────────────────────────── */
+  #app>header{
+    display:flex;align-items:center;gap:10px;height:var(--hdr);padding:0 16px;
+    border-bottom:1px solid var(--border);background:linear-gradient(180deg,#141a26,#0d1119);
+    position:sticky;top:0;z-index:60;
+  }
+  #app>header h1{font-size:15px;margin:0;letter-spacing:.5px;font-weight:600;white-space:nowrap}
+  .tag{font-size:11px;color:var(--mut);border:1px solid var(--border);border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .tag.warn{border-color:rgba(230,181,63,.45);color:var(--amb);background:rgba(230,181,63,.08)}
+  .status{font-size:11.5px;color:var(--mut);white-space:nowrap}
+  .status.ops{display:flex;gap:12px;align-items:center}
+
+  main{padding:12px 16px 28px}
+  footer{margin-top:14px;padding-top:10px;border-top:1px solid var(--border);line-height:1.7}
+  footer b{color:var(--fg)}
+
+  /* ── 筛选栏 ───────────────────────────────────────────────────────── */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+  .filters .search{min-width:230px;flex:0 1 300px}
+  .vchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .meta{display:flex;align-items:center;gap:10px;margin:0 2px 8px;font-size:12px;color:var(--mut)}
+  .meta b{color:var(--fg)}
+  .pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}
+
+  /* ── 行情主表 ─────────────────────────────────────────────────────── */
+  .wrap{
+    position:relative;border:1px solid var(--border);border-radius:10px;background:var(--panel);
+    overflow:auto;max-height:calc(100vh - var(--hdr) - 168px);min-height:320px;
+  }
+  table.board{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+  .board th,.board td{
+    padding:5px 9px;border-bottom:1px solid var(--border);white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .board th{
+    position:sticky;background:#10151e;color:var(--mut);font-weight:600;
+    text-align:right;z-index:20;height:var(--row1);
+  }
+  .board thead tr:first-child th{top:0}
+  .board thead tr.h2 th{top:var(--row1)}
+  .board th.l{text-align:left}
+  .board th.sortable{cursor:pointer;user-select:none}
+  .board th.sortable:hover{color:var(--fg)}
+  .board th.on{color:var(--acc)}
+  .board th i{font-style:normal;font-size:9px;margin-left:3px}
+  /* 正向 / 反向 两个分组 */
+  .board th.grp{text-align:center;font-size:12px;color:#b6c2d4;border-bottom:1px solid var(--border2)}
+  .board th.grp .mut{font-weight:400;font-size:10.5px;margin-left:4px}
+  .board th.grp.pos{background:#161219}
+  .board th.grp.neg{background:#101a19}
+  .board th.vh{text-align:center;font-size:11px;font-weight:600;letter-spacing:.3px}
+  .board th.vh.pos{background:#141017}
+  .board th.vh.neg{background:#0e1817}
+  /* 分组之间画一道竖线，眼睛不会串组 */
+  .board th.grp.pos+th.grp.neg,
+  .board th.vh.pos+th.vh.neg,
+  .board td.px.pos+td.px.neg{border-left:1px solid var(--border2)}
+
+  /* 「标的」列钉在左边，横向滚动时不丢上下文 */
+  .board th.l:first-child,.board td.tt{
+    position:sticky;left:0;background:var(--panel);z-index:25;
+    max-width:430px;min-width:300px;
+  }
+  .board th.l:first-child{background:#10151e;z-index:40}
+  .board td.tt{border-right:1px solid var(--border)}
+
+  .board tbody tr.r:hover>td{background:#161d2b}
+  .board tbody tr.r:hover>td.tt{background:#182031}
+  .board tr.r.sel>td{background:#17203040}
+  .board tr.r.sel>td.tt{box-shadow:inset 2px 0 0 var(--acc)}
+  .board tr.r.ended>td{opacity:.55}
+  .board tr.r.ch>td{background:#0f141d;font-size:12px}
+  .board tr.r.ch:hover>td{background:#151d2a}
+  .board tr.r.ch>td.tt{background:#0f141d}
+  .board tr.r.ch:hover>td.tt{background:#161f2d}
+  .board tr.r.multi>td.tt{cursor:pointer}
+  .board td.none{border-bottom:none}
+
+  /* 标的名称格 */
+  .board td.tt{display:table-cell}
+  .tg{width:18px;height:18px;flex:none;background:transparent;border:1px solid var(--border);
+      border-radius:4px;color:var(--mut);cursor:pointer;font-size:10px;line-height:1;padding:0;
+      display:inline-block;vertical-align:top;margin-right:6px}
+  .tg:hover{border-color:var(--acc);color:var(--fg)}
+  .tg.on{color:var(--acc);border-color:var(--acc)}
+  .tg.ph{border-color:transparent;cursor:default;background:none}
+  .tw{display:inline-block;vertical-align:top;max-width:calc(100% - 26px)}
+  .tw .nm{font-size:12.5px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  .tw .sub{display:flex;gap:5px;align-items:center;margin-top:2px;overflow:hidden}
+  .lead{font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .board td.tt.child{padding-left:9px}
+  .ind{display:inline-block;width:22px;height:11px;margin-right:4px;vertical-align:middle;
+       border-left:1px solid var(--border2);border-bottom:1px solid var(--border2);border-radius:0 0 0 3px}
+  .board td.tt.child .nm{display:inline;font-size:12px;color:#cfd8e6}
+  .vs{font-size:10.5px;color:var(--dim);margin-left:6px}
+
+  /* 价格格 */
+  .board td.px{
+    position:relative;text-align:right;cursor:pointer;font-variant-numeric:tabular-nums;
+    font-size:12.5px;font-weight:600;
+  }
+  .board td.px.pos{background:rgba(240,97,109,.035)}
+  .board td.px.neg{background:rgba(49,196,141,.03)}
+  .board td.px:hover{outline:1px solid var(--acc);outline-offset:-1px}
+  .board td.px.empty{color:#4d5769;font-weight:400;cursor:default}
+  .board td.px.empty:hover{outline:none}
+  .board td.px.part .v{color:var(--amb);font-weight:500}
+  .board td.px .mk{font-size:9.5px;color:var(--dim);margin-left:2px;vertical-align:2px}
+  .board td.px.hasLive::after{
+    content:'';position:absolute;top:3px;right:3px;width:4px;height:4px;
+    border-radius:50%;background:var(--acc);opacity:.6;
+  }
+  /* 价格跳动闪一下：涨红、跌绿。用 inset 阴影不动背景，免得把分组底色冲掉 */
+  .board td.px.fu{animation:fu .8s ease-out}
+  .board td.px.fd{animation:fd .8s ease-out}
+  @keyframes fu{0%{box-shadow:inset 0 0 0 40px rgba(240,97,109,.34)}100%{box-shadow:inset 0 0 0 40px rgba(240,97,109,0)}}
+  @keyframes fd{0%{box-shadow:inset 0 0 0 40px rgba(49,196,141,.30)}100%{box-shadow:inset 0 0 0 40px rgba(49,196,141,0)}}
+  .board td.when{color:var(--mut);font-size:11.5px}
+
+  /* ── 悬停盘口浮层 ─────────────────────────────────────────────────── */
+  /* 坐标是 getBoundingClientRect 算的视口坐标，所以必须 fixed */
+  .bookpop{
+    position:fixed;z-index:80;background:var(--panel2);border:1px solid var(--border2);
+    border-radius:9px;padding:8px;box-shadow:0 12px 32px rgba(0,0,0,.55);pointer-events:none;
+    font-size:11.5px;
+  }
+  .bk-h{display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:5px}
+  .bk-h b{font-size:12px;font-weight:600}
+  .bk-h .mut{margin-left:auto;font-size:11px}
+  .bk-b{display:flex;flex-direction:column;gap:1px}
+  .bk-l{position:relative;display:flex;align-items:center;gap:8px;padding:1px 4px;border-radius:3px}
+  .bk-bar{position:absolute;left:0;top:0;bottom:0;border-radius:3px;z-index:0}
+  /* 买盘推价上行 → 红；卖盘压价下行 → 绿 */
+  .bk-bar.bid{background:rgba(240,97,109,.16)}
+  .bk-bar.ask{background:rgba(49,196,141,.14)}
+  .bk-p{position:relative;z-index:1;font-variant-numeric:tabular-nums;font-weight:600;min-width:46px}
+  .bk-p.bid{color:var(--red)}
+  .bk-p.ask{color:var(--grn)}
+  .bk-s{position:relative;z-index:1;margin-left:auto;color:var(--mut);font-variant-numeric:tabular-nums}
+  .bk-mid{display:flex;justify-content:space-between;gap:8px;padding:3px 4px;margin:2px 0;
+          color:var(--amb);border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)}
+  .bk-empty{color:var(--mut);padding:10px 4px;text-align:center}
+  .bk-f{margin-top:6px;padding-top:5px;border-top:1px solid var(--border);font-size:10.5px}
+
+  /* ── 详情抽屉 ─────────────────────────────────────────────────────── */
+  .scrim{position:fixed;inset:0;background:rgba(4,7,12,.6);z-index:90;animation:fade .15s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .drawer{
+    position:fixed;top:0;right:0;bottom:0;width:min(1060px,94vw);z-index:100;
+    background:var(--bg);border-left:1px solid var(--border2);
+    box-shadow:-18px 0 48px rgba(0,0,0,.5);display:flex;flex-direction:column;
+    animation:slide .18s cubic-bezier(.2,.7,.3,1);
+  }
+  @keyframes slide{from{transform:translateX(28px);opacity:.4}to{transform:none;opacity:1}}
+  .drawer>header{
+    display:flex;align-items:flex-start;gap:12px;padding:14px 16px 10px;
+    border-bottom:1px solid var(--border);background:var(--panel);
+  }
+  .dt{min-width:0;flex:1}
+  .dtitle{font-size:16px;font-weight:600;line-height:1.35}
+  .dsub{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;font-size:11.5px}
+  .drawer .x{background:var(--panel2);border:1px solid var(--border);color:var(--mut);
+             width:28px;height:28px;border-radius:7px;cursor:pointer;flex:none;font-size:13px;line-height:1}
+  .drawer .x:hover{color:var(--fg);border-color:var(--border2)}
+  .derr{margin:10px 16px 0;color:var(--red);font-size:12.5px}
+  .drawer .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 16px 0}
+  .drawer .chips b{font-variant-numeric:tabular-nums;color:var(--fg)}
+  .dtabs{display:flex;align-items:center;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border)}
+  .dtabs>button{background:transparent;border:1px solid transparent;color:var(--mut);
+                padding:5px 13px;border-radius:7px;cursor:pointer;font-size:13px}
+  .dtabs>button:hover{color:var(--fg)}
+  .dtabs>button.on{background:var(--panel2);color:var(--fg);border-color:var(--border)}
+  .vlink{font-size:11.5px;color:var(--mut);border:1px solid var(--border);border-radius:6px;
+         padding:3px 8px;white-space:nowrap}
+  .vlink:hover{color:var(--fg);border-color:var(--border2);text-decoration:none}
+  .dbody{flex:1;overflow:auto;padding:14px 16px 28px}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;align-items:start}
+
+  /* K 线 */
+  .chart{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px}
+  .chart svg{display:block;width:100%}
+  .chart .gl{stroke:var(--border);stroke-width:1}
+  .chart .ax{fill:var(--dim);font-size:10px}
+  .chart .cross{stroke:var(--border2);stroke-width:1;stroke-dasharray:3 3}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;padding:6px 4px 2px;font-size:11.5px}
+  .lg{display:inline-flex;align-items:center;gap:5px}
+  .lg i{width:8px;height:8px;border-radius:2px;display:inline-block}
+  .lg b{font-variant-numeric:tabular-nums}
+
+  /* 盘口 / 成交 分栏 */
+  .vbook,.vtrades{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
+  .vb-h{display:flex;align-items:center;gap:6px;font-size:12.5px;padding-bottom:8px;
+        border-bottom:1px solid var(--border);margin-bottom:8px}
+  .vb-h .ext{margin-left:auto;font-size:11.5px}
+  .vbook .bk-l{font-size:12px;padding:2px 5px}
+  .vbook .bk-b{gap:1px}
+
+  table.mini{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px}
+  table.mini th,table.mini td{padding:3px 7px;border-bottom:1px solid var(--border);
+                              text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  table.mini th{color:var(--mut);font-weight:600}
+  table.mini th.l,table.mini td.l{text-align:left}
+  table.mini td.mono{max-width:230px;overflow:hidden;text-overflow:ellipsis}
+
+  /* F10 */
+  .f10{display:flex;flex-direction:column;gap:16px;max-width:960px}
+  .f10 section{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .f10 h4{margin:0 0 8px;font-size:13px;font-weight:600;color:#c3cddd}
+  .f10 dl{display:grid;grid-template-columns:88px 1fr;gap:4px 12px;margin:0;font-size:12.5px}
+  .f10 dt{color:var(--mut)}
+  .f10 dd{margin:0;overflow-wrap:anywhere}
+  .f10 p{margin:6px 0 0}
+  .hbar{display:inline-block;height:7px;border-radius:3px;background:linear-gradient(90deg,#2b6fe0,#4f8cff);
+        vertical-align:1px;margin-right:6px;min-width:2px}
+  .mini-btn{background:var(--panel2);border:1px solid var(--border);color:var(--mut);
+            border-radius:5px;padding:1px 7px;font-size:11px;cursor:pointer;margin-left:6px}
+  .mini-btn:hover{color:var(--fg);border-color:var(--border2)}
+  .ext{color:var(--acc)}
+
+  /* 窄屏：抽屉铺满，主表允许更矮 */
+  @media (max-width:820px){
+    #app>header{gap:6px;padding:0 10px}
+    #app>header .tag{display:none}
+    main{padding:10px 8px 24px}
+    .drawer{width:100vw}
+    .wrap{max-height:calc(100vh - var(--hdr) - 210px)}
+    .board th.l:first-child,.board td.tt{min-width:200px;max-width:240px}
+  }
 </style>
 </head>
 <body>
 <div id="app"></div>
-<script type="module">
-import { h, render, Fragment } from 'https://esm.sh/preact@10.24.3';
-import { useState, useEffect, useRef } from 'https://esm.sh/preact@10.24.3/hooks';
-import htm from 'https://esm.sh/htm@3.1.1';
-const html = htm.bind(h);
-
-/* ---------- API ---------- */
-const API='/pmxt/api';
-async function pget(venue, method, params={}){
-  const qs=new URLSearchParams();
-  for(const [k,v] of Object.entries(params)){ if(v===undefined||v===null||v==='') continue; qs.set(k, typeof v==='object'?JSON.stringify(v):String(v)); }
-  const url=`${API}/${venue}/${method}${qs.toString()?`?${qs}`:''}`;
-  const r=await fetch(url); let j; try{ j=await r.json(); }catch{ throw new Error(`HTTP ${r.status}`); }
-  if(!r.ok||j.success===false){ const e=j.error; throw new Error((typeof e==='string')?e:(e&&(e.message||e.error))||(e?JSON.stringify(e):`HTTP ${r.status}`)); }
-  return j.data;
-}
-const getConfig=async()=>{ const r=await fetch('/config'); return r.json(); };
-
-/* ---------- utils ---------- */
-const cents=p=>(p==null||isNaN(p))?'—':`${(p*100).toFixed(1)}¢`;
-const usd=n=>(n==null||isNaN(n))?'—':'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
-const mkTitle=m=>(m&&(m.title||m.question||m.slug||m.marketId||m.id))||'(未命名)';
-const venueOf=m=>(m&&m.sourceExchange)||'?';
-const o0=m=>m&&m.outcomes&&m.outcomes[0];
-// 取「Yes」那一项做跨平台对齐（各平台 outcomes[0] 极性不一定一致，直接比会把方向搞反）
-const yesOutcome=m=>{ const os=(m&&m.outcomes)||[]; return os.find(o=>/^\s*yes\s*$/i.test(o.label||''))||os[0]; };
-const chgCls=c=>c>0?'up':c<0?'dn':'';
-const chgTxt=c=>c==null?'':(c>0?'+':'')+(c*100).toFixed(1);
-const asArr=d=>Array.isArray(d)?d:(d&&(d.markets||d.matches||d.data))||[];
-/* 跨平台统一类别：pmxt 的 category/tags 各平台口径不一，这里按关键词归到固定大桶 */
-const BUCKETS=[
-  ['体育','sport|soccer|football|nfl|nba|wnba|mlb|nhl|tennis|golf|ufc|\\bmma\\b|boxing|cricket|rugby|olympic|world cup|fifa|premier league|champions league|formula|\\bf1\\b|esports|league of legends|\\blol\\b|dota|valorant|\\bcs2\\b|super bowl'],
-  ['政治','politic|election|president|senate|congress|governor|parliament|\\bvote|\\bpoll\\b|primary|nominee|geopolit|\\bwar\\b|ukraine|israel|gaza|trump|biden|government|shutdown|cabinet|impeach|tariff war'],
-  ['加密','crypto|bitcoin|\\bbtc\\b|ethereum|\\beth\\b|solana|\\bsol\\b|\\bxrp\\b|dogecoin|\\bdoge\\b|memecoin|\\btoken|defi|stablecoin|\\bnft'],
-  ['经济金融','\\bfed\\b|interest rate|\\bcpi\\b|inflation|\\bgdp\\b|recession|jobs report|unemployment|\\btariff|stock|s&p|nasdaq|earnings|\\bipo\\b|economy|economic|treasury|\\bbond'],
-  ['科技AI','\\bai\\b|artificial intelligence|openai|\\bgpt|\\bllm\\b|apple|google|tesla|spacex|nvidia|semiconductor|\\bchip\\b|iphone|android'],
-  ['文娱','movie|film|oscar|grammy|emmy|box office|\\bmusic|celebrity|\\btv\\b|award|entertainment|rotten tomatoes|spotify|netflix|billboard'],
-  ['科学天气','\\bscience|space|nasa|climate|weather|hurricane|temperature|\\bcovid|vaccine|health|nobel|earthquake'],
-];
-const BUCKET_RE=BUCKETS.map(([n,p])=>[n,new RegExp(p)]);
-const catOf=m=>{ const t=((m.category||'')+' '+((m.tags||[]).join(' '))+' '+(m.title||'')).toLowerCase(); for(const [n,re] of BUCKET_RE){ if(re.test(t)) return n; } return '其他'; };
-const volOf=m=>(m&&(m.volume24h||m.volume||m.liquidity))||0;
-// 是否已结束（结算/归档/到期）—— status 或 resolutionDate 有值时判定
-const isEnded=m=>{ if(!m) return false; if(m.status&&/(closed|resolved|archived|settled|inactive|expired|finalized)/i.test(m.status)) return true; if(m.resolutionDate){ const d=new Date(m.resolutionDate); if(!isNaN(d)&&d.getTime()<nowMs()) return true; } return false; };
-// 是否已定盘（价格贴近 0 或 1，机会页视为无意义）
-const isDecided=m=>{ const y=yesOutcome(m); const p=y&&y.price; return p!=null&&(p<=0.02||p>=0.98); };
-function nowMs(){ try{ return Date.parse(new Date().toISOString()); }catch{ return 0; } }
-
-/* ---------- watchlist ---------- */
-const WKEY='pmxt.watch.v1';
-const loadWatch=()=>{try{return JSON.parse(localStorage.getItem(WKEY))||[]}catch{return[]}};
-const saveWatch=w=>{try{localStorage.setItem(WKEY,JSON.stringify(w))}catch{}};
-
-/* ---------- shared ---------- */
-function Sparkline({data}){
-  if(!data||data.length<2) return html`<span class="muted">无K线</span>`;
-  const ys=data.map(d=>d.close ?? d.price ?? 0);
-  const mn=Math.min(...ys),mx=Math.max(...ys),rng=(mx-mn)||1,W=220,H=44;
-  const pts=ys.map((y,i)=>`${(i/(ys.length-1))*W},${H-((y-mn)/rng)*H}`).join(' ');
-  return html`<svg width=${W} height=${H} style="display:block"><polyline fill="none" stroke=${ys[ys.length-1]>=ys[0]?'var(--grn)':'var(--red)'} stroke-width="1.6" points=${pts}/></svg>`;
-}
-function OrderBook({venue,title,book,err,quote}){
-  const bids=(book&&book.bids||[]).slice(0,6), asks=(book&&book.asks||[]).slice(0,6).reverse();
-  const bb=bids[0]&&bids[0].price, ba=(book&&book.asks||[])[0]&&book.asks[0].price;
-  const mid=(bb!=null&&ba!=null)?(bb+ba)/2:null;
-  const has=book&&((book.bids&&book.bids.length)||(book.asks&&book.asks.length));
-  return html`<div>
-    <div class="colhead"><span class="pill">${venue}</span>${quote!=null?html`<span class="muted">报价 ${cents(quote)}</span>`:''}</div>
-    <div class="muted" style="margin-bottom:6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
-    ${err&&html`<div class="err">盘口取不到：${err}</div>`}
-    ${!err&&!has&&html`<div class="muted">该平台暂无深度盘口（仅报价）</div>`}
-    ${has&&html`<table class="book"><thead><tr><th class="l">档</th><th>价</th><th>量</th></tr></thead><tbody>
-      ${asks.map(l=>html`<tr><td class="l ask">卖</td><td class="ask">${cents(l.price)}</td><td>${(l.size&&l.size.toFixed)?l.size.toFixed(0):(l.size||'')}</td></tr>`)}
-      <tr><td class="l" style="color:var(--amb)">中</td><td colspan="2" style="color:var(--amb)">${cents(mid)}</td></tr>
-      ${bids.map(l=>html`<tr><td class="l bid">买</td><td class="bid">${cents(l.price)}</td><td>${(l.size&&l.size.toFixed)?l.size.toFixed(0):(l.size||'')}</td></tr>`)}
-    </tbody></table>`}
-  </div>`;
-}
-
-/* ================= 全市场大盘 ================= */
-function MktRow({venue,m,onWatch}){
-  const [exp,setExp]=useState(false);
-  const [live,setLive]=useState(null);        // 手动刷新后的最新中间价
-  const [ts,setTs]=useState(null);
-  const [book,setBook]=useState(null);
-  const [kb,setKb]=useState(null);
-  const [err,setErr]=useState('');
-  const [flash,setFlash]=useState(false);
-  const first=o0(m);
-  const px = live!=null ? live : (first&&first.price);
-  const refresh=async()=>{ if(!first) return; setErr('');
-    try{ const b=await pget(venue,'fetchOrderBook',{outcomeId:first.outcomeId,limit:1});
-      const bb=b.bids&&b.bids[0]&&b.bids[0].price, ba=b.asks&&b.asks[0]&&b.asks[0].price;
-      const mid=(bb!=null&&ba!=null)?(bb+ba)/2:(b.lastPrice!=null?b.lastPrice:(bb!=null?bb:ba));
-      if(mid!=null){ setLive(mid); setTs(Date.now()); setFlash(true); setTimeout(()=>setFlash(false),700); }
-    }catch(e){ setErr(e.message); } };
-  const loadBook=async()=>{ if(!first) return; setErr(''); try{ setBook(await pget(venue,'fetchOrderBook',{outcomeId:first.outcomeId,limit:6})); }catch(e){ setErr('盘口: '+e.message); } };
-  const loadK=async()=>{ if(!first) return; setErr(''); try{ setKb(await pget(venue,'fetchOHLCV',{outcomeId:first.outcomeId,resolution:'1h',limit:48})); }catch(e){ setErr('K线: '+e.message); } };
-  const chg=first&&first.price24hChange;
-  return html`<${Fragment}>
-    <tr class=${'mkt '+(flash?'flash':'')}>
-      <td class="l"><span class="pill">${venue}</span></td>
-      <td class="l title lnk" title=${mkTitle(m)} onClick=${()=>{ if(!exp){loadBook();loadK();} setExp(!exp); }}>${mkTitle(m)}</td>
-      <td class="l"><span class="pill" title=${m.category||''}>${catOf(m)}</span></td>
-      <td>${first?first.label:''}</td>
-      <td style="font-weight:600">${cents(px)}</td>
-      <td class=${chgCls(chg)}>${chgTxt(chg)}</td>
-      <td>${usd(m.volume24h)}</td>
-      <td>${usd(m.liquidity)}</td>
-      <td class="l">
-        <button class="lnk" style="border:none;background:none;color:var(--acc);cursor:pointer" onClick=${refresh} title="刷新此行价格">↻</button>
-        ${first&&html`<button class="lnk" style="border:none;background:none;color:var(--mut);cursor:pointer" title="加入盯盘" onClick=${()=>onWatch({venue,outcomeId:first.outcomeId,label:first.label,marketTitle:mkTitle(m)})}>+盯</button>`}
-      </td>
-    </tr>
-    ${exp&&html`<tr class="exp"><td colspan="9">
-      ${err&&html`<div class="err">${err}</div>`}
-      <div class="row" style="gap:16px;align-items:flex-start">
-        <div style="min-width:260px">
-          <div class="muted" style="margin-bottom:4px">全部选项</div>
-          ${(m.outcomes||[]).slice(0,12).map(o=>html`<div class="side"><span class="obar"><i style=${{width:`${Math.max(2,Math.min(100,(o.price||0)*100))}%`}}></i></span><span class="mkt2">${o.label}</span><span class="price">${cents(o.price)}</span><span class=${chgCls(o.price24hChange)} style="width:46px;text-align:right">${chgTxt(o.price24hChange)}</span></div>`)}
-          <div class="actions" style="margin-top:8px">
-            <button onClick=${loadBook}>盘口</button><button onClick=${loadK}>K线</button>
-            ${m.url&&html`<button onClick=${()=>window.open(m.url,'_blank')}>去平台↗</button>`}
-          </div>
-        </div>
-        ${kb&&html`<div><div class="muted" style="margin-bottom:4px">1h K线</div><${Sparkline} data=${kb}/></div>`}
-        ${book&&html`<div style="min-width:220px"><${OrderBook} venue=${venue} title=${mkTitle(m)} book=${book} quote=${first&&first.price}/></div>`}
-      </div>
-      ${ts&&html`<div class="muted" style="margin-top:6px;font-size:11px">价格更新于 ${new Date(ts).toLocaleTimeString()}</div>`}
-    </td></tr>`}
-  <//>`;
-}
-
-function BoardView({venues, onWatch}){
-  const [sel,setSel]=useState(new Set(venues));
-  const [limit,setLimit]=useState(60);
-  const [srvQ,setSrvQ]=useState('');          // 服务端关键词（重新取数）
-  const [kw,setKw]=useState('');               // 客户端过滤
-  const [cat,setCat]=useState('');
-  const [sort,setSort]=useState('volume24h');
-  const [hideEnded,setHideEnded]=useState(true);
-  const [interleave,setInterleave]=useState(false);
-  const [rows,setRows]=useState([]);
-  const [loading,setLoading]=useState(false);
-  const [err,setErr]=useState('');
-  const [updated,setUpdated]=useState(null);
-  const [auto,setAuto]=useState(true);
-  const [sec,setSec]=useState(60);
-  const load=async()=>{ setLoading(true); setErr('');
-    const vs=[...sel];
-    const out=[];
-    await Promise.all(vs.map(async v=>{
-      // 只传 limit（或 query）——多传 active 会让 pmxt 丢掉 limit、翻上百页导致 422
-      const p = srvQ ? {query:srvQ, limit} : {limit};
-      try{ const d=await pget(v,'fetchMarkets',p); asArr(d).forEach(m=>out.push({venue:v,m})); }
-      catch(e){ out.push({venue:v,err:e.message}); }
-    }));
-    setRows(out); setUpdated(Date.now()); setLoading(false);
-    const es=out.filter(r=>r.err); if(es.length) setErr(es.map(r=>`${r.venue}: ${r.err}`).join(' · '));
-  };
-  useEffect(()=>{ load(); },[]);
-  useEffect(()=>{ if(!auto) return; const id=setInterval(load, sec*1000); return ()=>clearInterval(id); },[auto,sec,sel,limit,srvQ]);
-  const toggleV=v=>{ const s=new Set(sel); s.has(v)?s.delete(v):s.add(v); setSel(s); };
-  const cats=[...new Set(rows.filter(r=>r.m).map(r=>catOf(r.m)))].sort();
-  let view=rows.filter(r=>r.m);
-  if(hideEnded) view=view.filter(r=>!isEnded(r.m));
-  if(cat) view=view.filter(r=>catOf(r.m)===cat);
-  if(kw){ const k=kw.toLowerCase(); view=view.filter(r=>mkTitle(r.m).toLowerCase().includes(k)); }
-  if(interleave){
-    const byV={}; view.forEach(r=>{ (byV[r.venue]=byV[r.venue]||[]).push(r); });
-    Object.values(byV).forEach(a=>a.sort((x,y)=>volOf(y.m)-volOf(x.m)));
-    const ks=Object.keys(byV), out2=[]; let i=0,go=true;
-    while(go){ go=false; for(const v of ks){ if(byV[v][i]){ out2.push(byV[v][i]); go=true; } } i++; }
-    view=out2;
-  } else {
-    view.sort((a,b)=>{ if(sort==='chg'){ const x=(o0(a.m)&&o0(a.m).price24hChange)||0,y=(o0(b.m)&&o0(b.m).price24hChange)||0; return Math.abs(y)-Math.abs(x);} if(sort==='price'){ return ((o0(b.m)&&o0(b.m).price)||0)-((o0(a.m)&&o0(a.m).price)||0);} return volOf(b.m)-volOf(a.m); });
-  }
-  const shown=view.slice(0,600);
-  const H=(k,l)=>html`<th onClick=${()=>setSort(k)} class=${sort===k?'up':''}>${l}${sort===k?' ▾':''}</th>`;
-  return html`<div>
-    <div class="row" style="margin-bottom:8px">
-      ${venues.map(v=>html`<span class=${'chip '+(sel.has(v)?'on':'')} onClick=${()=>toggleV(v)}>${v}</span>`)}
-      <span style="width:8px"></span>
-      <input placeholder="服务端搜索(留空取热门),回车" value=${srvQ} onInput=${e=>setSrvQ(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&load()} style="min-width:200px"/>
-      <select value=${limit} onChange=${e=>setLimit(+e.target.value)}>${[30,60,100,200].map(n=>html`<option value=${n}>每平台 ${n}</option>`)}</select>
-      <button class="btn" onClick=${load} disabled=${loading}>${loading?'加载中…':'刷新全部'}</button>
-    </div>
-    <div class="row" style="margin-bottom:10px">
-      <input placeholder="本地过滤标题" value=${kw} onInput=${e=>setKw(e.target.value)} style="min-width:160px"/>
-      <select value=${cat} onChange=${e=>setCat(e.target.value)}><option value="">全部类别</option>${cats.map(c=>html`<option value=${c}>${c}</option>`)}</select>
-      <span class=${'chip '+(hideEnded?'on':'')} onClick=${()=>setHideEnded(v=>!v)} title="隐藏已结算/到期的市场">隐藏已结束</span>
-      <span class=${'chip '+(interleave?'on':'')} onClick=${()=>setInterleave(v=>!v)} title="各平台轮流排列，避免被单一平台刷屏">交错平台</span>
-      <button class=${'btn '+(auto?'':'ghost')} onClick=${()=>setAuto(a=>!a)}><span class="dot" style=${{background:auto?'var(--grn)':'var(--mut)'}}></span>${auto?'自动刷新':'已暂停'}</button>
-      <select value=${sec} onChange=${e=>setSec(+e.target.value)}>${[30,60,120,300].map(n=>html`<option value=${n}>每 ${n}s</option>`)}</select>
-      <span class="grow"></span>
-      <span class="muted">${view.length} 条${shown.length<view.length?`（显示前 ${shown.length}）`:''}${updated?` · 更新于 ${new Date(updated).toLocaleTimeString()}`:''}</span>
-    </div>
-    ${err&&html`<div class="err">部分平台出错：${err}</div>`}
-    <div class="wrap"><table><thead><tr>
-      <th class="l">平台</th><th class="l">市场</th><th class="l">类别</th><th>选项</th>
-      ${H('price','价格')}${H('chg','24h')}${H('volume24h','24h量')}<th>流动性</th><th class="l">操作</th>
-    </tr></thead><tbody>
-      ${shown.map(r=>html`<${MktRow} key=${r.venue+(r.m.marketId||r.m.slug||mkTitle(r.m))} venue=${r.venue} m=${r.m} onWatch=${onWatch}/>`)}
-    </tbody></table></div>
-    ${!loading&&!shown.length&&html`<div class="empty">没有数据，检查平台选择或放宽过滤</div>`}
-  </div>`;
-}
-
-/* ================= 跨平台匹配 ================= */
-function PairCard({pair}){
-  const [open,setOpen]=useState(false); const [books,setBooks]=useState(null); const [bl,setBl]=useState(false);
-  const [live,setLive]=useState(null); const [ll,setLl]=useState(false); const [lts,setLts]=useState(null);
-  // 两边都取「Yes」选项对齐，避免方向搞反
-  const mk=s=>{ const y=yesOutcome(s)||{}; return {venue:venueOf(s), market:s, oid:y.outcomeId, price:y.price, label:y.label||'Yes'}; };
-  const A=mk(pair.sourceMarket), B=mk(pair.market);
-  const cDiff=(A.price!=null&&B.price!=null)?Math.abs(A.price-B.price):null;   // 目录参考价差
-  const lDiff=(live&&live.a!=null&&live.b!=null)?Math.abs(live.a-live.b):null;  // 实时价差
-  const showDiff=lDiff!=null?lDiff:cDiff;
-  const midOf=async(v,oid)=>{ if(!oid) return null; const b=await pget(v,'fetchOrderBook',{outcomeId:oid,limit:1}); const bb=b.bids&&b.bids[0]&&b.bids[0].price, ba=b.asks&&b.asks[0]&&b.asks[0].price; return (bb!=null&&ba!=null)?(bb+ba)/2:(b.lastPrice!=null?b.lastPrice:(bb!=null?bb:ba)); };
-  const refreshLive=async()=>{ setLl(true); try{ const [a,b]=await Promise.all([midOf(A.venue,A.oid).catch(()=>null), midOf(B.venue,B.oid).catch(()=>null)]); setLive({a,b}); setLts(Date.now()); }finally{ setLl(false); } };
-  const loadBooks=async()=>{ setOpen(true); setBl(true);
-    const one=async s=>{ if(!s.oid) return {err:'无 outcomeId'}; try{ return {book:await pget(s.venue,'fetchOrderBook',{outcomeId:s.oid,limit:6})}; }catch(e){ return {err:e.message}; } };
-    const [a,b]=await Promise.all([one(A),one(B)]); setBooks({a,b}); setBl(false); };
-  const disp=(S,i)=>live?(i===0?live.a:live.b):S.price;
-  return html`<div class="card">
-    <div class="pair">
-      <div>
-        ${[A,B].map((S,i)=>html`<div class="side">
-          <span class="pill venue">${S.venue}</span>
-          <span class="mkt2" title=${mkTitle(S.market)}>${mkTitle(S.market)}</span>
-          <span class="muted" style="font-size:11px;width:30px">${S.label}</span>
-          <span class="price">${cents(disp(S,i))}</span>
-        </div>`)}
-      </div>
-      <div><div class="big ${showDiff>=0.03?'up':''}">${showDiff==null?'—':(showDiff*100).toFixed(1)+'¢'}</div>
-        <div class="muted" style="font-size:11px;text-align:right">${live?'实时价差':'参考价差'}${pair.confidence!=null?` · 置信 ${(pair.confidence*100).toFixed(0)}%`:''}</div></div>
-    </div>
-    ${pair.reasoning&&html`<div class="reason">匹配理由：${pair.reasoning}</div>`}
-    <div class="actions" style="margin-top:10px">
-      <button onClick=${refreshLive} disabled=${ll}>${ll?'取实时价…':'刷新实时价'}</button>
-      <button onClick=${open?()=>setOpen(false):loadBooks}>${open?'收起盘口':'双边盘口'}</button>
-      ${A.market.url&&html`<button onClick=${()=>window.open(A.market.url,'_blank','noopener')}>${A.venue}↗</button>`}
-      ${B.market.url&&html`<button onClick=${()=>window.open(B.market.url,'_blank','noopener')}>${B.venue}↗</button>`}
-      ${lts&&html`<span class="muted" style="font-size:11px">实时价 ${new Date(lts).toLocaleTimeString()}</span>`}
-    </div>
-    ${!live&&html`<div class="muted" style="font-size:11px;margin-top:6px">↑ 卡片价来自 pmxt 匹配目录，可能有延迟；点「刷新实时价」取两边当前中间价算真实价差。</div>`}
-    ${open&&html`<div class="cols2" style="margin-top:10px">${bl?html`<div class="muted">加载盘口…</div>`:html`
-      <${OrderBook} venue=${A.venue} title=${mkTitle(A.market)} book=${books&&books.a.book} err=${books&&books.a.err} quote=${A.price}/>
-      <${OrderBook} venue=${B.venue} title=${mkTitle(B.market)} book=${books&&books.b.book} err=${books&&books.b.err} quote=${B.price}/>
-      <div class="muted" style="font-size:11px;grid-column:1/3">盘口为点击瞬间的实时快照，不自动刷新；收起再展开可重新拉取。</div>`}</div>`}
-  </div>`;
-}
-function MatchView({matching}){
-  const [q,setQ]=useState(''); const [cat,setCat]=useState(''); const [minConf,setMinConf]=useState(0);
-  const [limit,setLimit]=useState(100); const [pairs,setPairs]=useState([]); const [loading,setLoading]=useState(false); const [err,setErr]=useState('');
-  const [hideEnded,setHideEnded]=useState(true);
-  const run=async()=>{ setLoading(true); setErr('');
-    try{ const d=await pget('router','fetchMarketMatches',{query:q,category:cat,minConfidence:minConf||undefined,relation:'identity',limit});
-      let arr=Array.isArray(d)?d:asArr(d);
-      const adiff=p=>{ const a=(yesOutcome(p.sourceMarket)||{}).price, b=(yesOutcome(p.market)||{}).price; return (a!=null&&b!=null)?Math.abs(a-b):-1; };
-      arr.sort((x,y)=>adiff(y)-adiff(x));
-      setPairs(arr);
-    }catch(e){ setErr(e.message); setPairs([]); } finally{ setLoading(false); } };
-  useEffect(()=>{ if(matching) run(); },[]);
-  if(!matching) return html`<div class="notice"><b>跨平台匹配未启用</b><br/>需要在服务器 <code>deploy/.env</code> 配置 <code>PMXT_API_KEY</code>（pmxt.dev 免费申请）后 <code>docker compose up -d --build</code>。</div>`;
-  return html`<div>
-    <div class="row" style="margin-bottom:6px">
-      <input placeholder="关键词(服务端搜索，可空)" value=${q} onInput=${e=>setQ(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&run()} style="min-width:220px"/>
-      <input placeholder="分类(可选)" value=${cat} onInput=${e=>setCat(e.target.value)} style="width:120px"/>
-      <label class="muted">最小置信 <select value=${minConf} onChange=${e=>setMinConf(+e.target.value)}>${[0,0.5,0.7,0.9].map(v=>html`<option value=${v}>${v?v*100+'%':'不限'}</option>`)}</select></label>
-      <select value=${limit} onChange=${e=>setLimit(+e.target.value)}>${[50,100,200].map(n=>html`<option value=${n}>${n} 对</option>`)}</select>
-      <button class="btn" onClick=${run} disabled=${loading}>${loading?'扫描中…':'扫描全部匹配'}</button>
-      <span class=${'chip '+(hideEnded?'on':'')} onClick=${()=>setHideEnded(v=>!v)} title="过滤已结算/已出局/价格贴近0或1的市场">隐藏已结束</span>
-    </div>
-    <div class="muted" style="font-size:12px;margin-bottom:12px">pmxt 匹配引擎全量对齐（relation=identity），按价差从大到小。点某一对展开双边盘口。</div>
-    ${err&&html`<div class="err">出错：${err}${/401|unauth|key|token/i.test(err)?'（多半是 PMXT_API_KEY 问题）':''}</div>`}
-    ${(()=>{ const vpairs=hideEnded?pairs.filter(p=>!isDecided(p.sourceMarket)&&!isDecided(p.market)&&!isEnded(p.sourceMarket)&&!isEnded(p.market)):pairs;
-      return html`<${Fragment}>
-        ${!loading&&!err&&!vpairs.length&&html`<div class="empty">没有匹配结果${hideEnded&&pairs.length?'（已隐藏 '+(pairs.length-vpairs.length)+' 个已结束）':''}</div>`}
-        <div class="muted" style="font-size:12px;margin-bottom:8px">${vpairs.length?`共 ${vpairs.length} 对进行中的匹配`:''}${hideEnded&&pairs.length>vpairs.length?`（已隐藏 ${pairs.length-vpairs.length} 个已结束）`:''}</div>
-        ${vpairs.map((p,i)=>html`<${PairCard} key=${i} pair=${p}/>`)}
-      <//>`; })()}
-  </div>`;
-}
-
-/* ================= 盯盘 ================= */
-function WatchRow({item,tick,onDel}){
-  const [q,setQ]=useState(null); const [err,setErr]=useState(''); const prev=useRef(null); const [flash,setFlash]=useState(false);
-  useEffect(()=>{ let dead=false; (async()=>{ try{
-    const b=await pget(item.venue,'fetchOrderBook',{outcomeId:item.outcomeId,limit:1});
-    const bb=b.bids&&b.bids[0]&&b.bids[0].price, ba=b.asks&&b.asks[0]&&b.asks[0].price;
-    const mid=(bb!=null&&ba!=null)?(bb+ba)/2:(b.lastPrice!=null?b.lastPrice:(bb!=null?bb:ba));
-    if(dead)return; if(prev.current!=null&&mid!=null&&Math.abs(mid-prev.current)>1e-9){ setFlash(true); setTimeout(()=>setFlash(false),600); }
-    prev.current=mid; setQ({bb,ba,mid}); setErr('');
-  }catch(e){ if(!dead) setErr(e.message); } })(); return ()=>{dead=true}; },[tick]);
-  return html`<tr class=${flash?'flash':''}>
-    <td class="l">${item.marketTitle}</td><td class="l"><span class="pill">${item.venue}</span></td><td class="l">${item.label}</td>
-    <td class="bid">${cents(q&&q.bb)}</td><td class="ask">${cents(q&&q.ba)}</td><td style="color:var(--amb);font-weight:700">${cents(q&&q.mid)}</td>
-    <td class="l">${err?html`<span class="err">${err.slice(0,20)}</span>`:''}</td>
-    <td class="l"><button style="border:none;background:none;color:var(--red);cursor:pointer" onClick=${onDel}>✕</button></td>
-  </tr>`;
-}
-function WatchView({watch,setWatch}){
-  const [auto,setAuto]=useState(true); const [sec,setSec]=useState(5); const [tick,setTick]=useState(0);
-  useEffect(()=>{ if(!auto) return; const id=setInterval(()=>setTick(t=>t+1),sec*1000); return ()=>clearInterval(id); },[auto,sec]);
-  return html`<div>
-    <div class="row" style="margin-bottom:14px">
-      <button class=${'btn '+(auto?'':'ghost')} onClick=${()=>setAuto(a=>!a)}><span class="dot" style=${{background:auto?'var(--grn)':'var(--mut)'}}></span>${auto?'实时刷新中':'已暂停'}</button>
-      <select value=${sec} onChange=${e=>setSec(+e.target.value)}>${[2,3,5,10,30].map(n=>html`<option value=${n}>每 ${n}s</option>`)}</select>
-      <button class="btn ghost" onClick=${()=>setTick(t=>t+1)}>手动刷新</button>
-      <span class="grow"></span><button class="btn ghost" onClick=${()=>{ if(confirm('清空盯盘？')) setWatch([]); }}>清空</button>
-    </div>
-    ${!watch.length&&html`<div class="empty">盯盘为空。在「全市场大盘」某行点 <code>+盯</code> 加入。</div>`}
-    ${watch.length>0&&html`<div class="wrap"><table><thead><tr><th class="l">市场</th><th class="l">平台</th><th class="l">选项</th><th>买一</th><th>卖一</th><th>中间价</th><th class="l"></th><th class="l"></th></tr></thead>
-      <tbody>${watch.map((it,i)=>html`<${WatchRow} key=${it.venue+it.outcomeId} item=${it} tick=${tick} onDel=${()=>setWatch(watch.filter((_,k)=>k!==i))}/>`)}</tbody></table></div>`}
-  </div>`;
-}
-
-/* ================= 运维状态条 ================= */
-function OpsBar(){
-  const [ops,setOps]=useState(null);
-  useEffect(()=>{ let dead=false; const load=()=>fetch('/ops').then(r=>r.json()).then(d=>{ if(!dead) setOps(d); }).catch(()=>{}); load(); const id=setInterval(load,30000); return ()=>{dead=true;clearInterval(id);}; },[]);
-  if(!ops||ops.error) return html`<span class="status" title=${(ops&&ops.error)||''}>运维 —</span>`;
-  const d=ops.disk||{}, p=d.usePct;
-  const dcol=p>=85?'var(--red)':p>=70?'var(--amb)':'var(--grn)';
-  const cs=ops.containers||[];
-  const isBad=c=>{ const s=c.status||''; if(/unhealthy|restarting|dead|paused/i.test(s)) return true; if(/^Exited/i.test(s)&&!/Exited \(0\)/.test(s)) return true; return false; };
-  const bad=cs.filter(isBad); const up=cs.length-bad.length; const ccol=bad.length?'var(--red)':'var(--grn)';
-  const gB=k=>Math.round((k||0)/1048576);
-  return html`<span class="status" style="display:flex;gap:14px;align-items:center">
-    <span title=${`已用 ${p}% · 可用 ${gB(d.availKB)}G / 共 ${gB(d.totalKB)}G`}><span class="dot" style=${{background:dcol}}></span>磁盘 ${p==null?'—':p+'%'}</span>
-    <span title=${bad.length?('异常: '+bad.map(c=>`${c.name}(${c.status})`).join(', ')):'全部正常'}><span class="dot" style=${{background:ccol}}></span>容器 ${up}/${cs.length}</span>
-  </span>`;
-}
-
-/* ================= App ================= */
-function App(){
-  const [venues,setVenues]=useState(['polymarket','kalshi','limitless','opinion']);
-  const [matching,setMatching]=useState(false); const [ready,setReady]=useState(false);
-  const [tab,setTab]=useState('board'); const [watch,setW]=useState(loadWatch());
-  const setWatch=w=>{ setW(w); saveWatch(w); };
-  const addWatch=item=>setWatch([...watch.filter(x=>!(x.venue===item.venue&&x.outcomeId===item.outcomeId)),item]);
-  useEffect(()=>{ getConfig().then(c=>{ if(c&&c.venues&&c.venues.length) setVenues(c.venues); setMatching(Boolean(c&&c.matching)); setReady(true); }).catch(()=>setReady(true)); },[]);
-  const T=[['board','全市场大盘'],['match','跨平台匹配'],['watch',`盯盘 (${watch.length})`]];
-  return html`<div>
-    <header><h1>pmxt 行情台</h1><span class="tag">统一预测市场行情</span>
-      <div class="tabs">${T.map(([k,l])=>html`<button class=${tab===k?'on':''} onClick=${()=>setTab(k)}>${l}</button>`)}</div>
-      <span class="grow"></span>
-      <${OpsBar}/>
-      <span class="status">${matching?'匹配 ✓':'匹配 ✗'}</span>
-    </header>
-    <main>
-      ${!ready&&html`<div class="empty">正在连接网关…</div>`}
-      ${ready&&tab==='board'&&html`<${BoardView} venues=${venues} onWatch=${addWatch}/>`}
-      ${ready&&tab==='match'&&html`<${MatchView} matching=${matching}/>`}
-      ${ready&&tab==='watch'&&html`<${WatchView} watch=${watch} setWatch=${setWatch}/>`}
-    </main>
-  </div>`;
-}
-render(html`<${App}/>`, document.getElementById('app'));
-</script>
+<noscript><p style="padding:24px;color:#8b96a7">这个页面需要 JavaScript。</p></noscript>
+<script type="module" src="./js/app.js"></script>
 </body>
 </html>

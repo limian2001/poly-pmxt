@@ -16,14 +16,26 @@ services:
     environment:
       PMXT_GATEWAY_PORT: "3200"
       PMXT_GATEWAY_HOST: "0.0.0.0"
-      PMXT_VENUES: "${PMXT_VENUES:-polymarket,kalshi,limitless,opinion}"
+      # opinion 直连行情要它自己的 key，不填就 401。默认不带它，
+      # 免得大盘上多出一列永远拉不到价的平台。要用就在 .env 里显式写全。
+      PMXT_VENUES: "${PMXT_VENUES:-polymarket,kalshi,limitless}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
     ports:
       # 只映射到宿主机回环，不暴露公网；改 PMXT_PORT 可换宿主机端口
       - "127.0.0.1:${PMXT_PORT:-3200}:3200"
     volumes:
-      # 前端热更新：改了 dashboard/ 后 git pull + 刷新浏览器即可，无需 --build
+      # 前端热更新：改了 dashboard/ 后 git pull + 刷新浏览器即可，无需 --build。
+      # dashboard/ 是纯静态文件、没有 node_modules，所以整目录盖上去是安全的。
+      #
+      # ⚠️ 千万不要照猫画虎给网关也加一条 `./gateway:/app/deploy/gateway:ro`。
+      #    镜像里 express 和 pmxt-core 装在 /app/deploy/gateway/node_modules，
+      #    整目录挂载会把它们盖没（宿主机那个目录里没有 node_modules），
+      #    容器起来第一行 import express 就 ERR_MODULE_NOT_FOUND。
+      #    改网关代码请老老实实 `docker compose up -d --build`。
       - ./dashboard:/app/deploy/dashboard:ro
+      # 目录快照：重启后先用上一轮的数据把页面撑起来，后台再拉最新的（见 board-store 的 _loadSnapshot）。
+      # 里面只有可重建的缓存，丢了最多冷启动慢 10–60 秒，不是数据库。
+      - pmxt-data:/data
       # 运维状态条：宿主机 cron 写入的 status.json，网关只读（避免暴露 docker.sock）
       - ${PMXT_OPS_DIR:-/home/ubuntu/ops}:/app/ops:ro
     healthcheck:
@@ -36,3 +48,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+volumes:
+  pmxt-data:
