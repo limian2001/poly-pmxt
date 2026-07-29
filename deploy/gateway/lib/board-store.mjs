@@ -703,6 +703,11 @@ function pickRawMatches(c) {
 function cellFromClusterMember(venue, mem) {
   const price = numOrNull(mem?.price ?? mem?.yesPrice ?? mem?.probability);
   const id = hosted.memberMarketId(mem);
+  // 探针实测：集群成员对象上**没有顶层 price**，报价在 markets[].outcomes[].price。
+  // 所以这个兜底格实际上永远返回 null —— 这正是我们要的，别「顺手修好」它：
+  // 走到这里说明该平台直连挂了，而集群里的报价可能是几分钟前的、甚至是 0
+  // （实测他站有 price:0 + bestBid/Ask 全 null 的僵尸盘）。宁可显示 --，不要挂个假价。
+  //
   // 没有 id 或没有价格就别造这个格子。
   // 一个没价格的兜底格比「不显示」更糟：页面上会多出一列永远是 "--" 的平台，
   // 让人以为那个平台有这个标的只是暂时没报价；更要命的是它会把 row.venues 撑大一位，

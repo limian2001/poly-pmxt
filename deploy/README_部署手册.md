@@ -236,6 +236,31 @@ js/app.js       根组件：筛选栏、分页、SSE 接入
 
 **二开 pmxt 本身**：改 `core/src/**` 后 `docker compose up -d --build`（Dockerfile 会从本地源码重新编译）。
 
+### 托管接口的实测事实（别再靠猜）
+
+官方 OpenAPI 里 `/v0/matched-market-clusters` **没有定义响应结构**，所以下面这些全是
+`probe.mjs` 打真实接口测出来的。改 `hosted.mjs` 之前先看一眼，能省掉一整轮线上事故：
+
+| 事实 | 影响 |
+|---|---|
+| 信封是 `{data:[...], pagination:{...}}` | `unwrap()` 认这个形状 |
+| **`limit=500` 实际只回 250 条**（服务端页大小上限） | 按 500 请求再用「不满页=到底了」判断，会静默只同步前 250 个集群。`hosted.mjs` 现在按 250 请求，并且会自适应服务端给的真实页大小 |
+| `offset` 分页有效 | offset 必须按**已取回条数**递增，不能用 `page × limit` |
+| 连打两三次就可能 429 `Rate exceeded`，且先卡十秒再拒 | 已加退避重试（最多 3 次）+ 翻页间隔 350ms。不重试的话第一页一挂，整整 15 分钟都只剩 poly 一列 |
+| `venues=` 是「仅限于」不是「至少包含」 | 不传会混进 probable 等没接的平台 |
+| 集群级 `volume24h` 是各平台之和，**他站的值可能离谱**（实测某条 probable 报 5314 万，而同一条 `volume=0`、报价全 null） | 热度绝不能用集群里的量，只用直连拿到的 |
+| 价格在 `markets[].outcomes[].price`，成员对象上**没有顶层 `price`** | 直连挂掉时的兜底格拿不到价，于是不生成 —— 这是故意的，显示 `--` 好过挂个假价 |
+| `outcomes[].metadata.clobTokenId` = Polymarket 直连 WS 要的 token id | 实时推送靠它订阅 |
+
+再跑一次探针：
+
+```
+docker compose -f deploy/docker-compose.yml exec gateway node /app/deploy/gateway/probe.mjs
+```
+
+约 7 个 credit。日常不用跑，只在怀疑对方改了接口时验证。
+另外 `/gw/diag` 会把每轮同步实际观察到的信封形状、页大小、重试次数吐出来，那个是免费的。
+
 **接私有数据**（余额/持仓/我的成交）：在 `.env` 里填对应平台凭据（`.env.example` 底部有示例），
 pmxt-core 会自动读取。注意 `PMXT_API_KEY` 只在服务端用，网关注入 Bearer 后转发，**不会到浏览器**。
 
