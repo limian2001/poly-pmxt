@@ -79,27 +79,72 @@ function markErr(v, e) {
   health.set(v, { ...prev, ok: false, lastErr: Date.now(), msg: String(e?.message || e).slice(0, 200) });
 }
 
+// Polymarket 单独限流：Gamma /events 现在有 offset 上限，超了直接 422
+// （实测 offset 0/100/500/1100 都是 200，5000 返回
+//  {"type":"validation error","error":"offset too large, use /events/keyset for deeper pagination"}），
+// 而 core 里的 paginateParallel 还按老的 MAX_OFFSET=10000 算页数，并且用 Promise.all ——
+// 一页 422 整个抓取就 reject。1000 条事件 = offset 最深 900，落在实测安全区里。
+const POLY_MAX_EVENTS = Number(process.env.PMXT_POLY_MAX_EVENTS || 1000);
+
+/**
+ * 各平台的 fetchEvents 入参。**这个函数是 Polymarket 422 空看板事故的正解，别顺手"统一"掉。**
+ *
+ * BaseExchange.fetchEvents 里有个陷阱：
+ *     const { limit, offset, ...venueParams } = fetchParams;
+ *     const hasVenueParams = Object.keys(venueParams).length > 0;
+ *     const shouldForwardSimpleLimit = limit !== undefined && offset === undefined && !hasVenueParams;
+ *     await this.fetchEventsImpl(shouldForwardSimpleLimit ? { limit } : venueParams);
+ * 也就是说：**只要多传一个 limit/offset 之外的参数，limit 就不会下传给平台实现**，
+ * 只会在拿到全部结果后做一次 slice。对 Polymarket 来说 limit 丢了 ⇒
+ * fetchRawEventsDefault 用 25000 兜底 ⇒ paginateParallel 一路翻到 offset 9900 ⇒ Gamma 422 ⇒
+ * 抓取整体失败 ⇒ 锚平台 0 事件 ⇒ 主区 0 行（页面全空）。
+ *
+ * 所以 Polymarket 只传 { limit }：它内部默认就是 status=active + order=volume&ascending=false，
+ * 跟我们想要的完全一致，一个字都不用多说。
+ *
+ * Kalshi 反过来必须继续传 sort/status：它的 hasBoundedDefaultRead 快路径条件是
+ * status==='active' && limit!==undefined && sort===undefined && ...，命中后只返回一页，
+ * 那才是真的会让 Kalshi 只剩几十个市场。Limitless 无所谓，跟 Kalshi 走同一条。
+ */
+function eventParams(venue, limit, sort) {
+  if (venue === 'polymarket') return { limit: Math.min(limit, POLY_MAX_EVENTS) };
+  return { limit, sort, status: 'active' };
+}
+
+/** 抓取失败时的降级梯度：宁可少几百个标的，也不要整块空白 */
+function limitLadder(limit) {
+  const xs = [limit, 500, 200].filter((n) => Number.isFinite(n) && n > 0);
+  return [...new Set(xs)].sort((a, b) => b - a);
+}
+
 /**
  * 抓一个平台的全部活跃事件（含市场与结果价格）。
- * 注意 Polymarket 的坑：fetchMarkets 传 active:true + limit 会让 limit 被丢掉，
- * 进而翻页越过 Gamma 的 offset 10000 上限报 422。走 fetchEvents 路径不踩这个坑
- * （paginateParallel 内部已经把 MAX_OFFSET 卡死在 10000）。
+ * 失败不抛，返回 []，并在 health 里留痕（/api/board/stats 的 venueHealth 能看到）。
  */
 export async function fetchVenueEvents(venue, { limit = 1200, sort = 'volume' } = {}) {
   const t0 = Date.now();
-  try {
-    const ex = getVenue(venue);
-    const events = await ex.fetchEvents({ limit, sort, status: 'active' });
-    const list = Array.isArray(events) ? events : [];
-    const mkts = list.reduce((s, e) => s + (e.markets?.length || 0), 0);
-    markOk(venue, { events: list.length, markets: mkts, ms: Date.now() - t0 });
-    log.info(`直连 ${venue}: ${list.length} 事件 / ${mkts} 市场, ${Date.now() - t0}ms`);
-    return list;
-  } catch (e) {
-    markErr(venue, e);
-    log.warn(`直连 ${venue} 失败: ${e?.message || e}`);
-    return [];
+  const ex = (() => { try { return getVenue(venue); } catch (e) { markErr(venue, e); log.warn(`未知平台 ${venue}: ${e.message}`); return null; } })();
+  if (!ex) return [];
+
+  let lastErr = null;
+  for (const n of limitLadder(limit)) {
+    const params = eventParams(venue, n, sort);
+    try {
+      const events = await ex.fetchEvents(params);
+      const list = Array.isArray(events) ? events : [];
+      const mkts = list.reduce((s, e) => s + (e.markets?.length || 0), 0);
+      markOk(venue, { events: list.length, markets: mkts, ms: Date.now() - t0, limit: params.limit });
+      const degraded = params.limit !== limit ? `（降级到 limit=${params.limit}）` : '';
+      log.info(`直连 ${venue}: ${list.length} 事件 / ${mkts} 市场, ${Date.now() - t0}ms${degraded}`);
+      return list;
+    } catch (e) {
+      lastErr = e;
+      log.warn(`直连 ${venue} limit=${params.limit} 失败: ${e?.message || e}`);
+    }
   }
+  markErr(venue, lastErr);
+  log.warn(`直连 ${venue} 全部降级尝试都失败，本轮该平台缺席`);
+  return [];
 }
 
 /** 并发抓多个平台，单个平台失败不影响其它平台 */

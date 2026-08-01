@@ -32,6 +32,8 @@ export class BoardStore {
     this.outcomeRoutes = new Map(); // `${venue}:${outcomeId}` -> [{rowId, childId, side}]
     this.categories = new Map();    // category -> count
     this.tagCounts = new Map();
+    this.lastClusters = null;       // 上一轮成功拿到的集群，接口挂了就沿用
+    this.lastClustersAt = null;
 
     this.state = {
       lastSyncAt: null, lastSyncMs: null, lastError: null,
@@ -80,11 +82,22 @@ export class BoardStore {
 
       // ③ 向托管接口买「对应关系」
       let clusters = [];
+      let clustersReused = false;
       if (hosted.hostedEnabled()) {
         try {
           clusters = await hosted.fetchAllMarketClusters({ venues: this.venues });
+          this.lastClusters = clusters;          // 留一份，下轮撞 429 时好接着用
+          this.lastClustersAt = Date.now();
         } catch (e) {
-          log.warn(`集群接口不可用，本轮退化为「只有 ${ANCHOR} 单平台数据」: ${e.message}`);
+          // 「A 站这条 == B 站那条」这种对应关系是**慢变量**，昨天成立的今天基本还成立。
+          // 所以集群接口挂了（实测最常见是 429）不该直接退化成「一列价」——
+          // 拿上一轮的映射表接着用，价格反正全是直连现抓的，一点都不旧。
+          clusters = this.lastClusters || [];
+          clustersReused = clusters.length > 0;
+          const age = this.lastClustersAt ? `${Math.round((Date.now() - this.lastClustersAt) / 60000)} 分钟前` : '—';
+          log.warn(clustersReused
+            ? `集群接口失败（${e.message}），沿用${age}那一轮的 ${clusters.length} 个映射关系；价格仍是本轮直连的新值`
+            : `集群接口失败（${e.message}），且没有可沿用的历史映射，本轮各平台只能各自独立成行（跨平台列会是 --）`);
         }
       } else {
         log.warn('未配置 PMXT_API_KEY，跨平台匹配不可用（看板仍可用，只是没有他站价格列）');
@@ -124,6 +137,7 @@ export class BoardStore {
         cellCount: built.cellCount,
         matchedRowCount: built.matchedRowCount,
         clusterCount: clusters.length,
+        clustersReused,                        // true = 本轮映射是沿用的旧集群，不是新买的
         generation: this.state.generation + 1,
       };
       this._saveSnapshot();
@@ -488,7 +502,11 @@ export class BoardStore {
     const offset = Math.max(0, Number(q.offset || 0));
     const limit = Math.min(500, Math.max(1, Number(q.limit || 60)));
     const page = list.slice(offset, offset + limit);
-    return { total, offset, limit, rows: page.map((r) => (q.slim ? slim(r) : r)) };
+    // sectionTotal = 这个分区**没过筛选**时有多少行。
+    // 空表有两种完全不同的原因：分区本来就没数据（同步坏了，去看 venueHealth），
+    // 还是筛选条件太狠把它全挡了（自己点两下就能救）。只报 total 的话这两者长得一样，
+    // 上次就是因为分不清，花了两轮才定位到锚平台 422。前端拿它来决定提示哪一句。
+    return { total, sectionTotal: section.length, offset, limit, rows: page.map((r) => (q.slim ? slim(r) : r)) };
   }
 
   getRow(id) { return this.byId.get(id) || null; }

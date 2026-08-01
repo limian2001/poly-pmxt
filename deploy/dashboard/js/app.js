@@ -129,6 +129,7 @@ function App() {
   const [f, setF] = useState({ ...DEFAULTS, ...h0 });
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
+  const [secTotal, setSecTotal] = useState(0); // 该分区未过筛选的总行数，用来分辨「空表」的两种成因
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const [expandAll, setExpandAll] = useState(false);
@@ -165,7 +166,7 @@ function App() {
         limit: f.limit,
       });
       if (my !== reqId.current) return; // 有更新的请求在路上了，丢弃这次
-      setRows(j.rows || []); setTotal(j.total || 0); setErr('');
+      setRows(j.rows || []); setTotal(j.total || 0); setSecTotal(j.sectionTotal || 0); setErr('');
     } catch (e) {
       if (my === reqId.current) setErr(String(e.message || e));
     } finally {
@@ -220,6 +221,29 @@ function App() {
 
   const page = Number(f.page || 0), limit = Number(f.limit || 60);
   const pages = Math.max(1, Math.ceil(total / limit));
+
+  // ── 空表的成因诊断 ────────────────────────────────────────────────────
+  // 「一条都没有」有两种完全不同的原因，长得却一模一样：
+  //   ① 筛选条件太狠 —— 分区里有数据，全被挡掉了（自己点一下就好）
+  //   ② 后端没数据 —— 通常是某个平台直连挂了；锚平台一挂，主榜必然全空
+  // 上次排查花了两轮才定位到锚平台报 422，就是因为页面只说「没有符合条件的标的」。
+  // 现在把 venueHealth 直接摆到空表上，谁挂了、报什么错，一眼可见。
+  const anchor = cfg?.anchor || 'polymarket';
+  const vh = stats?.venueHealth || {};
+  const deadVenues = Object.entries(vh).filter(([, h]) => h && h.ok === false).map(([v, h]) => ({ v, msg: h.msg }));
+  const resetFilters = () => setF((s) => ({ ...DEFAULTS, sec: s.sec, limit: s.limit }));
+  const filtersActive = f.q || f.cat || f.tag || f.end || f.ven || f.mv || f.minv || f.ended === '1';
+  const emptyHint = total > 0 ? null
+    : secTotal > 0 ? html`
+        <span>这个分区有 <b>${secTotal}</b> 个标的，但当前筛选条件把它们全挡掉了。
+          <button class="btn ghost xs" onClick=${resetFilters}>清空筛选</button></span>`
+      : deadVenues.length ? html`
+        <span>后端这一轮没组装出数据${deadVenues.some((d) => d.v === anchor)
+          ? html`：<b>锚定平台 ${venueMeta(anchor).name} 直连失败</b>，主榜必然是空的` : ''}。
+          <br/>失败的平台：${deadVenues.map((d) => `${venueMeta(d.v).name}（${d.msg || '未知错误'}）`).join('；')}
+          <br/><button class="btn ghost xs" onClick=${refresh} disabled=${syncing}>立即重试同步</button></span>`
+      : stats?.lastSyncAt ? html`<span>这个分区暂时没有标的${filtersActive ? '（当前还挂着筛选条件）' : ''}。</span>`
+      : html`<span>首轮同步还没跑完，稍等十几秒再看（右上角「目录」会显示同步时间）。</span>`;
 
   return html`
     <${Fragment}>
@@ -292,7 +316,7 @@ function App() {
         ${err ? html`<div class="err">取数失败：${err}</div>` : null}
 
         <${Board} rows=${rows} venues=${venues} sort=${f.sort} dir=${f.dir} onSort=${onSort}
-          loading=${loading} expandAll=${expandAll}
+          loading=${loading} expandAll=${expandAll} emptyHint=${emptyHint}
           onOpen=${(id, childId) => setOpen({ id, childId: childId || '' })} />
 
         ${pages > 1 ? html`

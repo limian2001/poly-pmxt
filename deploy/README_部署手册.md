@@ -272,8 +272,30 @@ pmxt-core 会自动读取。注意 `PMXT_API_KEY` 只在服务端用，网关注
 先在服务器 `curl -I http://127.0.0.1:3200`。服务器通、本地不通 → 隧道断了，检查 `-L 3200` 那条还挂着没。
 
 **页面能开，但表是空的**
-看 `/api/board/stats` 的 `rowCount`。刚启动是正常的（首轮同步 10–60 秒）；
-一直是 0 就看 `lastError` 和 `docker compose logs gateway`。
+空表现在会自己解释原因（是筛选挡的，还是哪个平台挂了，都写在表格中央），先读那句话。
+要手工确认就按这个顺序：
+
+```bash
+# ① 主区有没有行？次要区有没有行？哪个平台挂了？
+curl -s localhost:3200/api/board/stats | python3 -m json.tool | \
+  grep -E 'rowCount|secondaryCount|clusterCount|clustersReused|lastError|"ok"|msg'
+# ② 接口层面看一眼：total 是行数，sectionTotal 是「没过筛选」的行数
+curl -s 'localhost:3200/api/board?limit=1'                   | head -c 300; echo
+curl -s 'localhost:3200/api/board?section=secondary&limit=1'  | head -c 300; echo
+```
+
+- `total=0` 但 `sectionTotal>0` → **是筛选条件挡的**，页面上点「清空筛选」。
+  最容易忘的是 hash 里残留的 `mv=2`（≥2 平台）和平台 chip —— 次要区的行天生只有一个平台，
+  开着「≥2 平台」看次要区，必然是 0 条。
+- `rowCount=0` 且 `venueHealth.<锚平台>.ok=false` → **锚平台直连挂了**。主区是以锚平台
+  （默认 polymarket）逐个事件铺开的，锚平台一空，主区必然 0 行，跟筛选无关。看 `msg`：
+  - `Request failed with status code 422` → Gamma 的 `/events` offset 上限。
+    我们只给 Polymarket 传 `{limit}`（≤ `PMXT_POLY_MAX_EVENTS`，默认 1000）就是为了躲这个，
+    见 `lib/venues.mjs` 的 `eventParams()`；真要调大先用 `?offset=` 探一下 Gamma 现在的上限。
+  - 超时 / `fetch failed` → 容器出网被挡了，`docker compose exec gateway curl -I https://gamma-api.polymarket.com/events`。
+- 刚启动 `rowCount=0` 是正常的，首轮同步 10–60 秒。
+- `clustersReused=true` → 这一轮的跨平台映射是沿用上一轮的（集群接口挂了，通常是 429）。
+  价格仍是本轮直连的新值，可以放心看；连着几轮都是 true 才需要查 key 和额度。
 
 **每一行都只有 Polymarket 一列有价**
 `PMXT_API_KEY` 没配对或额度用完了。`/api/board/stats` 里 `hosted.enabled` 和 `matchedRowCount` 能确认。
@@ -321,7 +343,8 @@ opinion 直连要它自己的 key，默认就没启用。
 - [ ] 筛完之后**地址栏 hash 变了**，复制这个链接重新打开，筛选条件还在（可以收藏）
 - [ ] 「已结束」的标的默认不出现在列表里
 - [ ] 状态条：「实时」灯是绿的，「目录 N 分钟前」在走，点「立即同步」有反应
-- [ ] 切到「次要分区」，能看到只有非 Polymarket 平台才有的标的
+- [ ] 切到「其他平台独有」，能看到只有非 Polymarket 平台才有的标的
+      （这些行天生只有一个平台，所以先把「≥2 平台」那个 chip 关掉，否则必然 0 条）
 - [ ] `docker compose restart` 之后**立刻刷新页面，表里就有数据**（走的是快照），
       状态条先显示「（快照）」，一轮同步后这三个字消失
 

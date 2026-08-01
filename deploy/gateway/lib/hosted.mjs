@@ -91,11 +91,15 @@ async function call(path, params = {}, { retries = 3 } = {}) {
     }
 
     if (RETRY_STATUS.has(r.status) && attempt < retries) {
-      // 服务端给了 Retry-After 就听它的，否则 1s→2s→4s 退避。
+      // 服务端给了 Retry-After 就听它的，否则退避。
+      // 429 单独一档：生产日志里 1s→2s→4s 三次全部撞在同一个 429 上 —— 因为它的限流
+      // 桶是**按分钟**的，几秒钟的退避只是在同一个桶里白挨三次（还各花 1 credit）。
+      // 所以 429 从 20 秒起步（20s→40s→60s），跨过分钟边界再试；5xx 是瞬时抖动，保持短退避。
       const ra = Number(r.headers.get('retry-after'));
-      const waitMs = Number.isFinite(ra) && ra > 0
-        ? Math.min(ra * 1000, 60_000)
+      const backoff = r.status === 429
+        ? Math.min(20_000 * 2 ** attempt, 60_000)
         : Math.min(1000 * 2 ** attempt, 16_000);
+      const waitMs = Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 60_000) : backoff;
       diag.retryCount += 1;
       log.warn(`托管接口 HTTP ${r.status}，${waitMs}ms 后重试（${attempt + 1}/${retries}）`);
       await sleep(waitMs);

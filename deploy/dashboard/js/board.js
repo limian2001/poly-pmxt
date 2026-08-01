@@ -200,7 +200,7 @@ function BoardRow({ row, venues, expanded, onToggle, onOpen, onHover, onLeave, s
 }
 
 // ── 主表 ────────────────────────────────────────────────────────────────
-export function Board({ rows, venues, sort, dir, onSort, onOpen, loading, expandAll }) {
+export function Board({ rows, venues, sort, dir, onSort, onOpen, loading, expandAll, emptyHint }) {
   const [expanded, setExpanded] = useState(() => new Set());
   const [sel, setSel] = useState('');
   const [hover, setHover] = useState(null);
@@ -268,7 +268,7 @@ export function Board({ rows, venues, sort, dir, onSort, onOpen, loading, expand
               selected=${sel === r.id} onSelect=${setSel} />`)}
           ${!rows.length && !loading && html`
             <tr><td colspan=${COLS} class="none">
-              没有符合条件的标的。把筛选放宽一点，或者点右上角「立即同步」拉一轮新数据。
+              ${emptyHint || '没有符合条件的标的。把筛选放宽一点，或者点右上角「立即同步」拉一轮新数据。'}
             </td></tr>`}
         </tbody>
       </table>
