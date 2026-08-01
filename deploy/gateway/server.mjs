@@ -16,6 +16,7 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { timingSafeEqual } from 'node:crypto';
 
 // pmxt-core 是 CommonJS，用默认导入再解构，避免 ESM 命名导入的互操作问题
 import pmxtCore from 'pmxt-core';
@@ -44,6 +45,39 @@ const OPS_FILE = process.env.PMXT_OPS_FILE || '/app/ops/status.json';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// ── 访问口令（只在把端口开到公网时才需要）──────────────────────────────
+// 绑 127.0.0.1 走 SSH 隧道时，隧道本身就是认证，这里留空即可。
+// 一旦 PMXT_BIND=0.0.0.0，这个端口对全网可见，而网关上有两个不该白送的东西：
+//   · POST /api/board/refresh —— 每次都真的去打托管接口，烧的是你的 credit
+//   · /pmxt/*                —— pmxt-core 的完整 REST，等于一台免费行情代理
+// 所以用最笨但最有效的办法：HTTP Basic。浏览器原生弹框、会自动带上后续的
+// fetch 和 EventSource 请求，前端一行都不用改。
+// 格式：PMXT_AUTH=用户名:密码
+const AUTH = String(process.env.PMXT_AUTH || '').trim();
+const AUTH_HEADER = AUTH ? 'Basic ' + Buffer.from(AUTH).toString('base64') : '';
+
+/** 逐字节比较，别用 === —— 那个会因为提前返回而泄漏口令长度和前缀 */
+function safeEqual(a, b) {
+  const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+  if (x.length !== y.length) return false;
+  return timingSafeEqual(x, y);
+}
+
+if (AUTH_HEADER) {
+  app.use((req, res, next) => {
+    // healthcheck 从容器内部打 127.0.0.1，别让它也去凑口令
+    const ip = req.socket.remoteAddress || '';
+    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') return next();
+    const got = req.headers.authorization || '';
+    if (got && safeEqual(got, AUTH_HEADER)) return next();
+    res.set('WWW-Authenticate', 'Basic realm="pmxt", charset="UTF-8"');
+    res.status(401).send('需要口令');
+  });
+  log.info('已启用访问口令（PMXT_AUTH）');
+} else if (String(process.env.PMXT_BIND || '') && process.env.PMXT_BIND !== '127.0.0.1') {
+  log.warn(`⚠️ 端口绑在 ${process.env.PMXT_BIND} 却没设 PMXT_AUTH —— 这个看板现在对全网开放`);
+}
 
 // ── 聚合层 + 实时层 ──────────────────────────────────────────────────
 const board = new BoardStore({ venues: VENUES });

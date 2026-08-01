@@ -20,9 +20,15 @@ services:
       # 免得大盘上多出一列永远拉不到价的平台。要用就在 .env 里显式写全。
       PMXT_VENUES: "${PMXT_VENUES:-polymarket,kalshi,limitless}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
+      # 访问口令（user:pass）。绑公网时必填，走 SSH 隧道时留空。
+      PMXT_AUTH: "${PMXT_AUTH:-}"
+      # 只是让网关知道自己被绑在哪，好在「开了公网却没设口令」时打一条警告
+      PMXT_BIND: "${PMXT_BIND:-127.0.0.1}"
     ports:
-      # 只映射到宿主机回环，不暴露公网；改 PMXT_PORT 可换宿主机端口
-      - "127.0.0.1:${PMXT_PORT:-3200}:3200"
+      # 默认仍只绑回环（配合 SSH 隧道）。要用 IP:端口直连，在 .env 里写 PMXT_BIND=0.0.0.0。
+      # ⚠️ 一旦绑 0.0.0.0，这个端口就是公开的：/api/board/refresh 会烧 pmxt 额度，
+      #    /pmxt/* 还能被人当成免费的行情代理。所以开公网的同时必须设 PMXT_AUTH。
+      - "${PMXT_BIND:-127.0.0.1}:${PMXT_PORT:-3200}:3200"
     volumes:
       # 前端热更新：改了 dashboard/ 后 git pull + 刷新浏览器即可，无需 --build。
       # dashboard/ 是纯静态文件、没有 node_modules，所以整目录盖上去是安全的。

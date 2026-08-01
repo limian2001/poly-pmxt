@@ -137,6 +137,7 @@ function App() {
   const [sseState, setSseState] = useState('connecting');
   const [syncing, setSyncing] = useState(false);
   const [kw, setKw] = useState(h0.q || '');
+  const [lastReq, setLastReq] = useState(''); // 上一次真正发出去的大盘查询，空表时摆给人看
 
   const set = (patch) => setF((s) => ({ ...s, page: '0', ...patch }));
   const venues = cfg?.venues || facets.venues || [];
@@ -157,15 +158,22 @@ function App() {
     const my = ++reqId.current;
     if (!quiet) setLoading(true);
     try {
-      const j = await api('/api/board', {
+      const params = {
         section: f.sec, q: f.q, category: f.cat, tag: f.tag,
         sort: f.sort, dir: f.dir,
         endingWithinH: f.end, venues: f.ven, minVenues: f.mv, minVol24h: f.minv,
         hideEnded: f.ended === '1' ? '0' : '1',
         offset: Number(f.page || 0) * Number(f.limit || 60),
         limit: f.limit,
-      });
+      };
+      // 空表的时候把这一串原样摆到页面上。排查「后端有数据、前端 0 行」时，
+      // 唯一真正有用的信息就是「浏览器到底问了什么」—— 猜十轮不如看一眼。
+      const sent = Object.entries(params)
+        .filter(([, v]) => v !== '' && v !== null && v !== undefined && v !== false)
+        .map(([k, v]) => `${k}=${v}`).join('&');
+      const j = await api('/api/board', params);
       if (my !== reqId.current) return; // 有更新的请求在路上了，丢弃这次
+      setLastReq(`/api/board?${sent}`);
       setRows(j.rows || []); setTotal(j.total || 0); setSecTotal(j.sectionTotal || 0); setErr('');
     } catch (e) {
       if (my === reqId.current) setErr(String(e.message || e));
@@ -244,6 +252,12 @@ function App() {
           <br/><button class="btn ghost xs" onClick=${refresh} disabled=${syncing}>立即重试同步</button></span>`
       : stats?.lastSyncAt ? html`<span>这个分区暂时没有标的${filtersActive ? '（当前还挂着筛选条件）' : ''}。</span>`
       : html`<span>首轮同步还没跑完，稍等十几秒再看（右上角「目录」会显示同步时间）。</span>`;
+  // 不管是哪种成因，都把实际请求附在后面：一张截图就能定位，不用再来回问。
+  const emptyBlock = total > 0 ? null : html`
+    <${Fragment}>
+      ${emptyHint}
+      <br/><span class="mut small">本次请求 ${lastReq || '（还没发出）'} · 库存 ${stats?.rowCount ?? '—'} 行</span>
+    <//>`;
 
   return html`
     <${Fragment}>
@@ -271,12 +285,12 @@ function App() {
 
           <select value=${f.cat} onChange=${(e) => set({ cat: e.target.value })}>
             <option value="">全部分类</option>
-            ${facets.categories.map((c) => html`<option key=${c.key} value=${c.key}>${c.key}（${c.count}）</option>`)}
+            ${(facets.categories || []).map((c) => html`<option key=${c.key} value=${c.key}>${c.key}（${c.count}）</option>`)}
           </select>
 
           <select value=${f.tag} onChange=${(e) => set({ tag: e.target.value })}>
             <option value="">全部标签</option>
-            ${facets.tags.map((t) => html`<option key=${t.key} value=${t.key}>${t.key}（${t.count}）</option>`)}
+            ${(facets.tags || []).map((t) => html`<option key=${t.key} value=${t.key}>${t.key}（${t.count}）</option>`)}
           </select>
 
           <select value=${f.end} onChange=${(e) => set({ end: e.target.value })}>
@@ -316,7 +330,7 @@ function App() {
         ${err ? html`<div class="err">取数失败：${err}</div>` : null}
 
         <${Board} rows=${rows} venues=${venues} sort=${f.sort} dir=${f.dir} onSort=${onSort}
-          loading=${loading} expandAll=${expandAll} emptyHint=${emptyHint}
+          loading=${loading} expandAll=${expandAll} emptyHint=${emptyBlock}
           onOpen=${(id, childId) => setOpen({ id, childId: childId || '' })} />
 
         ${pages > 1 ? html`
