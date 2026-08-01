@@ -285,12 +285,12 @@ function App() {
 
           <select value=${f.cat} onChange=${(e) => set({ cat: e.target.value })}>
             <option value="">全部分类</option>
-            ${(facets.categories || []).map((c) => html`<option key=${c.key} value=${c.key}>${c.key}（${c.count}）</option>`)}
+            ${(facets.categories || []).map((c) => html`<option key=${c.key} value=${c.key}>${c.zh || c.key}（${c.count}）</option>`)}
           </select>
 
           <select value=${f.tag} onChange=${(e) => set({ tag: e.target.value })}>
             <option value="">全部标签</option>
-            ${(facets.tags || []).map((t) => html`<option key=${t.key} value=${t.key}>${t.key}（${t.count}）</option>`)}
+            ${(facets.tags || []).map((t) => html`<option key=${t.key} value=${t.key}>${t.zh || t.key}（${t.count}）</option>`)}
           </select>
 
           <select value=${f.end} onChange=${(e) => set({ end: e.target.value })}>

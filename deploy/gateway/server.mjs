@@ -28,6 +28,8 @@ import { Realtime } from './lib/realtime.mjs';
 import { createBoardRouter, createSse } from './lib/routes.mjs';
 import { closeAll, getHealth } from './lib/venues.mjs';
 import * as hosted from './lib/hosted.mjs';
+import * as translate from './lib/translate.mjs';
+import * as polyZh from './lib/poly-zh.mjs';
 import { log } from './lib/util.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -151,6 +153,8 @@ app.get('/gw/diag', (_req, res) => {
   res.json({
     hosted: { enabled: hosted.hostedEnabled(), base: process.env.PMXT_HOSTED_BASE || 'https://api.pmxt.dev', ...hosted.diag },
     venueHealth: getHealth(),
+    // 只报统计量，不报 key —— 腾讯云凭据跟 PMXT_API_KEY 一样，永远不下发浏览器
+    translate: { enabled: translate.enabled(), ...translate.diag, polyZh: polyZh.diag },
     board: board.stats(),
     realtime: realtime.stats(),
     sseClients: sse.count(),

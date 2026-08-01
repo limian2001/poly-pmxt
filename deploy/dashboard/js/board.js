@@ -123,12 +123,22 @@ const PriceCell = memo(function PriceCell({ cell, side, venue, onHover, onLeave 
 });
 
 // ── 标的名称格 ──────────────────────────────────────────────────────────
+/**
+ * 中文为主、悬停看英文。
+ * 后端翻到了才有 *Zh 字段；没翻到就退回英文原文，绝不显示空白。
+ * 英文原文永远进 title 属性 —— 机翻会出错，用户得能一眼核对原文，
+ * 尤其是标的名里的人名、队名、机构缩写。
+ */
+const zhOf = (o, k) => o?.[`${k}Zh`] || o?.[k] || '';
+/** 有中文时 hover 显示英文；本来就是英文时别再挂一遍重复的 tooltip */
+const enTip = (o, k) => (o?.[`${k}Zh`] ? o[k] : undefined);
+
 function TitleCell({ row, child, expanded, onToggle }) {
   if (child) {
     return html`
       <td class="l tt child">
         <span class="ind"></span>
-        <span class="nm">${child.label}</span>
+        <span class="nm" title=${enTip(child, 'label')}>${zhOf(child, 'label')}</span>
         ${child.venues?.length > 1 ? html`<span class="vs">${child.venues.length} 平台</span>` : null}
       </td>`;
   }
@@ -141,15 +151,16 @@ function TitleCell({ row, child, expanded, onToggle }) {
               title=${expanded ? '收起候选' : `展开 ${row.childCount} 个候选`}>${expanded ? '▾' : '▸'}</button>`
         : html`<span class="tg ph"></span>`}
       <div class="tw">
-        <div class="nm" title=${row.title}>
-          ${row.title}
+        <div class=${cls('nm', row.titleZh && 'zh')} title=${row.title}>
+          ${zhOf(row, 'title')}
           ${ended ? html`<span class="badge end">已结束</span>` : null}
         </div>
         <div class="sub">
-          ${row.category ? html`<span class="badge cat">${row.category}</span>` : null}
-          ${(row.tags || []).slice(0, 3).map((t) => html`<span class="badge">${t}</span>`)}
+          ${row.category ? html`<span class="badge cat" title=${enTip(row, 'category')}>${zhOf(row, 'category')}</span>` : null}
+          ${(row.tags || []).slice(0, 3).map((t, i) => html`
+            <span class="badge" title=${row.tagsZh ? t : undefined}>${row.tagsZh?.[i] || t}</span>`)}
           ${multi && row.leader
-            ? html`<span class="lead">领先 · ${row.leader.label} ${cents(row.leader.pos)}¢ · 共 ${row.childCount} 个候选</span>`
+            ? html`<span class="lead">领先 · ${zhOf(row.leader, 'label')} ${cents(row.leader.pos)}¢ · 共 ${row.childCount} 个候选</span>`
             : null}
         </div>
       </div>

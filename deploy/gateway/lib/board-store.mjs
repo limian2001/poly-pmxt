@@ -16,6 +16,8 @@ import { dirname } from 'node:path';
 import { log, num, toMs, pickDirections, alignTo, heatScore, mapLimit } from './util.mjs';
 import { fetchAllVenueEvents, getHealth } from './venues.mjs';
 import * as hosted from './hosted.mjs';
+import * as tr from './translate.mjs';
+import * as polyZh from './poly-zh.mjs';
 
 const ANCHOR = (process.env.PMXT_BOARD_ANCHOR || 'polymarket').toLowerCase();
 
@@ -45,7 +47,13 @@ export class BoardStore {
 
   // ── 生命周期 ─────────────────────────────────────────────────────────
   async start() {
+    // 译文缓存先读起来：快照恢复出来的行也能立刻带上中文，不用等第一轮同步。
+    tr.load();
+    // 后台每翻完一批就地回填。注意是**就地改对象**，不重建数组 ——
+    // 实时推送那边 applyTicks 拿的是同一批对象引用，重建会打断它。
+    tr.onBatch(() => this._applyZh(false));
     this._loadSnapshot();
+    this._applyZh(true);
     this.sync().catch((e) => log.error('首次同步失败:', e?.message || e));
     this._timer = setInterval(() => {
       this.sync().catch((e) => log.error('定时同步失败:', e?.message || e));
@@ -145,6 +153,19 @@ export class BoardStore {
         clustersReused,                        // true = 本轮映射是沿用的旧集群，不是新买的
         generation: this.state.generation + 1,
       };
+      // 中文标注。故意不 await —— 翻译再慢也不能拖住同步这条链路。
+      // 顺序很重要：**先白嫖再花钱**。
+      //   ① 先把缓存里已有的挂上，表立刻就有中文
+      //   ② 去 Polymarket 拿官方中文（免费），塞进缓存，顺手把队列里对应的条目撤掉
+      //   ③ 剩下 Poly 没覆盖的（冷门盘、Kalshi/Limitless 独有的）才送腾讯云机翻
+      // 反过来的话，Poly 本来白给的那几百条会先被机翻烧掉一遍字符额度。
+      this._applyZh(true);
+      polyZh.fetchPairs(this.eventLimit)
+        .then((pairs) => { if (tr.seed(pairs)) this._applyZh(true); })
+        .then(() => tr.drain())
+        .then(() => this._saveSnapshot())
+        .catch(() => {});
+
       this._saveSnapshot();
       log.info(`同步完成：主区 ${built.rows.length} 行（其中 ${built.matchedRowCount} 行有跨平台匹配），次要区 ${built.secondary.length} 行，耗时 ${Date.now() - t0}ms`);
     } catch (e) {
@@ -460,7 +481,12 @@ export class BoardStore {
     if (q.text) {
       const t = String(q.text).toLowerCase();
       list = list.filter((r) =>
+        // 中文也要能搜 —— 表上显示的是中文，用户照着屏幕打字搜不到会很懵
         (r.title || '').toLowerCase().includes(t) ||
+        (r.titleZh || '').includes(t) ||
+        (r.categoryZh || '').includes(t) ||
+        (r.tagsZh || []).some((x) => String(x).includes(t)) ||
+        (r.children || []).some((c) => (c.labelZh || '').includes(t)) ||
         (r.category || '').toLowerCase().includes(t) ||
         (r.tags || []).some((x) => String(x).toLowerCase().includes(t)) ||
         (r.children || []).some((c) => (c.label || '').toLowerCase().includes(t)));
@@ -518,10 +544,44 @@ export class BoardStore {
 
   getRow(id) { return this.byId.get(id) || null; }
 
+  // ── 中文标注 ─────────────────────────────────────────────────────────
+  /**
+   * 给所有行挂上 titleZh / labelZh / categoryZh / tagsZh。
+   * 查得到就挂，查不到就（enqueue=true 时）丢进队列等后台翻。
+   *
+   * 就地改对象，不重建数组：realtime 的 applyTicks 持有的是同一批引用。
+   * 挂不上中文的字段**保持 undefined**，不要回填英文原文 —— 前端靠
+   * 「有没有 titleZh」来决定显示哪个，填了原文就分不清「翻过了」和「没翻」。
+   */
+  _applyZh(enqueue) {
+    const one = (obj, srcKey, dstKey) => {
+      const src = obj?.[srcKey];
+      if (!src) return;
+      const v = tr.zh(src);
+      if (v) obj[dstKey] = v;
+      else if (enqueue) tr.want(src);
+    };
+    for (const row of [...this.rows, ...this.secondary]) {
+      one(row, 'title', 'titleZh');
+      one(row, 'category', 'categoryZh');
+      if (Array.isArray(row.tags) && row.tags.length) {
+        // 标签整组一起挂：只翻出一半的话前端显示会中英夹杂，不如整组要么全中要么全英
+        const zhs = row.tags.map((t) => tr.zh(t));
+        if (zhs.every(Boolean)) row.tagsZh = zhs;
+        else if (enqueue) for (const t of row.tags) tr.want(t);
+      }
+      for (const ch of row.children || []) {
+        one(ch, 'label', 'labelZh');
+        one(ch, 'title', 'titleZh');
+      }
+      if (row.leader) one(row.leader, 'label', 'labelZh');
+    }
+  }
+
   facets() {
     return {
-      categories: [...this.categories.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ key: k, count: v })),
-      tags: [...this.tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([k, v]) => ({ key: k, count: v })),
+      categories: [...this.categories.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ key: k, zh: tr.zh(k) || undefined, count: v })),
+      tags: [...this.tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([k, v]) => ({ key: k, zh: tr.zh(k) || undefined, count: v })),
       venues: this.venues,
       anchor: ANCHOR,
     };
