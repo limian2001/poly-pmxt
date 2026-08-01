@@ -140,9 +140,39 @@ export function memberVenue(m) {
   return v ? String(v).toLowerCase() : null;
 }
 
-/** 从一个集群成员里认出市场 id —— 同样多字段兜底 */
+/**
+ * 从一个集群成员里认出**平台原生**的市场 id。
+ *
+ * ⚠️ slug 必须排在 marketId 前面，这个顺序是 2026-08 探针实测定下来的，别调回去：
+ *   托管接口的 marketId / id 是 **pmxt 自己的 UUID**（a978ab78-…），
+ *   跟直连各平台拿到的原生 id 完全不同源 —— 拿它去撞 marketIndex，命中率 0%，
+ *   表现就是「842 个集群全都对不上，整张表除了锚定平台全是 --」。
+ *   而成员里的 slug 才是原生 id：
+ *     polymarket  slug ↔ 直连 slug        命中 225/250 (90%)
+ *     kalshi      slug ↔ 直连 marketId    命中 204/239 (85%)   例：KXGOVFLNOMR-26-JFIS
+ *     limitless   slug ↔ 直连 marketId    命中  54/60  (90%)
+ *   marketIndex 那边同时按 marketId 和 slug 建了别名，所以这一个字段就能三家通吃。
+ */
 export function memberMarketId(m) {
-  return m?.marketId ?? m?.id ?? m?.market_id ?? m?.ticker ?? m?.slug ?? null;
+  return m?.slug ?? m?.ticker ?? m?.market_id ?? m?.marketId ?? m?.id ?? null;
+}
+
+/**
+ * 成员身上所有可能是原生 id 的写法，用来在 clusterOf 里建别名。
+ * 只认 slug 已经能覆盖 85–90%，剩下的零头（改过 slug、url 带 id）用别名兜一下，
+ * 反正 key 里带了平台前缀，跨平台不会串。
+ */
+export function memberIdAliases(m) {
+  const out = [];
+  const push = (v) => {
+    if (v == null || v === '') return;
+    const s = String(v);
+    if (!out.includes(s)) out.push(s);
+  };
+  push(m?.slug); push(m?.ticker); push(m?.market_id); push(m?.marketId); push(m?.id);
+  // limitless 的 url 尾段实测就是它的 marketId（命中 54/60），顺手也登记上
+  if (typeof m?.url === 'string') push(m.url.split('?')[0].split('/').filter(Boolean).pop());
+  return out;
 }
 
 /** 从一个集群里取集群 id */

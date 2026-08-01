@@ -108,8 +108,13 @@ export class BoardStore {
       for (const c of clusters) {
         for (const mem of hosted.clusterMembers(c)) {
           const v = hosted.memberVenue(mem);
-          const id = hosted.memberMarketId(mem);
-          if (v && id) clusterOf.set(mkey(v, id), c);
+          if (!v) continue;
+          // 成员身上每一种像原生 id 的写法都登记一遍。
+          // 只登记一种的代价见 hosted.memberMarketId 的注释：整整一轮全军覆没。
+          for (const alias of hosted.memberIdAliases(mem)) {
+            const k = mkey(v, alias);
+            if (k && !clusterOf.has(k)) clusterOf.set(k, c);
+          }
         }
       }
 
@@ -307,7 +312,9 @@ export class BoardStore {
 
   /** 把集群里其它平台的市场挂到目标行/子行上 */
   _attachMatches(target, anchorMarket, clusterOf, marketIndex, usedMarkets, routes, rowId, childId) {
-    const c = clusterOf.get(mkey(ANCHOR, anchorMarket.marketId));
+    // 锚定平台这一侧也得多试几种写法：Polymarket 直连的 marketId 是 Gamma 数字号
+    // （"559652"），而集群里认的是 slug —— 只按 marketId 查必然落空。
+    const c = clusterFor(clusterOf, ANCHOR, anchorMarket);
     if (!c) return;
     target.confidence = numOrNull(c?.confidence) ?? target.confidence;
     target.matchSource = 'cluster';
@@ -577,6 +584,19 @@ export class BoardStore {
 
 // ── 辅助函数 ───────────────────────────────────────────────────────────
 function mkey(venue, id) { return venue && id ? `${venue}:${id}` : ''; }
+
+/**
+ * 用一条直连市场去 clusterOf 里找它所属的集群。
+ * 直连侧的原生 id 各家放的位置不一样（poly 在 slug，kalshi/limitless 在 marketId），
+ * 而集群侧统一登记的是 slug —— 所以两边都要多试几种写法才碰得上。
+ */
+function clusterFor(clusterOf, venue, m) {
+  for (const id of [m?.slug, m?.marketId, m?.sourceMetadata?.ticker, m?.sourceMetadata?.marketTicker]) {
+    const c = id ? clusterOf.get(mkey(venue, id)) : null;
+    if (c) return c;
+  }
+  return null;
+}
 function numOrNull(v) { return typeof v === 'number' && Number.isFinite(v) ? v : null; }
 function round4(v) { return Math.round(v * 10000) / 10000; }
 function bump(map, k) { if (k) map.set(k, (map.get(k) || 0) + 1); }
