@@ -80,11 +80,15 @@ function markErr(v, e) {
 }
 
 // Polymarket 单独限流：Gamma /events 现在有 offset 上限，超了直接 422
-// （实测 offset 0/100/500/1100 都是 200，5000 返回
-//  {"type":"validation error","error":"offset too large, use /events/keyset for deeper pagination"}），
-// 而 core 里的 paginateParallel 还按老的 MAX_OFFSET=10000 算页数，并且用 Promise.all ——
-// 一页 422 整个抓取就 reject。1000 条事件 = offset 最深 900，落在实测安全区里。
-const POLY_MAX_EVENTS = Number(process.env.PMXT_POLY_MAX_EVENTS || 1000);
+// {"type":"validation error","error":"offset too large, use /events/keyset for deeper pagination"}
+// 2026-07 生产实测（limit=100，order=volume&ascending=false&active=true&closed=false）：
+//   offset 0 / 100 / 500 / 1100 / 1500 / 2000 → 200
+//   offset 3000 / 5000                        → 422
+// 也就是天花板在 (2000, 3000) 之间。而 core 里的 paginateParallel 还按老的 MAX_OFFSET=10000
+// 算页数，并且用 Promise.all —— 一页 422 整个抓取就 reject。
+// 2000 条事件 = offset 最深 1900，落在实测通过的那一侧，留了一页余量。
+// 上限会变（Gamma 已经在推 /events/keyset），所以调这个值之前请重新探一次，别照抄上面的数字。
+const POLY_MAX_EVENTS = Number(process.env.PMXT_POLY_MAX_EVENTS || 2000);
 
 /**
  * 各平台的 fetchEvents 入参。**这个函数是 Polymarket 422 空看板事故的正解，别顺手"统一"掉。**
