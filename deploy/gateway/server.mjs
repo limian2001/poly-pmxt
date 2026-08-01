@@ -104,15 +104,54 @@ if (AUTH_HEADER) {
   log.warn(`⚠️ 端口绑在 ${process.env.PMXT_BIND} 却没设 PMXT_AUTH —— 这个看板现在对全网开放`);
 }
 
+// ── 只读模式（摘掉口令、把看板开给外人看时用）────────────────────────
+// PMXT_PUBLIC_READONLY=1 之后，没带口令的访客只能看，不能碰会花钱或能被白嫖的东西：
+//   · 只放行 GET —— 唯一的写接口 POST /api/board/refresh 每次都真去打托管接口，烧 credit
+//   · 挡掉 /pmxt/*  —— pmxt-core 的完整 REST，等于免费送人一台行情代理
+//   · 挡掉 /gw/diag —— 里面有快照路径、托管接口地址这些内部细节，没必要给外人
+// 看板自己要用的（/config、/ops、/gw/health、/api/board*、/api/book、/api/ohlcv、
+// /api/trades、/api/stream、静态文件）全是 GET，一个都不受影响。
+//
+// 带对口令的请求**完全不受这里限制**：所以你可以「留着 PMXT_AUTH 给自己用，
+// 同时开只读给外人看」。两个开关是正交的，不是二选一。
+const PUBLIC_RO = /^(1|true|yes|on)$/i.test(String(process.env.PMXT_PUBLIC_READONLY || ''));
+const RO_DENY = ['/pmxt', '/gw/diag'];
+
+/** 这条请求是不是带着正确口令来的（没设口令时恒为 false） */
+function isAuthed(req) {
+  if (!AUTH_HEADER) return false;
+  const got = req.headers.authorization || '';
+  return Boolean(got) && safeEqual(got, AUTH_HEADER);
+}
+
+if (PUBLIC_RO) {
+  app.use((req, res, next) => {
+    if (isAuthed(req)) return next();
+    const ip = req.socket.remoteAddress || '';
+    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') return next();
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return res.status(403).json({ error: '只读模式：该操作已关闭' });
+    }
+    if (RO_DENY.some((p) => req.path === p || req.path.startsWith(p + '/'))) {
+      return res.status(403).json({ error: '只读模式：该接口已关闭' });
+    }
+    next();
+  });
+  log.info('已启用只读模式（PMXT_PUBLIC_READONLY）：访客只能 GET 看板，/pmxt 与刷新接口已关闭');
+}
+
 // ── 聚合层 + 实时层 ──────────────────────────────────────────────────
 const board = new BoardStore({ venues: VENUES });
 const sse = createSse();
 const realtime = new Realtime(board, sse.broadcast);
 
 // 前端启动时读取：启用了哪些平台、跨平台匹配是否可用、锚定平台是谁
-app.get('/config', (_req, res) => {
+app.get('/config', (req, res) => {
   res.json({
     venues: VENUES,
+    // 前端据此把「立即重试同步」按钮藏掉 —— 只读模式下点了必然 403，
+    // 与其让访客看到一个报错的按钮，不如根本不显示
+    readonly: PUBLIC_RO && !isAuthed(req),
     anchor: board.facets().anchor,
     matching: Boolean(PMXT_API_KEY),
     realtime: realtime.enabled,

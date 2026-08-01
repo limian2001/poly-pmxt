@@ -115,7 +115,7 @@ function SyncBar({ stats, sseState, onRefresh, syncing }) {
       <span title=${stats?.lastSyncAt ? `上次同步 ${new Date(stats.lastSyncAt).toLocaleString('zh-CN')}` : '尚未同步'}>
         目录 ${ago ? `${ago}前` : '—'}${stats?.stale ? '（快照）' : ''}
       </span>
-      <button class="btn ghost xs" onClick=${onRefresh} disabled=${syncing}>${syncing ? '同步中…' : '立即同步'}</button>
+      ${onRefresh ? html`<button class="btn ghost xs" onClick=${onRefresh} disabled=${syncing}>${syncing ? '同步中…' : '立即同步'}</button>` : null}
     </span>`;
 }
 
@@ -249,7 +249,7 @@ function App() {
         <span>后端这一轮没组装出数据${deadVenues.some((d) => d.v === anchor)
           ? html`：<b>锚定平台 ${venueMeta(anchor).name} 直连失败</b>，主榜必然是空的` : ''}。
           <br/>失败的平台：${deadVenues.map((d) => `${venueMeta(d.v).name}（${d.msg || '未知错误'}）`).join('；')}
-          <br/><button class="btn ghost xs" onClick=${refresh} disabled=${syncing}>立即重试同步</button></span>`
+          ${cfg?.readonly ? null : html`<br/><button class="btn ghost xs" onClick=${refresh} disabled=${syncing}>立即重试同步</button>`}</span>`
       : stats?.lastSyncAt ? html`<span>这个分区暂时没有标的${filtersActive ? '（当前还挂着筛选条件）' : ''}。</span>`
       : html`<span>首轮同步还没跑完，稍等十几秒再看（右上角「目录」会显示同步时间）。</span>`;
   // 不管是哪种成因，都把实际请求附在后面：一张截图就能定位，不用再来回问。
@@ -267,7 +267,7 @@ function App() {
         <span class="tag">${venues.length} 个平台</span>
         ${cfg && !cfg.matching ? html`<span class="tag warn">未配置匹配 key，只有单平台数据</span>` : null}
         <span class="grow"></span>
-        <${SyncBar} stats=${stats} sseState=${sseState} onRefresh=${refresh} syncing=${syncing || stats?.syncing} />
+        <${SyncBar} stats=${stats} sseState=${sseState} onRefresh=${cfg?.readonly ? null : refresh} syncing=${syncing || stats?.syncing} />
         <${OpsBar} />
       </header>
 
