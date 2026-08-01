@@ -42,6 +42,7 @@ export class Realtime {
     this._resubTimer = null;
     this._pollTimer = null;
     this._closing = false;
+    this._connErr = new Map(); // venue -> {n, since, loggedAt}，连接级故障聚合日志用
   }
 
   start() {
@@ -123,20 +124,45 @@ export class Realtime {
         this._onQuote(sub, book);
       } catch (e) {
         if (sub.stop || this._closing) break;
-        sub.errors++;
         this.stats_.errors++;
         this.stats_.lastErrorMsg = `${sub.venue}/${sub.wsId}: ${String(e?.message || e).slice(0, 160)}`;
-        log.debug(`WS ${sub.venue}/${sub.wsId} 出错，${backoff}ms 后重试: ${e?.message}`);
-        // 连错 8 次多半是这个 id 本身有问题（下架/不存在），别再耗着
-        if (sub.errors >= 8) {
-          log.warn(`放弃订阅 ${sub.venue}/${sub.wsId}（连续 ${sub.errors} 次失败）`);
-          this.subs.delete(sub.key);
-          break;
+
+        // **连接级 vs 标的级，必须分开记账。**
+        // pmxt-core 的 rejectPendingMarketResolvers 在 socket close/error 时会把当前
+        // 所有 pending 的 resolver 一起 reject —— 一次断线，160 个订阅同时吃一次失败。
+        // 如果照旧往每个 sub 头上记一笔，断线四次就把整张订阅表清空了，
+        // 而"连错 8 次就放弃"本来是给"这个 id 下架/不存在"准备的。
+        const kind = wsErrorKind(e);
+        if (kind === 'conn') {
+          this._noteConnError(sub.venue, e);
+        } else {
+          sub.errors++;
+          log.debug(`WS ${sub.venue}/${sub.wsId} 出错，${backoff}ms 后重试: ${e?.message}`);
+          if (sub.errors >= 8) {
+            log.warn(`放弃订阅 ${sub.venue}/${sub.wsId}（连续 ${sub.errors} 次标的级失败，多半是下架或 id 无效）`);
+            this.subs.delete(sub.key);
+            break;
+          }
         }
-        await sleep(backoff);
+        // 抖动：不然 160 个订阅会在同一毫秒一起重连，把刚恢复的连接再打死一次
+        await sleep(backoff + Math.floor(Math.random() * 400));
         backoff = Math.min(BACKOFF_MAX, backoff * 2);
       }
     }
+  }
+
+  /** 连接级故障：不记个体账，只按平台聚合，每 30 秒最多说一句，免得刷屏 */
+  _noteConnError(venue, e) {
+    const now = Date.now();
+    const c = this._connErr.get(venue) || { n: 0, since: now, loggedAt: 0 };
+    c.n++;
+    if (now - c.loggedAt >= 30_000) {
+      log.warn(`${venue} 实时连接不稳：${Math.round((now - c.since) / 1000)} 秒内 ${c.n} 次连接级失败（${String(e?.message || e).slice(0, 80)}）。订阅会自动重连，不计入放弃阈值`);
+      c.loggedAt = now;
+      c.n = 0;
+      c.since = now;
+    }
+    this._connErr.set(venue, c);
   }
 
   // ── Kalshi 轮询 ──────────────────────────────────────────────────────
@@ -198,6 +224,26 @@ export class Realtime {
       venues: [...new Set([...this.subs.values()].map((s) => `${s.venue}:${s.mode}`))],
     };
   }
+}
+
+/**
+ * 这次失败是「连接塌了」还是「这个标的有问题」？
+ *
+ * 连接级：整条 socket 的事，所有订阅同时中招，重连就好，**不能**记到单个 id 头上。
+ *   典型来源是 pmxt-core 的 rejectPendingMarketResolvers（'Polymarket market channel closed'）
+ *   和各种 socket 层错误码。
+ * 标的级：只有这个 id 有问题（下架、id 写错、平台不认），重试多少次都一样，攒够就放弃。
+ *
+ * 分不清的一律当连接级 —— 误判成连接级只是多重试几次，误判成标的级会把还活着的标的永久踢掉。
+ */
+const CONN_ERR_RE = /channel closed|socket|websocket|closed before|disconnect|ECONNRESET|EPIPE|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ECONNREFUSED|connection (timed out|closed|reset)|network/i;
+const ID_ERR_RE = /may not exist|not found|unknown (asset|market|token)|invalid (asset|token|market|id)|no such/i;
+
+export function wsErrorKind(e) {
+  const m = String(e?.message || e || '');
+  if (ID_ERR_RE.test(m)) return 'id';
+  if (CONN_ERR_RE.test(m)) return 'conn';
+  return 'conn';
 }
 
 /** Yes 侧盘口 → No 侧：价格取补数，买卖两边互换 */
