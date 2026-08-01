@@ -206,17 +206,50 @@ export function Board({ rows, venues, sort, dir, onSort, onOpen, loading, expand
   const [hover, setHover] = useState(null);
   const timer = useRef(null);
 
+  // 子行按需取回来的缓存：rowId -> 完整 children
+  // 列表接口只带第一个候选（父行那行价格要用），其余展开时才拉。
+  // 不这么做的话，一页 60 行要传 1.8MB —— 而其中 97% 是默认收起、根本没显示的子行。
+  const [kids, setKids] = useState(() => new Map());
+  const loading子行 = useRef(new Set());
+
+  const loadKids = async (row) => {
+    if (!row?.childrenTruncated || kids.has(row.id) || loading子行.current.has(row.id)) return;
+    loading子行.current.add(row.id);
+    try {
+      const full = await api(`/api/board/row/${encodeURIComponent(row.id)}`);
+      const cs = full?.children || [];
+      if (cs.length) setKids((m) => new Map(m).set(row.id, cs));
+    } catch { /* 拉不到就维持只显示领先候选，不弹错 */ }
+    finally { loading子行.current.delete(row.id); }
+  };
+
+  // 换了一页/换了筛选就把缓存丢掉。
+  // 注意依赖用的是「这一页的签名」而不是 rows 本身：实时推送每来一帧
+  // applyTicks 都会造一个新数组，用 rows 当依赖的话缓存每秒都被清空，
+  // 展开一次就得重新拉一次子行。签名只在真正翻页/改筛选时才变。
+  const pageSig = `${rows.length}|${rows[0]?.id || ''}|${rows[rows.length - 1]?.id || ''}`;
+  useEffect(() => { setKids(new Map()); }, [pageSig]);
+
   // 「全部展开」开关翻转时，重置一次展开集合
   useEffect(() => {
-    if (expandAll) setExpanded(new Set(rows.filter((r) => r.kind === 'multi').map((r) => r.id)));
-    else setExpanded(new Set());
+    if (expandAll) {
+      setExpanded(new Set(rows.filter((r) => r.kind === 'multi').map((r) => r.id)));
+      // 一次点「全部展开」会同时要几十行的子行。串行拉，别一口气打几十个请求
+      // 把服务端的事件循环占满 —— 表已经在渲染了，子行陆续补上就行。
+      (async () => { for (const r of rows) if (r.kind === 'multi') await loadKids(r); })();
+    } else setExpanded(new Set());
   }, [expandAll]);
 
-  const toggle = (id) => setExpanded((s) => {
-    const n = new Set(s);
-    n.has(id) ? n.delete(id) : n.add(id);
-    return n;
-  });
+  const toggle = (id) => {
+    // 副作用别写进 setState 的 updater 里 —— updater 可能被重复调用，
+    // 那样一次点击会打出两个一模一样的请求。
+    if (!expanded.has(id)) loadKids(rows.find((r) => r.id === id));
+    setExpanded((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
 
   // 悬停 150ms 才拉盘口：鼠标扫过一整行不该触发十几个请求
   const onHover = (e, at) => {
@@ -262,7 +295,7 @@ export function Board({ rows, venues, sort, dir, onSort, onOpen, loading, expand
         </thead>
         <tbody>
           ${rows.map((r) => html`
-            <${BoardRow} key=${r.id} row=${r} venues=${venues}
+            <${BoardRow} key=${r.id} row=${kids.has(r.id) ? { ...r, children: kids.get(r.id) } : r} venues=${venues}
               expanded=${expanded.has(r.id)} onToggle=${() => toggle(r.id)}
               onOpen=${onOpen} onHover=${onHover} onLeave=${onLeave}
               selected=${sel === r.id} onSelect=${setSel} />`)}

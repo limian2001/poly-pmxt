@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { timingSafeEqual } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 
 // pmxt-core 是 CommonJS，用默认导入再解构，避免 ESM 命名导入的互操作问题
 import pmxtCore from 'pmxt-core';
@@ -45,6 +46,28 @@ const OPS_FILE = process.env.PMXT_OPS_FILE || '/app/ops/status.json';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// ── 响应压缩 ─────────────────────────────────────────────────────────
+// 看板返回的是高度重复的 JSON（同样的字段名重复几万次），gzip 大约能压到 1/8。
+// 没用 compression 这个包，是不想为二十行代码多背一个依赖 —— 我们只需要压 JSON，
+// 静态文件那点体积无所谓。
+// 注意用 gzipSync：这些响应最大也就几百 KB，压一次 1ms 上下，
+// 换成流式反而要处理背压和 SSE 的交互，不值当。SSE 走的是 res.write，不经过 res.json。
+app.use((req, res, next) => {
+  if (!/\bgzip\b/.test(req.headers['accept-encoding'] || '')) return next();
+  const json = res.json.bind(res);
+  res.json = (body) => {
+    let buf;
+    try { buf = gzipSync(Buffer.from(JSON.stringify(body), 'utf8')); }
+    catch { return json(body); }   // 压不了就原样发，别因为压缩把接口搞挂
+    res.set('Content-Type', 'application/json; charset=utf-8');
+    res.set('Content-Encoding', 'gzip');
+    res.set('Vary', 'Accept-Encoding');
+    res.removeHeader('Content-Length');
+    return res.end(buf);
+  };
+  next();
+});
 
 // ── 访问口令（只在把端口开到公网时才需要）──────────────────────────────
 // 绑 127.0.0.1 走 SSH 隧道时，隧道本身就是认证，这里留空即可。

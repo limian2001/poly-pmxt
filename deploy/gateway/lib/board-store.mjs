@@ -716,11 +716,20 @@ function finalizeRow(row, ev) {
 // 子行也要剥：_attachMatches 是按 target 写 rawMatches 的，target 可能就是某个子行，
 // 于是一个 60 行的多候选页能白白多出上千条匹配证据。前端主表一个字段都不读，
 // 真要看证据走 /api/board/row/:id（那条不 slim，证据是全的）。
+// 2026-08 实测：一行 30KB，其中 29.4KB（97%）是 children —— 平均 27 个候选，
+// 每个 1.2KB。而候选默认是**收起**的，一行都不显示。60 行一页就是 1.8MB 明文
+// JSON，弱网上要几十秒才出表，用户看到的就是「打开半天没数据」。
+// 所以列表只带**第一个**候选（BoardRow 用 children[0] 显示父行那一行价格，必须留），
+// 其余展开时再按行去 /api/board/row/:id 取。同一页从 1.8MB 掉到约 100KB。
 function slim(r) {
   const { rawMatches, ...rest } = r;
+  const kids = (r.children || []).map(({ rawMatches: _rm, ...c }) => c);
   return {
     ...rest,
-    children: (r.children || []).map(({ rawMatches: _rm, ...c }) => c),
+    children: kids.slice(0, 1),
+    // 前端据此判断「手上这份是不是完整的」：children.length < childCount 就去拉全量。
+    // 不能用 childCount>1 来判断 —— 展开取回来之后它照样 >1，会每次都重取。
+    childrenTruncated: kids.length > 1,
     hasRawMatches: Array.isArray(rawMatches) && rawMatches.length > 0,
   };
 }
